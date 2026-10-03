@@ -421,3 +421,37 @@ export interface ArchiveEntry {
   awards: Array<{ label: string; winner: string; manual?: boolean }>
   updatedAt: number
 }
+
+// ---------- FMO (fútbol) ----------
+export interface FmoGuest {
+  id: string
+  name: string
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface FmoMatchPlayer {
+  team: 'A' | 'B'
+  x: number // posición en la cancha, 0..100
+  y: number // 0..100; menos de 50 es el equipo A (arriba)
+  goals: number
+}
+
+export interface FmoMatch {
+  id: string
+  playedAt: number
+  size: number // jugadores por equipo (5 a 8)
+  nameA: string
+  nameB: string
+  players: Record<string, FmoMatchPlayer> // id de miembro o de invitado
+  otherA: number // goles en contra o sin dueño a favor de A
+  otherB: number
+  status: 'DRAFT' | 'PLAYED'
+  notes?: string
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt: number
+  revision: number
+}

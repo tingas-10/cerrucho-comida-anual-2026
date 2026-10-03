@@ -45,6 +45,10 @@ export const P = {
   reaction: (photoId: string, memberId: string) => `reactions/${photoId}_${memberId}`,
   audit: (slug: string) => `editions/${slug}/audit`,
   auditEntry: (slug: string, id: string) => `editions/${slug}/audit/${id}`,
+  fmoMatches: 'fmoMatches',
+  fmoMatch: (id: string) => `fmoMatches/${id}`,
+  fmoGuests: 'fmoGuests',
+  fmoGuest: (id: string) => `fmoGuests/${id}`,
   archive: 'archive',
   archiveEntry: (slug: string) => `archive/${slug}`,
 }

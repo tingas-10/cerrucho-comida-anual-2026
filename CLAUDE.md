@@ -15,6 +15,7 @@ Que los cambios chicos salgan rápido por chat: editar el archivo correspondient
 | Categorías iniciales de premios y regla "Nadie" | `src/content/premios.ts` |
 | Bebidas, frases del nivel de consumo (barra 0-100), recetas, envases, reserva, agua/hielo | `src/content/bebidas.ts` |
 | Plantillas de tareas, lista personal y agenda | `src/content/tareas.ts` |
+| FMO (fútbol): puntos del ranking, tamaños de equipo, nombres por defecto | `src/content/fmo.ts` |
 | Colores, tipografía, radios, estilos globales | `src/index.css` |
 | Config de Firebase (pública por diseño; excepción autorizada por Agus) | `src/firebase/firebase.config.json` |
 | Reglas de seguridad (al cambiarlas, Agus debe republicarlas: ver README) | `firestore.rules` |
@@ -28,6 +29,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - `src/domain/` reglas puras con tests (`npm test`): `awards.ts` (conteo y ballotage), `beverages.ts` (validación y compras), `expenses.ts` (reparto en centavos, saldos), `gift.ts` (sorteo cripto), `polls.ts`, `format.ts` (fechas Buenos Aires).
 - `src/ui/` carcasa (`Shell.tsx`), componentes base (`components.tsx`), `PollCard.tsx`, toast, tema.
 - `src/pages/` una pantalla por archivo; `src/pages/admin/` una pestaña del panel por archivo.
+- `src/pages/fmo/` sección FMO (fútbol): partidos con cancha arrastrable, ranking, jugadores/invitados y 1 vs 1. Reglas puras en `src/domain/fmo.ts`. Colecciones `fmoMatches` y `fmoGuests`: todos los miembros activos leen y escriben.
 - `docs/spec/` la especificación original del paquete (autoridad de producto).
 
 ## Reglas del dominio que no se negocian
@@ -42,7 +44,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 
 ## Modo demo
 
-Si `firebase.config.json` tiene `PEGAR_...`, la app usa `MemoryAdapter` + `DemoAuthAdapter` con datos ficticios (`demoSeed.ts`). Sirve para previsualizar sin backend y para verificar cambios de UI en el navegador: `npm run dev` y entrar como "Agustín (administrador)".
+Con `VITE_DEMO=1` (o si `firebase.config.json` tiene `PEGAR_...`) la app usa `MemoryAdapter` + `DemoAuthAdapter` con datos ficticios (`demoSeed.ts`), sin tocar Firebase. Es lo que usa el servidor local `cerrucho` de `Documentos/Claude/.claude/launch.json` para verificar cambios de UI: entrar como "Agustín (administrador)". En producción la web usa siempre Firebase.
 
 ## Verificación antes de commitear
 

@@ -9,4 +9,5 @@ export const firebaseConfig: FirebaseWebConfig | null =
     ? { apiKey: cfg.apiKey, authDomain: cfg.authDomain, projectId: cfg.projectId, appId: cfg.appId, storageBucket: cfg.storageBucket, messagingSenderId: cfg.messagingSenderId }
     : null
 
-export const IS_DEMO = firebaseConfig === null
+// VITE_DEMO=1 fuerza el modo demo en desarrollo local (sin tocar los datos reales).
+export const IS_DEMO = firebaseConfig === null || import.meta.env.VITE_DEMO === '1'

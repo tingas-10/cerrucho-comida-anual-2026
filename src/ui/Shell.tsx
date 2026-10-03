@@ -3,18 +3,22 @@ import {
   Archive,
   Beer,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
   Gift,
+  Goal,
   Home,
   Image as ImageIcon,
   ListChecks,
   LogOut,
+  Medal,
   Moon,
   MoreHorizontal,
   Settings,
   Sun,
+  Swords,
   Trophy,
   UserRound,
   Users,
@@ -57,8 +61,14 @@ function useNav() {
     { to: '/galeria', label: 'Galería', icon: <ImageIcon size={18} /> },
     { to: '/archivo', label: 'Archivo', icon: <Archive size={18} /> },
   ]
+  const fmo: NavItem[] = [
+    { to: '/fmo', label: 'Partidos', icon: <Goal size={18} />, end: true },
+    { to: '/fmo/ranking', label: 'Ranking', icon: <Medal size={18} /> },
+    { to: '/fmo/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
+    { to: '/fmo/versus', label: '1 vs 1', icon: <Swords size={18} /> },
+  ]
   const admin: NavItem[] = isAdmin ? [{ to: '/admin', label: 'Administración', icon: <Settings size={18} /> }] : []
-  return { edicion, organizacion, banda, admin, e }
+  return { edicion, organizacion, fmo, banda, admin, e }
 }
 
 function Item({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
@@ -70,15 +80,38 @@ function Item({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean
   )
 }
 
-function Group({ title, items, collapsed, onClick }: { title: string; items: NavItem[]; collapsed?: boolean; onClick?: () => void }) {
+/** Sección del menú: el título es un botón que pliega o despliega sus subsecciones. */
+function Group({ title, items, collapsed, open = true, onToggle, onClick }: { title: string; items: NavItem[]; collapsed?: boolean; open?: boolean; onToggle?: () => void; onClick?: () => void }) {
+  if (collapsed) {
+    return (
+      <div className="mb-2">
+        <div className="border-t border-line my-2" />
+        {items.map((i) => (
+          <Item key={i.to} item={i} collapsed onClick={onClick} />
+        ))}
+      </div>
+    )
+  }
   return (
-    <div className="mb-4">
-      {!collapsed ? <p className="eyebrow px-3 mb-1 text-[10px]">{title}</p> : <div className="border-t border-line my-2" />}
-      {items.map((i) => (
-        <Item key={i.to} item={i} collapsed={collapsed} onClick={onClick} />
-      ))}
+    <div className="mb-2">
+      <button type="button" className="w-full flex items-center justify-between gap-2 px-3 min-h-[40px] rounded-lg eyebrow text-[10px] hover:bg-soft/60" aria-expanded={open} onClick={onToggle}>
+        <span className="text-left">{title}</span>
+        <ChevronDown size={14} className={`shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} aria-hidden />
+      </button>
+      {open
+        ? items.map((i) => <Item key={i.to} item={i} onClick={onClick} />)
+        : null}
     </div>
   )
+}
+
+const NAV_OPEN_KEY = 'cerrucho-nav-open'
+function loadOpenGroups(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(NAV_OPEN_KEY) ?? '{}') as Record<string, boolean>
+  } catch {
+    return {}
+  }
 }
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -99,6 +132,18 @@ export function Shell({ children }: { children: ReactNode }) {
       /* nada */
     }
   }, [collapsed])
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(loadOpenGroups)
+  const isOpen = (id: string) => openGroups[id] !== false
+  const toggleGroup = (id: string) =>
+    setOpenGroups((cur) => {
+      const next = { ...cur, [id]: cur[id] === false }
+      try {
+        localStorage.setItem(NAV_OPEN_KEY, JSON.stringify(next))
+      } catch {
+        /* nada */
+      }
+      return next
+    })
   const [sheet, setSheet] = useState<'organizar' | 'mas' | null>(null)
   const location = useLocation()
   useEffect(() => setSheet(null), [location.pathname])
@@ -128,9 +173,10 @@ export function Shell({ children }: { children: ReactNode }) {
           )}
         </div>
         <nav className="flex-1">
-          <Group title={edition?.title ?? 'Comida anual'} items={[...nav.edicion, ...nav.organizacion]} collapsed={collapsed} />
-          <Group title="La banda" items={nav.banda} collapsed={collapsed} />
-          {nav.admin.length ? <Group title="Más" items={nav.admin} collapsed={collapsed} /> : null}
+          <Group title={edition?.title ?? 'Comida anual'} items={[...nav.edicion, ...nav.organizacion]} collapsed={collapsed} open={isOpen('edicion')} onToggle={() => toggleGroup('edicion')} />
+          <Group title="FMO" items={nav.fmo} collapsed={collapsed} open={isOpen('fmo')} onToggle={() => toggleGroup('fmo')} />
+          <Group title="La banda" items={nav.banda} collapsed={collapsed} open={isOpen('banda')} onToggle={() => toggleGroup('banda')} />
+          {nav.admin.length ? <Group title="Más" items={nav.admin} collapsed={collapsed} open={isOpen('mas')} onToggle={() => toggleGroup('mas')} /> : null}
         </nav>
         <button type="button" className="nav-link mt-2" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}>
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -166,7 +212,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {demo ? (
             <div className="bg-warn-soft text-warn text-xs px-4 py-2 flex items-center justify-between gap-2">
               <span>
-                <b>Modo demostración.</b> Nada se guarda en un servidor: falta conectar Firebase.
+                <b>Modo demostración.</b> Datos de prueba: nada se guarda en un servidor.
               </span>
               <button type="button" className="underline font-semibold" onClick={resetDemo}>
                 Reiniciar demo
@@ -188,9 +234,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <ListChecks size={20} />
           Organizar
         </button>
-        <NavLink to={`${nav.e}/premios`} className={({ isActive }) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] ${isActive ? 'text-accent font-bold bg-soft' : 'muted'}`}>
-          <Trophy size={20} />
-          Premios
+        <NavLink to="/fmo" className={({ isActive }) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] ${isActive ? 'text-accent font-bold bg-soft' : 'muted'}`}>
+          <Goal size={20} />
+          FMO
         </NavLink>
         <NavLink to="/galeria" className={({ isActive }) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] ${isActive ? 'text-accent font-bold bg-soft' : 'muted'}`}>
           <ImageIcon size={20} />
@@ -207,20 +253,20 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="absolute inset-0 bg-black/50" onClick={() => setSheet(null)} aria-hidden />
           <div className="absolute bottom-0 left-0 right-0 card rounded-b-none p-4 safe-bottom pop-in">
             <div className="flex items-center justify-between mb-2">
-              <p className="h3">{sheet === 'organizar' ? 'Organizar' : 'Más'}</p>
+              <p className="h3">{sheet === 'organizar' ? (edition?.title ?? 'Comida anual') : 'Más'}</p>
               <button type="button" className="btn btn-line btn-sm" onClick={() => setSheet(null)} aria-label="Cerrar">
                 <X size={16} />
               </button>
             </div>
             {sheet === 'organizar' ? (
               <div className="grid grid-cols-2 gap-1">
-                {[...nav.edicion.slice(1, 5), ...nav.organizacion].map((i) => (
+                {[...nav.edicion.slice(1), ...nav.organizacion].map((i) => (
                   <Item key={i.to} item={i} onClick={() => setSheet(null)} />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-1">
-                {[...nav.banda, nav.edicion[6], ...nav.admin].map((i) => (
+                {[...nav.banda, ...nav.admin].map((i) => (
                   <Item key={i.to} item={i} onClick={() => setSheet(null)} />
                 ))}
                 <NavLink to="/cuenta" className="nav-link" onClick={() => setSheet(null)}>

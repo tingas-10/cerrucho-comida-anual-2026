@@ -82,6 +82,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ---------- FMO (fútbol): todos los miembros activos pueden hacer todo ----------
+    match /fmoMatches/{matchId} {
+      allow read, write: if isActive();
+    }
+    match /fmoGuests/{guestId} {
+      allow read, write: if isActive();
+    }
+
     // ---------- Edición ----------
     match /editions/{slug} {
       allow read: if isActive();

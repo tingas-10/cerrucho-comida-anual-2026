@@ -3,6 +3,7 @@
 import { EDICION_ACTUAL, GRUPO } from '../content/config'
 import { P } from './paths'
 import type { MemoryAdapter } from './memoryAdapter'
+import { defaultPosition } from '../domain/fmo'
 import { ensureEdition, ensureOwnerAndDrafts, newMember, slugify } from './seed'
 import type { BeverageProfile, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
 
@@ -101,6 +102,18 @@ export async function seedDemo(db: MemoryAdapter) {
   for (const id of ['m-choclo', 'm-pato']) {
     await db.setDoc(P.giftParticipant(slug, id), { accepted: true, acceptedBudgetVersion: 1, attending: true, delegateId: null, wishes: id === 'm-pato' ? 'Algo para el asado' : '', avoid: '', updatedAt: now })
   }
+
+  // FMO: un invitado y dos partidos de ejemplo.
+  await db.setDoc(P.fmoGuest('g-demo-primo'), { id: 'g-demo-primo', name: 'Primo de Topo', createdBy: 'm-topo', createdAt: now, updatedAt: now })
+  const fmoPlayers = (a: Array<[string, number]>, b: Array<[string, number]>) => {
+    const out: Record<string, { team: 'A' | 'B'; x: number; y: number; goals: number }> = {}
+    a.forEach(([id, goals], i) => (out[id] = { team: 'A', ...defaultPosition('A', i), goals }))
+    b.forEach(([id, goals], i) => (out[id] = { team: 'B', ...defaultPosition('B', i), goals }))
+    return out
+  }
+  const fmoBase = { size: 5, nameA: 'Claros', nameB: 'Oscuros', otherA: 0, otherB: 0, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
+  await db.setDoc(P.fmoMatch('demo-1'), { ...fmoBase, id: 'demo-1', playedAt: now - 9 * 86400000, status: 'PLAYED', players: fmoPlayers([['owner', 2], ['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-pipe', 1]], [['m-felix', 1], ['m-marcos', 0], ['m-nacho', 2], ['m-topo', 0], ['g-demo-primo', 0]]) })
+  await db.setDoc(P.fmoMatch('demo-2'), { ...fmoBase, id: 'demo-2', playedAt: now - 2 * 86400000, status: 'PLAYED', otherB: 1, players: fmoPlayers([['owner', 0], ['m-felix', 2], ['m-nacho', 0], ['m-santi', 0], ['m-tomi', 0]], [['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-topo', 0], ['m-ucky', 0]]) })
 
   // Propuestas de comida pendientes.
   await db.setDoc(P.proposal(slug, 'prop-1'), {

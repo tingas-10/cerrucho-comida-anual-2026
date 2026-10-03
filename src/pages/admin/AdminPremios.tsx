@@ -178,7 +178,7 @@ export function AdminPremios() {
 
   return (
     <div className="grid gap-4">
-      {!edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO quedan bloqueadas hasta confirmar el padrón VAO en Miembros. Ahora hay {vao.length} marcados.</Notice> : null}
+      {!edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO (Viaje Anual Obligatorio) quedan bloqueadas hasta que confirmes en Miembros quiénes fueron al viaje. Ahora hay {vao.length} marcados.</Notice> : null}
       <Card>
         <p className="h3 mb-2">Abrir y cerrar</p>
         <div className="grid grid-cols-[1fr_120px] gap-2 max-w-sm">

@@ -9,6 +9,11 @@ import { Bebidas } from './pages/Bebidas'
 import { Comida } from './pages/Comida'
 import { Cuenta } from './pages/Cuenta'
 import { Fecha } from './pages/Fecha'
+import { FmoJugadores } from './pages/fmo/FmoJugadores'
+import { FmoPartido } from './pages/fmo/FmoPartido'
+import { FmoPartidos } from './pages/fmo/FmoPartidos'
+import { FmoRanking } from './pages/fmo/FmoRanking'
+import { FmoVersus } from './pages/fmo/FmoVersus'
 import { Galeria } from './pages/Galeria'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
@@ -62,6 +67,11 @@ function Gate() {
               <Route path="/e/:slug/premios" element={<Premios />} />
               <Route path="/e/:slug/agenda" element={<Agenda />} />
               <Route path="/e/:slug/tareas" element={<Tareas />} />
+              <Route path="/fmo" element={<FmoPartidos />} />
+              <Route path="/fmo/partido/:id" element={<FmoPartido />} />
+              <Route path="/fmo/ranking" element={<FmoRanking />} />
+              <Route path="/fmo/jugadores" element={<FmoJugadores />} />
+              <Route path="/fmo/versus" element={<FmoVersus />} />
               <Route path="/miembros" element={<Miembros />} />
               <Route path="/galeria" element={<Galeria />} />
               <Route path="/archivo" element={<Archivo />} />

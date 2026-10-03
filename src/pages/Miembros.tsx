@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useSession } from '../data/DataContext'
 import { useCollection, useEdition, useMembers } from '../data/hooks'
 import { P } from '../data/paths'
@@ -5,7 +6,7 @@ import type { Rsvp } from '../data/types'
 import { Avatar, Card, Empty, Loading, PageHeader, Pill, Stat } from '../ui/components'
 
 export function Miembros() {
-  const { slug } = useSession()
+  const { slug, isAdmin } = useSession()
   const members = useMembers()
   const { data: edition } = useEdition()
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
@@ -19,7 +20,18 @@ export function Miembros() {
   const drafts = members.list.filter((m) => m.status === 'draft')
   return (
     <div>
-      <PageHeader eyebrow="La banda" title="Miembros" intro="Quiénes somos este año. Los mails no se muestran a nadie." />
+      <PageHeader
+        eyebrow="La banda"
+        title="Miembros"
+        intro="Quiénes somos este año. Los mails no se muestran a nadie."
+        actions={
+          isAdmin ? (
+            <Link to="/admin/miembros" className="btn btn-gold">
+              Cargar mails y nombres
+            </Link>
+          ) : null
+        }
+      />
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Stat label="Participan" value={active.length} />
         <Stat label="Confirmaron" value={yes} hint={edition?.date.startsAt ? 'que vienen' : 'sin fecha aún'} />
