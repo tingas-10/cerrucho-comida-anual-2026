@@ -17,7 +17,7 @@ export function Galeria() {
   const { db, memberId } = useSession()
   const toast = useToast()
   const [album, setAlbum] = useState<string>('todos')
-  const [kind, setKind] = useState<'all' | 'photo' | 'meme' | 'video'>('all')
+  const [kind, setKind] = useState<'all' | 'photo' | 'meme'>('all')
   const [open, setOpen] = useState<number | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const { rows: reactions } = useCollection<Reaction>(P.reactions)
@@ -77,7 +77,6 @@ export function Galeria() {
             { value: 'all', label: 'Todo' },
             { value: 'photo', label: 'Fotos' },
             { value: 'meme', label: 'Memes' },
-            { value: 'video', label: 'Videos' },
           ]}
         />
       </div>
@@ -171,7 +170,7 @@ export function Galeria() {
             <p className="small muted">
               Para que la galería no tenga costo, las fotos viven en la web. Mandalas por WhatsApp a Agus (o al grupo) y él las sube acá.
             </p>
-            <p className="tiny muted mt-3">Formatos: fotos JPG/PNG/WebP y videos MP4 cortos.</p>
+            <p className="tiny muted mt-3">Formatos: fotos JPG, PNG o WebP.</p>
           </>
         )}
       </Modal>

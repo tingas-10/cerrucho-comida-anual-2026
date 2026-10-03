@@ -6,12 +6,10 @@ import { Agenda } from './pages/Agenda'
 import { AmigoInvisible } from './pages/AmigoInvisible'
 import { Archivo } from './pages/Archivo'
 import { Bebidas } from './pages/Bebidas'
-import { Ceremonia } from './pages/Ceremonia'
 import { Comida } from './pages/Comida'
 import { Cuenta } from './pages/Cuenta'
 import { Fecha } from './pages/Fecha'
 import { Galeria } from './pages/Galeria'
-import { Gastos } from './pages/Gastos'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 import { Miembros } from './pages/Miembros'
@@ -52,13 +50,8 @@ function Gate() {
     )
   }
   return (
-    <Routes>
-      <Route path="/e/:slug/ceremonia" element={<Ceremonia />} />
-      <Route
-        path="*"
-        element={
-          <Shell>
-            <Routes>
+    <Shell>
+      <Routes>
               <Route path="/" element={<Navigate to={`/e/${EDICION_ACTUAL.slug}`} replace />} />
               <Route path="/entrar" element={<Navigate to={`/e/${EDICION_ACTUAL.slug}`} replace />} />
               <Route path="/e/:slug" element={<Inicio />} />
@@ -69,18 +62,14 @@ function Gate() {
               <Route path="/e/:slug/premios" element={<Premios />} />
               <Route path="/e/:slug/agenda" element={<Agenda />} />
               <Route path="/e/:slug/tareas" element={<Tareas />} />
-              <Route path="/e/:slug/gastos" element={<Gastos />} />
               <Route path="/miembros" element={<Miembros />} />
               <Route path="/galeria" element={<Galeria />} />
               <Route path="/archivo" element={<Archivo />} />
               <Route path="/cuenta" element={<Cuenta />} />
               <Route path="/admin/*" element={<Admin />} />
               <Route path="*" element={<Navigate to={`/e/${EDICION_ACTUAL.slug}`} replace />} />
-            </Routes>
-          </Shell>
-        }
-      />
-    </Routes>
+      </Routes>
+    </Shell>
   )
 }
 

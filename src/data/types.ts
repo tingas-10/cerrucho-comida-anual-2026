@@ -150,6 +150,8 @@ export interface Poll {
   state: PollState
   options: PollOption[]
   electorate: string[]
+  // ALL_ACTIVE: votan todos los miembros activos que participan (sin congelar). FROZEN: sólo `electorate`.
+  electorateMode?: 'ALL_ACTIVE' | 'FROZEN'
   audience: 'ALL' | 'AFTERPARTY'
   openAt: number | null
   closeAt: number | null
@@ -183,6 +185,7 @@ export interface Proposal {
   link?: string
   startsAt?: number | null
   state: ProposalState
+  votes?: Record<string, 'up' | 'down'>
   createdAt: number
   updatedAt: number
 }
@@ -205,7 +208,8 @@ export interface DietaryProfile {
 }
 
 export interface BeverageProfile {
-  portions: number
+  level: number // 0..100 en pasos de 10; 0 = no toma
+  portions: number // derivado del nivel, para el cálculo de compras
   noAlcohol: boolean
   pct: Record<string, number>
   revision: number

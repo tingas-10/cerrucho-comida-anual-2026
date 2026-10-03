@@ -4,11 +4,12 @@ import { useSession } from '../data/DataContext'
 import { errorText } from '../data/actions'
 import { useCollection, useDoc, useEdition, useMembers } from '../data/hooks'
 import { P } from '../data/paths'
-import type { Poll, Proposal, Rsvp, TransportEntry } from '../data/types'
+import type { Poll, Rsvp, TransportEntry } from '../data/types'
 import { formatArs } from '../domain/expenses'
 import { fmtDayLong, fmtTime } from '../domain/format'
-import { Button, Card, Field, Input, Loading, Notice, PageHeader, Pill, Section, Textarea } from '../ui/components'
+import { Button, Card, Field, Input, Loading, Notice, PageHeader, Pill, Section } from '../ui/components'
 import { PollCard } from '../ui/PollCard'
+import { ProposalsBoard } from '../ui/Proposals'
 import { useToast } from '../ui/toast'
 
 export function Agenda() {
@@ -45,7 +46,7 @@ export function Agenda() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `cena-${edition.slug}.ics`
+    a.download = `comida-anual-${edition.slug}.ics`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -98,84 +99,19 @@ export function Agenda() {
         <Card className="mb-3">
           <p className="small muted">Tu plan después de comer: {myRsvp.data?.afterparty === 'JOIN' ? 'me sumo a salir' : myRsvp.data?.afterparty === 'LEAVE_AFTER_DINNER' ? 'me vuelvo después de comer' : myRsvp.data?.afterparty === 'STAY_AWARDS' ? 'me quedo hasta los premios' : 'sin definir'}. Se cambia desde Fecha y asistencia.</p>
         </Card>
-        {visiblePolls.length ? (
-          visiblePolls.map((p) => (
-            <div key={p.id} className="mb-3">
-              <PollCard poll={p} aliasOf={members.aliasOf} />
-              {p.audience === 'AFTERPARTY' ? <p className="tiny muted mt-1">Votan sólo quienes marcaron "Me sumo a salir".</p> : null}
-            </div>
-          ))
-        ) : (
-          <AfterpartyProposal />
-        )}
-        {visiblePolls.length ? <AfterpartyProposal /> : null}
+        {visiblePolls.map((p) => (
+          <div key={p.id} className="mb-3">
+            <PollCard poll={p} aliasOf={members.aliasOf} />
+            {p.audience === 'AFTERPARTY' ? <p className="tiny muted mt-1">Votan sólo quienes marcaron "Me sumo a salir".</p> : null}
+          </div>
+        ))}
+        <ProposalsBoard types={['afterparty']} title="A dónde seguimos" intro="Proponé un lugar para después; la banda lo vota con 👍 o 👎." placeholder="ej. Bar de Topo" />
       </Section>
 
       <Section title="Transporte">
         <Transport memberId={memberId} db={db} slug={slug} aliasOf={members.aliasOf} />
       </Section>
     </div>
-  )
-}
-
-function AfterpartyProposal() {
-  const { db, slug, memberId } = useSession()
-  const toast = useToast()
-  const members = useMembers()
-  const { rows } = useCollection<Proposal>(P.proposals(slug), [{ field: 'type', op: '==', value: 'afterparty' }])
-  const [label, setLabel] = useState('')
-  const [detail, setDetail] = useState('')
-  const [busy, setBusy] = useState(false)
-  async function submit() {
-    if (!memberId || label.trim().length < 2) return
-    setBusy(true)
-    try {
-      const id = db.newId()
-      await db.setDoc<Proposal>(P.proposal(slug, id), { id, type: 'afterparty', authorId: memberId, label: label.trim(), detail: detail.trim(), state: 'PENDING', createdAt: Date.now(), updatedAt: Date.now() })
-      setLabel('')
-      setDetail('')
-      toast.ok('Propuesta enviada')
-    } catch (e) {
-      toast.error(errorText(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-  const list = rows.filter((p) => p.state !== 'WITHDRAWN')
-  return (
-    <Card>
-      <p className="h3 mb-2">Proponer a dónde seguir</p>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Lugar" id="ap-label">
-          <Input id="ap-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} />
-        </Field>
-        <Field label="Zona, entrada, dress code (opcional)" id="ap-detail">
-          <Textarea id="ap-detail" value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={200} />
-        </Field>
-      </div>
-      <Button onClick={() => void submit()} loading={busy} disabled={label.trim().length < 2}>
-        Proponer
-      </Button>
-      {list.length ? (
-        <div className="mt-3">
-          {list.map((p) => (
-            <div key={p.id} className="row">
-              <span className="small">
-                <b>{p.label}</b> {p.detail ? `· ${p.detail}` : ''} <span className="tiny muted">· {members.aliasOf(p.authorId)}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                {p.state === 'PENDING' ? <Pill tone="warn">Pendiente</Pill> : p.state === 'APPROVED' ? <Pill tone="ok">Publicada</Pill> : <Pill tone="muted">No va</Pill>}
-                {p.authorId === memberId && p.state === 'PENDING' ? (
-                  <Button size="sm" variant="line" onClick={() => void db.updateDoc(P.proposal(slug, p.id), { state: 'WITHDRAWN', updatedAt: Date.now() })}>
-                    Retirar
-                  </Button>
-                ) : null}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </Card>
   )
 }
 
@@ -225,7 +161,7 @@ function Transport({ memberId, db, slug, aliasOf }: { memberId: string | null; d
           </Field>
           <Field label="Tramo" id="tr-leg">
             <select id="tr-leg" className="input" value={leg} onChange={(e) => setLeg(e.target.value as TransportEntry['leg'])}>
-              <option value="DINNER">A la cena</option>
+              <option value="DINNER">A la comida</option>
               <option value="AFTERPARTY">A la salida</option>
             </select>
           </Field>
@@ -251,7 +187,7 @@ function Transport({ memberId, db, slug, aliasOf }: { memberId: string | null; d
             {mine.map((r) => (
               <div key={r.id} className="row">
                 <span className="small">
-                  {r.kind === 'OFFER' ? `Ofrezco ${r.seats} lugares` : r.kind === 'NEED' ? 'Necesito traslado' : 'Taxi compartido'} · {r.leg === 'DINNER' ? 'cena' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
+                  {r.kind === 'OFFER' ? `Ofrezco ${r.seats} lugares` : r.kind === 'NEED' ? 'Necesito traslado' : 'Taxi compartido'} · {r.leg === 'DINNER' ? 'comida' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
                 </span>
                 <Button size="sm" variant="line" onClick={() => void db.deleteDoc(P.transportEntry(slug, r.id))}>
                   Quitar
@@ -267,7 +203,7 @@ function Transport({ memberId, db, slug, aliasOf }: { memberId: string | null; d
         {offers.map((r) => (
           <div key={r.id} className="row items-start">
             <span className="small">
-              <b>{aliasOf(r.memberId)}</b> ofrece {r.seats} lugares · {r.leg === 'DINNER' ? 'cena' : 'salida'} {r.originHint ? `· desde ${r.originHint}` : ''} {r.time ? `· ${r.time}` : ''}
+              <b>{aliasOf(r.memberId)}</b> ofrece {r.seats} lugares · {r.leg === 'DINNER' ? 'comida' : 'salida'} {r.originHint ? `· desde ${r.originHint}` : ''} {r.time ? `· ${r.time}` : ''}
               {involved(r) && r.passengers.length ? <span className="block tiny muted">Van: {r.passengers.map(aliasOf).join(', ')}</span> : null}
             </span>
             <Pill tone={r.passengers.length >= r.seats ? 'muted' : 'ok'}>{Math.max(0, r.seats - r.passengers.length)} libres</Pill>
@@ -276,7 +212,7 @@ function Transport({ memberId, db, slug, aliasOf }: { memberId: string | null; d
         {needs.map((r) => (
           <div key={r.id} className="row">
             <span className="small">
-              <b>{aliasOf(r.memberId)}</b> necesita traslado · {r.leg === 'DINNER' ? 'cena' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
+              <b>{aliasOf(r.memberId)}</b> necesita traslado · {r.leg === 'DINNER' ? 'comida' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
             </span>
             {r.passengers.length ? <Pill tone="ok">Asignado</Pill> : <Pill tone="warn">Sin asignar</Pill>}
           </div>
@@ -284,7 +220,7 @@ function Transport({ memberId, db, slug, aliasOf }: { memberId: string | null; d
         {taxis.map((r) => (
           <div key={r.id} className="row">
             <span className="small">
-              <b>{aliasOf(r.memberId)}</b> comparte taxi · {r.leg === 'DINNER' ? 'cena' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
+              <b>{aliasOf(r.memberId)}</b> comparte taxi · {r.leg === 'DINNER' ? 'comida' : 'salida'} {r.originHint ? `· ${r.originHint}` : ''}
             </span>
           </div>
         ))}

@@ -4,7 +4,7 @@ import { DESEMPATE_LOGISTICO_HORAS, QUORUM_LOGISTICO_PCT, REGALO_MONTOS_BORRADOR
 import { useSession } from '../../data/DataContext'
 import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
 import { DataError } from '../../data/adapter'
-import { useCollection, useEdition, useMembers } from '../../data/hooks'
+import { electorateOf, useCollection, useEdition, useMembers } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { GiftCampaign, Poll, PollKind, PollOption, PollResponse, Proposal, Rsvp } from '../../data/types'
 import { formatArs } from '../../domain/expenses'
@@ -161,7 +161,7 @@ export function AdminDecisiones() {
     setBusy(p.id)
     try {
       const responses = await db.getCollection<PollResponse>(P.responses(slug, p.id))
-      const part = participation(p, responses.length)
+      const part = participation(p, responses.length, electorateOf(p, members).length)
       await db.runTransaction(async (tx) => {
         const cur = await tx.get<Poll>(P.poll(slug, p.id))
         if (!cur) throw new DataError('NOT_FOUND')
@@ -414,13 +414,15 @@ export function AdminDecisiones() {
 
 function PollAdminCard({ poll, busy, aliasOf, onPublish, onClose, onVoid, onNewVersion, onConfirm, onRunoff }: { poll: Poll; busy: boolean; aliasOf: (id: string) => string; onPublish: () => void; onClose: (reason: string) => void; onVoid: (reason: string) => void; onNewVersion: () => void; onConfirm: (optionId: string, reason: string) => void; onRunoff: (ids: string[]) => void }) {
   const { slug } = useSession()
+  const members = useMembers()
+  const electorate = electorateOf(poll, members)
   const { rows: responses } = useCollection<PollResponse>(P.responses(slug, poll.id))
   const [closeOpen, setCloseOpen] = useState(false)
   const [voidOpen, setVoidOpen] = useState(false)
   const [confirmOpt, setConfirmOpt] = useState<string | null>(null)
   const now = Date.now()
   const open = isPollOpen(poll, now)
-  const part = participation(poll, responses.length)
+  const part = participation(poll, responses.length, electorate.length)
   const counts = poll.method === 'AVAILABILITY' ? null : poll.method === 'APPROVAL' ? tallyApproval(poll, responses) : tallySingle(poll, responses)
   const rows = poll.method === 'AVAILABILITY' ? tallyAvailability(poll, responses) : null
   const rec = rows ? recommendDates(rows) : null
@@ -434,7 +436,7 @@ function PollAdminCard({ poll, busy, aliasOf, onPublish, onClose, onVoid, onNewV
             {poll.title} <span className="tiny muted font-normal">· {KINDS.find((k) => k.value === poll.kind)?.label}</span>
           </p>
           <p className="tiny muted">
-            {poll.state === 'OPEN' ? (open ? `Abierta · cierra ${parts.date} ${parts.time}` : 'Vencida, sin cerrar') : poll.state} · respondieron {responses.length} de {poll.electorate.length} ({part.pct}%)
+            {poll.state === 'OPEN' ? (open ? `Abierta · cierra ${parts.date} ${parts.time}` : 'Vencida, sin cerrar') : poll.state} · respondieron {responses.length} de {electorate.length} ({part.pct}%)
             {poll.closure?.lowParticipation ? ' · baja participación' : ''}
           </p>
         </div>
@@ -499,7 +501,7 @@ function PollAdminCard({ poll, busy, aliasOf, onPublish, onClose, onVoid, onNewV
           Decisión confirmada por {aliasOf(poll.decision.by)} · {fmtDateTime(poll.decision.at)} {poll.decision.reason ? `· ${poll.decision.reason}` : ''}
         </p>
       ) : null}
-      <ConfirmDialog open={closeOpen} onClose={() => setCloseOpen(false)} title="Cerrar consulta" text={part.quorumMet ? `Respondieron ${responses.length} de ${poll.electorate.length}. Se cierra y queda la recomendación para confirmar.` : `Quórum no alcanzado (${part.pct}% de ${poll.quorumPct}%). Se cierra como baja participación; podés confirmar igual con motivo.`} requireReason={!part.quorumMet} confirmLabel="Cerrar" onConfirm={(r) => { onClose(r); setCloseOpen(false) }} />
+      <ConfirmDialog open={closeOpen} onClose={() => setCloseOpen(false)} title="Cerrar consulta" text={part.quorumMet ? `Respondieron ${responses.length} de ${electorate.length}. Se cierra y queda la recomendación para confirmar.` : `Quórum no alcanzado (${part.pct}% de ${poll.quorumPct}%). Se cierra como baja participación; podés confirmar igual con motivo.`} requireReason={!part.quorumMet} confirmLabel="Cerrar" onConfirm={(r) => { onClose(r); setCloseOpen(false) }} />
       <ConfirmDialog open={voidOpen} onClose={() => setVoidOpen(false)} title="Anular consulta" text="Las respuestas quedan guardadas pero la consulta deja de valer." requireReason danger confirmLabel="Anular" onConfirm={(r) => { onVoid(r); setVoidOpen(false) }} />
       <ConfirmDialog open={!!confirmOpt} onClose={() => setConfirmOpt(null)} title="Confirmar decisión oficial" text={`Opción: ${poll.options.find((o) => o.id === confirmOpt)?.label ?? ''}. ${lead.includes(confirmOpt ?? '') ? '' : 'No es la opción líder: explicá el motivo.'}`} requireReason={!lead.includes(confirmOpt ?? '') || !!poll.closure?.lowParticipation} confirmLabel="Confirmar" onConfirm={(r) => { if (confirmOpt) onConfirm(confirmOpt, r); setConfirmOpt(null) }} />
     </Card>

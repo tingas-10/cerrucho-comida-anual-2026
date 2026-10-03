@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { QueryFilter, WithId } from './adapter'
 import { useSession } from './DataContext'
 import { P } from './paths'
-import type { Edition, Member } from './types'
+import type { Edition, Member, Poll } from './types'
 
 export interface DocState<T> {
   data: T | null
@@ -85,6 +85,12 @@ export function useMembers(): MembersIndex {
       loading,
     }
   }, [rows, loading])
+}
+
+/** Electores de una consulta: congelados, o todos los activos que participan si es ALL_ACTIVE. */
+export function electorateOf(poll: Poll, members: MembersIndex): string[] {
+  if (poll.electorateMode === 'ALL_ACTIVE') return members.active.filter((m) => m.participating).map((m) => m.id)
+  return poll.electorate
 }
 
 /** Suscribe varios documentos a la vez (por ejemplo, mis respuestas de cada encuesta). */

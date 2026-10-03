@@ -1,10 +1,9 @@
 // Reglas puras de bebidas: validación del perfil, reparto grupal y lista de compras.
-import { BEBIDAS, PORCIONES_MAX, PORCIONES_MIN, type BebidaKey } from '../content/bebidas'
+import { BEBIDAS, NIVEL_PASO, PORCIONES_AL_100, type BebidaKey } from '../content/bebidas'
 import type { BeverageProfile, BeverageSettings } from '../data/types'
 
 export interface ProfileInput {
-  portions: number
-  noAlcohol: boolean
+  level: number // 0..100 en pasos de 10; 0 = no toma alcohol
   pct: Record<string, number>
 }
 
@@ -16,11 +15,15 @@ export function pctTotal(pct: Record<string, number>): number {
   return BEBIDAS.reduce((a, k) => a + (Number(pct[k]) || 0), 0)
 }
 
+/** Porciones equivalentes para el cálculo de compras (100% = PORCIONES_AL_100). */
+export function portionsOf(level: number): number {
+  return (Math.max(0, Math.min(100, level)) / 100) * PORCIONES_AL_100
+}
+
 /** Devuelve null si es válido, o el mensaje de error. */
 export function validateProfile(p: ProfileInput): string | null {
-  if (p.noAlcohol) return null
-  if (!Number.isInteger(p.portions) || p.portions < PORCIONES_MIN || p.portions > PORCIONES_MAX)
-    return `Las porciones tienen que ser un entero entre ${PORCIONES_MIN} y ${PORCIONES_MAX}.`
+  if (!Number.isInteger(p.level) || p.level < 0 || p.level > 100 || p.level % NIVEL_PASO !== 0) return `El nivel va de 0 a 100 en pasos de ${NIVEL_PASO}.`
+  if (p.level === 0) return null
   for (const k of BEBIDAS) {
     const v = p.pct[k]
     if (!Number.isInteger(v) || v < 0 || v > 100) return 'Cada porcentaje tiene que ser un entero entre 0 y 100.'
@@ -36,8 +39,9 @@ export function validateProfile(p: ProfileInput): string | null {
 /** Porciones por bebida de un perfil. */
 export function servingsOf(p: ProfileInput): Record<BebidaKey, number> {
   const out = emptyPct()
-  if (p.noAlcohol) return out
-  for (const k of BEBIDAS) out[k] = (p.portions * (p.pct[k] ?? 0)) / 100
+  if (p.level <= 0) return out
+  const portions = portionsOf(p.level)
+  for (const k of BEBIDAS) out[k] = (portions * (p.pct[k] ?? 0)) / 100
   return out
 }
 
@@ -48,14 +52,17 @@ export interface GroupSummary {
   responded: number
   drinkers: number
   nonDrinkers: number
+  avgLevel: number
 }
 
 export function summarize(profiles: ProfileInput[]): GroupSummary {
   const servings = emptyPct()
   let drinkers = 0
   let nonDrinkers = 0
+  let levelSum = 0
   for (const p of profiles) {
-    if (p.noAlcohol) {
+    levelSum += p.level
+    if (p.level <= 0) {
       nonDrinkers++
       continue
     }
@@ -66,7 +73,7 @@ export function summarize(profiles: ProfileInput[]): GroupSummary {
   const totalServings = BEBIDAS.reduce((a, k) => a + servings[k], 0)
   const share = emptyPct()
   if (totalServings > 0) for (const k of BEBIDAS) share[k] = Math.round((servings[k] / totalServings) * 1000) / 10
-  return { servings, totalServings, share, responded: profiles.length, drinkers, nonDrinkers }
+  return { servings, totalServings, share, responded: profiles.length, drinkers, nonDrinkers, avgLevel: profiles.length ? Math.round(levelSum / profiles.length) : 0 }
 }
 
 export interface PurchaseLine {

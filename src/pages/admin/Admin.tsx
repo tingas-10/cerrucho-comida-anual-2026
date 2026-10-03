@@ -6,7 +6,6 @@ import { AdminAuditoria } from './AdminAuditoria'
 import { AdminBebidas } from './AdminBebidas'
 import { AdminDecisiones } from './AdminDecisiones'
 import { AdminEdicion } from './AdminEdicion'
-import { AdminGastos } from './AdminGastos'
 import { AdminMiembros } from './AdminMiembros'
 import { AdminPremios } from './AdminPremios'
 import { AdminRegalos } from './AdminRegalos'
@@ -20,7 +19,6 @@ const TABS = [
   { path: 'regalos', label: 'Regalos' },
   { path: 'premios', label: 'Premios' },
   { path: 'tareas', label: 'Tareas' },
-  { path: 'gastos', label: 'Gastos' },
   { path: 'auditoria', label: 'Auditoría' },
 ]
 
@@ -46,7 +44,6 @@ export function Admin() {
         <Route path="regalos" element={<AdminRegalos />} />
         <Route path="premios" element={<AdminPremios />} />
         <Route path="tareas" element={<AdminTareas />} />
-        <Route path="gastos" element={<AdminGastos />} />
         <Route path="auditoria" element={<AdminAuditoria />} />
         <Route path="*" element={<Navigate to="/admin/edicion" replace />} />
       </Routes>

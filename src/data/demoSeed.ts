@@ -35,51 +35,24 @@ export async function seedDemo(db: MemoryAdapter) {
     await db.setDoc<MemberPrivate>(P.memberPrivate(id), { email: demoEmailFor(alias), invitedAt: now })
     await db.setDoc(P.uid('demo-' + id), { memberId: id })
   }
-  const activeIds = ['owner', ...DEMO_ACTIVE_ALIASES.map((a) => 'm-' + slugify(a))]
 
-  // Encuesta de fechas abierta con algunas respuestas.
-  // Próximo día de la semana (0 = domingo … 6 = sábado) a N semanas, a las 21:00 de Buenos Aires.
-  const nextDow = (dow: number, weeksAhead: number, hour = 21) => {
-    const d = new Date(now)
-    const diff = (dow - d.getUTCDay() + 7) % 7 || 7
-    d.setUTCDate(d.getUTCDate() + diff + weeksAhead * 7)
-    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hour + 3, 0)
-  }
-  const poll: Poll = {
-    id: 'fechas-1',
-    kind: 'dates',
-    title: '¿Qué día nos juntamos?',
-    description: 'Marcá todas las fechas en las que podés. Estar disponible todavía no confirma asistencia.',
-    method: 'AVAILABILITY',
-    state: 'OPEN',
-    options: [
-      { id: 'd1', label: 'Viernes', startsAt: nextDow(5, 2) },
-      { id: 'd2', label: 'Sábado', startsAt: nextDow(6, 2) },
-      { id: 'd3', label: 'Viernes siguiente', startsAt: nextDow(5, 3) },
-    ],
-    electorate: activeIds,
-    audience: 'ALL',
-    openAt: now - 86400000,
-    closeAt: now + 5 * 86400000,
-    quorumPct: 70,
-    version: 1,
-    closure: null,
-    decision: null,
-    createdAt: now - 86400000,
-    updatedAt: now - 86400000,
-  }
-  await db.setDoc(P.poll(slug, poll.id), poll)
-  await db.updateDoc(P.edition(slug), { 'decisions.fecha': { status: 'VOTING', pollId: poll.id }, state: 'ORGANIZING' })
+  // Respuestas de ejemplo a la consulta real de fechas (la crea ensureEdition).
+  const pollId = 'fechas-' + slug
+  const datePoll = await db.getDoc<Poll>(P.poll(slug, pollId))
+  const ids = (datePoll?.options ?? []).slice(0, 3).map((o) => o.id)
+  const [o1, o2, o3] = ids
   const answers: Array<[string, Record<string, 'yes' | 'maybe' | 'no'>]> = [
-    ['m-choclo', { d1: 'yes', d2: 'yes', d3: 'no' }],
-    ['m-facu', { d1: 'no', d2: 'yes', d3: 'maybe' }],
-    ['m-felix', { d1: 'yes', d2: 'maybe', d3: 'yes' }],
-    ['m-marcos', { d1: 'maybe', d2: 'yes', d3: 'yes' }],
-    ['m-pato', { d1: 'yes', d2: 'yes', d3: 'yes' }],
+    ['m-choclo', { [o1]: 'yes', [o2]: 'yes', [o3]: 'no' }],
+    ['m-facu', { [o1]: 'no', [o2]: 'yes', [o3]: 'maybe' }],
+    ['m-felix', { [o1]: 'yes', [o2]: 'maybe', [o3]: 'yes' }],
+    ['m-marcos', { [o1]: 'maybe', [o2]: 'yes', [o3]: 'yes' }],
+    ['m-pato', { [o1]: 'yes', [o2]: 'yes', [o3]: 'yes' }],
   ]
-  for (const [id, payload] of answers) {
+  for (const [id, partial] of answers) {
+    const payload: Record<string, 'yes' | 'maybe' | 'no'> = {}
+    for (const o of datePoll?.options ?? []) payload[o.id] = partial[o.id] ?? 'no'
     const r: PollResponse = { payload, revision: 1, updatedAt: now - 3600000 }
-    await db.setDoc(P.response(slug, poll.id, id), r)
+    await db.setDoc(P.response(slug, pollId, id), r)
   }
 
   // Encuesta de monto de regalo en borrador.
@@ -106,9 +79,9 @@ export async function seedDemo(db: MemoryAdapter) {
 
   // Algunas bebidas y RSVP de ejemplo.
   const bev: Array<[string, BeverageProfile]> = [
-    ['m-choclo', { portions: 4, noAlcohol: false, pct: { fernet: 50, cerveza: 50, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
-    ['m-pato', { portions: 6, noAlcohol: false, pct: { fernet: 70, cerveza: 0, gin: 30, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
-    ['m-felix', { portions: 0, noAlcohol: true, pct: { fernet: 0, cerveza: 0, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
+    ['m-choclo', { level: 40, portions: 4, noAlcohol: false, pct: { fernet: 50, cerveza: 50, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
+    ['m-pato', { level: 70, portions: 7, noAlcohol: false, pct: { fernet: 70, cerveza: 0, gin: 30, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
+    ['m-felix', { level: 0, portions: 0, noAlcohol: true, pct: { fernet: 0, cerveza: 0, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
   ]
   for (const [id, p] of bev) await db.setDoc(P.beverage(slug, id), p)
   const rsvps: Array<[string, Rsvp['status']]> = [
@@ -137,6 +110,7 @@ export async function seedDemo(db: MemoryAdapter) {
     label: 'Asado en lo de Topo',
     detail: 'Topo tiene parrilla y lugar para 25.',
     state: 'PENDING',
+    votes: { 'm-nacho': 'up', 'm-pato': 'up', 'm-felix': 'down' },
     createdAt: now - 7200000,
     updatedAt: now - 7200000,
   })

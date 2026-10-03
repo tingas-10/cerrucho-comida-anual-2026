@@ -67,9 +67,9 @@ export function Login({ returnTo }: { returnTo: string }) {
     <div className="min-h-dvh flex items-center justify-center p-5 bg-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <p className="font-serif text-gold text-5xl font-bold">C</p>
+          <img src={import.meta.env.BASE_URL + 'logo.webp'} alt="" className="w-28 h-28 rounded-full object-cover mx-auto shadow-lg" />
           <h1 className="h1 mt-3">{GRUPO.nombre}</h1>
-          <p className="eyebrow mt-2">Cena de fin de año</p>
+          <p className="eyebrow mt-2">Comida anual</p>
         </div>
         <div className="card p-6">
           {demo ? (

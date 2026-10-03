@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from '../data/DataContext'
 import { errorText } from '../data/actions'
 import { DataError } from '../data/adapter'
-import { useCollection, useDoc, useNow } from '../data/hooks'
+import { electorateOf, useCollection, useDoc, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Poll, PollResponse } from '../data/types'
 import { fmtDateTime, timeLeft } from '../domain/format'
@@ -22,7 +22,7 @@ export async function saveResponse(
   const err = validateResponse(poll, payload)
   if (err) throw new DataError('VALIDATION_ERROR', err)
   if (!isPollOpen(poll, Date.now())) throw new DataError('POLL_CLOSED', 'La consulta ya cerró.')
-  if (!poll.electorate.includes(memberId)) throw new DataError('ACCESS_DENIED', 'No sos elector de esta consulta.')
+  if (poll.electorateMode !== 'ALL_ACTIVE' && !poll.electorate.includes(memberId)) throw new DataError('ACCESS_DENIED', 'No sos elector de esta consulta.')
   await db.runTransaction(async (tx) => {
     const cur = await tx.get<PollResponse>(P.response(slug, poll.id, memberId))
     const rev = cur?.revision ?? 0
@@ -35,6 +35,8 @@ export function PollCard({ poll, aliasOf, hideCounts }: { poll: Poll; aliasOf?: 
   const { db, slug, memberId, isAdmin } = useSession()
   const toast = useToast()
   const now = useNow()
+  const members = useMembers()
+  const electorate = electorateOf(poll, members)
   const mine = useDoc<PollResponse>(memberId ? P.response(slug, poll.id, memberId) : null)
   const { rows: responses } = useCollection<PollResponse>(P.responses(slug, poll.id))
   const [sel, setSel] = useState<string[]>([])
@@ -50,9 +52,9 @@ export function PollCard({ poll, aliasOf, hideCounts }: { poll: Poll; aliasOf?: 
   }, [mine.data, dirty])
 
   const open = isPollOpen(poll, now)
-  const isElector = !!memberId && poll.electorate.includes(memberId)
+  const isElector = !!memberId && electorate.includes(memberId)
   const counts = poll.method === 'APPROVAL' ? tallyApproval(poll, responses) : tallySingle(poll, responses)
-  const part = participation(poll, responses.length)
+  const part = participation(poll, responses.length, electorate.length)
   const showCounts = !hideCounts
   const max = Math.max(1, ...Object.values(counts))
 
@@ -112,7 +114,7 @@ export function PollCard({ poll, aliasOf, hideCounts }: { poll: Poll; aliasOf?: 
                 </span>
                 {showCounts ? (
                   <span className="tiny muted whitespace-nowrap">
-                    {n} {poll.method === 'APPROVAL' ? `de ${poll.electorate.length}` : ''}
+                    {n} {poll.method === 'APPROVAL' ? `de ${electorate.length}` : ''}
                   </span>
                 ) : null}
               </span>
@@ -127,7 +129,7 @@ export function PollCard({ poll, aliasOf, hideCounts }: { poll: Poll; aliasOf?: 
       </div>
       <div className="flex items-center justify-between gap-3 mt-4 flex-wrap">
         <p className="tiny muted">
-          Respondieron {responses.length} de {poll.electorate.length}
+          Respondieron {responses.length} de {electorate.length}
           {poll.quorumPct ? ` · quórum ${poll.quorumPct}% ${part.quorumMet ? 'alcanzado' : 'pendiente'}` : ''}
         </p>
         {open && isElector ? (

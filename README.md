@@ -1,6 +1,6 @@
 # La Banda del cerrucho · Cena de fin de año
 
-Web privada para organizar la cena anual con amigos: fecha, comida y lugar, bebidas y lista de compras, amigo invisible, nueve premios con ballotage y ceremonia, tareas, gastos, galería y archivo.
+Web privada para organizar la comida anual con amigos: fecha, comida y lugar (propuestas con 👍/👎), bebidas y lista de compras, amigo invisible, nueve premios con ballotage, tareas, galería y archivo.
 
 - **Web:** https://tingas-10.github.io/cerrucho-comida-anual-2026/
 - **Hosting:** GitHub Pages (se publica solo con cada push a `main`).
@@ -57,16 +57,15 @@ No se mandan mails automáticos: el link de la web se comparte por el grupo de W
 ## Checklist del organizador
 
 1. Cargar mails de los miembros y marcar quién participa este año y quién fue al VAO (Administración → Miembros, botón **Confirmar padrón VAO**).
-2. Publicar la consulta de fechas (Administración → Decisiones → Nueva consulta).
+2. La consulta de fechas (jueves, viernes y sábados del 5/11 al 19/12) ya está abierta desde el primer ingreso; en Decisiones la cerrás cuando quieras.
 3. Cerrar la consulta y **confirmar la fecha** (o fijarla desde Edición). Eso abre el RSVP.
 4. Aprobar propuestas de comida y lugar, publicar las consultas y confirmar las decisiones. Cargar lugar, menú, agenda y salida en Edición.
 5. Regalo: confirmar monto (consulta o a mano), **abrir inscripción**, cerrarla y **sortear**. El sorteo corre una sola vez en tu navegador; vos no ves el mapa salvo con acceso reservado (queda registrado).
 6. Premios: abrir primera ronda (todas las categorías), cerrar (se cuentan y sellan sin mostrarse), abrir ballotage si hace falta, cerrar.
 7. Bebidas: revisar lista de compras, stock, precios y responsables; cerrar con snapshot.
 8. Tareas: publicar y asignar lo que falte.
-9. La noche: abrir `/e/2026/ceremonia` en el proyector con cualquier cuenta de miembro y controlar desde tu teléfono (el panel de control aparece sólo para vos). **Revelar** publica el resultado para todos.
-10. Gastos: aprobar y repartir; confirmar transferencias.
-11. Archivar la edición y crear la siguiente (Edición → Cierre).
+9. La noche: desde Administración → Premios, tocá **Revelar** en cada categoría cuando la anuncies; recién ahí la banda lo ve en Premios.
+10. Archivar la edición y crear la siguiente (Edición → Cierre).
 
 ## Desarrollo
 

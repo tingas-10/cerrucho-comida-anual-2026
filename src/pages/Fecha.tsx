@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '../data/DataContext'
 import { errorText } from '../data/actions'
 import { DataError } from '../data/adapter'
-import { useCollection, useDoc, useEdition, useMembers, useNow } from '../data/hooks'
+import { electorateOf, useCollection, useDoc, useEdition, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Availability, Poll, PollResponse, Proposal, Rsvp } from '../data/types'
 import { fmtDayLong, fmtDayShort, fmtTime, localToMs, timeLeft } from '../domain/format'
@@ -60,6 +60,8 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
   const { db, slug, memberId } = useSession()
   const toast = useToast()
   const now = useNow()
+  const members = useMembers()
+  const electorate = electorateOf(poll, members)
   const mine = useDoc<PollResponse>(memberId ? P.response(slug, poll.id, memberId) : null)
   const { rows: responses } = useCollection<PollResponse>(P.responses(slug, poll.id))
   const [answers, setAnswers] = useState<Record<string, Availability>>({})
@@ -71,10 +73,10 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
   }, [mine.data, dirty])
 
   const open = isPollOpen(poll, now)
-  const isElector = !!memberId && poll.electorate.includes(memberId)
+  const isElector = !!memberId && electorate.includes(memberId)
   const rows = useMemo(() => tallyAvailability(poll, responses), [poll, responses])
   const rec = useMemo(() => recommendDates(rows), [rows])
-  const part = participation(poll, responses.length)
+  const part = participation(poll, responses.length, electorate.length)
   const complete = poll.options.every((o) => answers[o.id])
 
   function setAll(v: Availability) {
@@ -107,7 +109,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
         </div>
         {poll.state === 'OPEN' ? <Pill tone={open ? 'accent' : 'muted'}>{open ? timeLeft(poll.closeAt, now) : 'Cerró'}</Pill> : <Pill tone="muted">Cerrada</Pill>}
       </div>
-      <p className="tiny muted mb-3">Respondieron {responses.length} de {poll.electorate.length} · quórum {poll.quorumPct}% {part.quorumMet ? 'alcanzado' : 'pendiente'}</p>
+      <p className="tiny muted mb-3">Respondieron {responses.length} de {electorate.length} · quórum {poll.quorumPct}% {part.quorumMet ? 'alcanzado' : 'pendiente'}</p>
 
       {open && isElector ? (
         <div className="flex gap-2 mb-3 flex-wrap">
@@ -131,7 +133,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
                 <div>
                   <p className="font-semibold">
                     {o.startsAt ? `${fmtDayLong(o.startsAt)} · ${fmtTime(o.startsAt)} h` : o.label}
-                    {o.startsAt && o.label && o.label !== fmtDayLong(o.startsAt) ? <span className="tiny muted ml-2">{o.label}</span> : null}
+                    {o.startsAt && o.label && o.label !== fmtDayLong(o.startsAt) ? <span className="tiny muted ml-2">· {o.label}</span> : null}
                   </p>
                   {o.detail ? <p className="tiny muted">{o.detail}</p> : null}
                 </div>
@@ -181,7 +183,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
 
       {poll.state === 'CLOSED' ? (
         <div className="mt-4">
-          {poll.closure?.lowParticipation ? <Notice tone="warn">Cierre con baja participación: respondieron {poll.closure.count} de {poll.electorate.length}.</Notice> : null}
+          {poll.closure?.lowParticipation ? <Notice tone="warn">Cierre con baja participación: respondieron {poll.closure.count} de {electorate.length}.</Notice> : null}
           {!rec.viable ? <Notice tone="danger">Ninguna opción viable: ninguna fecha tuvo un Puedo.</Notice> : null}
           {rec.viable && rec.leaders.length > 1 ? <Notice tone="warn">Empate de disponibilidad entre {rec.leaders.length} fechas. Agus elige con motivo.</Notice> : null}
           {poll.decision ? (
@@ -212,7 +214,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
               </tr>
             </thead>
             <tbody>
-              {poll.electorate.map((id) => {
+              {electorate.map((id) => {
                 const r = responses.find((x) => x.id === id)
                 const payload = (r?.payload as Record<string, Availability>) ?? null
                 return (
@@ -305,7 +307,7 @@ function RsvpCard({ edition }: { edition: { planVersion: number; afterparty: unk
           Guardar detalles
         </Button>
       ) : null}
-      <p className="tiny muted mt-3">Confirmar la cena no te anota al amigo invisible: eso se hace aparte.</p>
+      <p className="tiny muted mt-3">Confirmar la comida anual no te anota al amigo invisible: eso se hace aparte.</p>
     </Card>
   )
 }

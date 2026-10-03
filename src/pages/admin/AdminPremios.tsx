@@ -31,6 +31,7 @@ export function AdminPremios() {
   const [manualTarget, setManualTarget] = useState<Award | null>(null)
   const [manualWinner, setManualWinner] = useState('')
   const [reservedTarget, setReservedTarget] = useState<Award | null>(null)
+  const [revealTarget, setRevealTarget] = useState<Award | null>(null)
   const [reserved, setReserved] = useState<Record<string, SealedResult>>({})
   const [newLabel, setNewLabel] = useState('')
   const [ballotCounts, setBallotCounts] = useState<Record<string, number>>({})
@@ -124,6 +125,31 @@ export function AdminPremios() {
     await logAudit(db, slug, memberId!, 'award.manual', a.code, reason)
   }
 
+  /** Publica el resultado sellado para toda la banda. Una vez revelado no se vuelve a ocultar. */
+  async function reveal(a: Award) {
+    const sealed = await db.getDoc<SealedResult>(P.sealed(slug, a.code))
+    if (!sealed || sealed.outcome === 'RUNOFF_REQUIRED') throw new DataError('STATE_CONFLICT', 'No hay resultado sellado.')
+    const result: AwardResult = {
+      outcome: sealed.outcome,
+      winner: sealed.winner ?? null,
+      tied: sealed.tied ?? [],
+      counts: sealed.counts,
+      round: sealed.round,
+      participation: sealed.participation,
+      electorateSize: sealed.electorateSize,
+      manual: (sealed as SealedResult & { manual?: boolean }).manual ?? false,
+    }
+    await db.runTransaction(async (tx) => {
+      const cur = await tx.get<Award>(P.award(slug, a.code))
+      if (!cur) throw new DataError('NOT_FOUND')
+      if (cur.state === 'REVEALED') return
+      if (cur.state !== 'SEALED') throw new DataError('STATE_CONFLICT', 'La categoría no está sellada.')
+      tx.update(P.award(slug, a.code), { state: 'REVEALED', result, revealedAt: Date.now(), updatedAt: Date.now(), version: cur.version + 1 })
+    })
+    await pushNews(db, slug, `Premio revelado: ${awardTitle(a, edition!.year)}.`)
+    await logAudit(db, slug, memberId!, 'award.reveal', a.code)
+  }
+
   async function correctRevealed(a: Award, reason: string) {
     const r: AwardResult = { ...a.result!, corrected: { reason, at: Date.now() } }
     await db.updateDoc(P.award(slug, a.code), { result: r, updatedAt: Date.now(), version: a.version + 1 })
@@ -199,7 +225,7 @@ export function AdminPremios() {
             Cierre en {BALLOTAGE_HORAS} h
           </Button>
         </div>
-        <p className="tiny muted mt-3">Al cerrar, el conteo corre en tu navegador y se guarda sellado sin mostrarse. Para ver un resultado antes de la ceremonia usá el acceso reservado de cada categoría.</p>
+        <p className="tiny muted mt-3">Al cerrar, el conteo corre en tu navegador y se guarda sellado sin mostrarse. Cuando quieras anunciarlo, tocá Revelar en cada categoría: ahí recién lo ve la banda en Premios. Para espiar antes, usá el acceso reservado.</p>
       </Card>
 
       <Card>
@@ -270,6 +296,11 @@ export function AdminPremios() {
                     Anular
                   </Button>
                 </>
+              ) : null}
+              {a.state === 'SEALED' ? (
+                <Button size="sm" variant="gold" onClick={() => setRevealTarget(a)}>
+                  Revelar
+                </Button>
               ) : null}
               {a.state === 'SEALED' || a.state === 'RUNOFF_READY' || a.state === 'ROUND1_CLOSED' ? (
                 <Button size="sm" variant="line" onClick={() => setReservedTarget(a)}>
@@ -361,6 +392,19 @@ export function AdminPremios() {
         </Button>
       </Modal>
 
+      <ConfirmDialog
+        open={!!revealTarget}
+        onClose={() => setRevealTarget(null)}
+        title={`Revelar ${revealTarget ? awardTitle(revealTarget, edition.year) : ''}`}
+        text="El resultado se publica para toda la banda en Premios. No se puede volver a ocultar; si hubiera un error, se registra una corrección."
+        confirmLabel="Revelar ahora"
+        loading={busy === 'reveal'}
+        onConfirm={async () => {
+          const t = revealTarget!
+          await run('reveal', () => reveal(t), 'Revelado')
+          setRevealTarget(null)
+        }}
+      />
       <ConfirmDialog
         open={!!reservedTarget}
         onClose={() => setReservedTarget(null)}

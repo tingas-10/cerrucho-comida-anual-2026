@@ -105,7 +105,7 @@ service cloud.firestore {
           allow create, update: if isActive() && memberId == myId()
             && poll().state == 'OPEN'
             && (poll().closeAt == null || now() < poll().closeAt)
-            && myId() in poll().electorate;
+            && (poll().electorateMode == 'ALL_ACTIVE' || myId() in poll().electorate);
           allow delete: if false;
         }
       }
@@ -114,6 +114,9 @@ service cloud.firestore {
         allow read: if isActive();
         allow create: if isActive() && request.resource.data.authorId == myId() && request.resource.data.state == 'PENDING';
         allow update: if isAdmin()
+          // Voto con pulgar: cada miembro sólo toca su propia clave en `votes`
+          || (isActive() && onlyKeys(['votes', 'updatedAt'])
+              && request.resource.data.votes.diff(resource.data.get('votes', {})).affectedKeys().hasOnly([myId()]))
           || (isActive() && resource.data.authorId == myId() && resource.data.state == 'PENDING'
               && request.resource.data.authorId == myId()
               && (request.resource.data.state == 'PENDING' || request.resource.data.state == 'WITHDRAWN'));

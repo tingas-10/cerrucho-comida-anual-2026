@@ -10,9 +10,9 @@ export function Archivo() {
   const list = [...rows].sort((a, b) => b.year - a.year)
   return (
     <div>
-      <PageHeader eyebrow="La banda" title="Archivo" intro="Cenas y premios de otros años. Los premios no revelados nunca se publican por archivar." />
+      <PageHeader eyebrow="La banda" title="Archivo" intro="Comidas anuales y premios de otros años. Los premios no revelados nunca se publican por archivar." />
       {list.length === 0 ? (
-        <Empty title={TEXTOS.archivoVacio} text="Cuando se archive una edición, sus premios revelados y su cena aparecen acá." />
+        <Empty title={TEXTOS.archivoVacio} text="Cuando se archive una edición, sus premios revelados y su comida anual aparecen acá." />
       ) : (
         <div className="grid gap-4">
           {list.map((e) => (

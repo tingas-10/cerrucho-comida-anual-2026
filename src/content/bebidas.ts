@@ -1,7 +1,7 @@
 // ============================================================
-// CONTENIDO EDITABLE · Bebidas, recetas y envases iniciales
+// CONTENIDO EDITABLE · Bebidas, nivel de consumo, recetas y envases iniciales
 // Son parámetros de cálculo de compras (no instrucciones de preparación).
-// Después de crear la edición se editan desde Administración > Bebidas y compras.
+// Después de crear la edición, recetas y envases se editan desde Administración > Bebidas y compras.
 // ============================================================
 
 export const BEBIDAS = ['fernet', 'cerveza', 'gin', 'vodka', 'vino', 'aperol'] as const
@@ -14,6 +14,25 @@ export const BEBIDA_LABEL: Record<BebidaKey, string> = {
   vodka: 'Vodka',
   vino: 'Vino',
   aperol: 'Aperol',
+}
+
+// Nivel de consumo: barra de 0% a 100% en pasos de 10. Cada nivel tiene su frase.
+// Para las compras, 100% equivale a PORCIONES_AL_100 porciones (50% = la mitad, etc.).
+export const NIVEL_PASO = 10
+export const PORCIONES_AL_100 = 10
+export const NIVEL_FRASES: Array<{ desde: number; frase: string }> = [
+  { desde: 0, frase: 'señor charle un rato con dewinne' },
+  { desde: 10, frase: 'eeee, soy un chocli o un yayin' },
+  { desde: 30, frase: 'pase de ser yayin a ser yaggermaister' },
+  { desde: 50, frase: 'al medio, sin dudar' },
+  { desde: 70, frase: 'pincho mas latas que el 1 de alo' },
+  { desde: 100, frase: 'imposible, solo el zubel puede poner 100%' },
+]
+
+export function fraseNivel(nivel: number): string {
+  let out = NIVEL_FRASES[0].frase
+  for (const f of NIVEL_FRASES) if (nivel >= f.desde) out = f.frase
+  return out
 }
 
 export interface Ingrediente {
@@ -54,6 +73,3 @@ export const RECETAS: Record<BebidaKey, Record<string, number>> = {
 export const RESERVA_COMPRA_PCT = 10
 export const AGUA_ML_POR_ASISTENTE = 1000
 export const HIELO_G_POR_ASISTENTE = 500
-export const PORCIONES_MIN = 1
-export const PORCIONES_MAX = 20
-export const PORCIONES_SUGERIDAS_UI = 4

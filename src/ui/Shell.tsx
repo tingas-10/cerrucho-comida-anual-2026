@@ -13,11 +13,9 @@ import {
   LogOut,
   Moon,
   MoreHorizontal,
-  Receipt,
   Settings,
   Sun,
   Trophy,
-  Tv,
   UserRound,
   Users,
   UtensilsCrossed,
@@ -31,6 +29,8 @@ import { useCollection, useEdition } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Rsvp } from '../data/types'
 import { useTheme } from './theme'
+
+const LOGO = import.meta.env.BASE_URL + 'logo.webp'
 
 interface NavItem {
   to: string
@@ -51,21 +51,13 @@ function useNav() {
     { to: `${e}/premios`, label: 'Premios', icon: <Trophy size={18} /> },
     { to: `${e}/agenda`, label: 'Agenda y salida', icon: <Clock size={18} /> },
   ]
-  const organizacion: NavItem[] = [
-    { to: `${e}/tareas`, label: 'Tareas y compras', icon: <ListChecks size={18} /> },
-    { to: `${e}/gastos`, label: 'Gastos', icon: <Receipt size={18} /> },
-  ]
+  const organizacion: NavItem[] = [{ to: `${e}/tareas`, label: 'Tareas y compras', icon: <ListChecks size={18} /> }]
   const banda: NavItem[] = [
     { to: '/miembros', label: 'Miembros', icon: <Users size={18} /> },
     { to: '/galeria', label: 'Galería', icon: <ImageIcon size={18} /> },
     { to: '/archivo', label: 'Archivo', icon: <Archive size={18} /> },
   ]
-  const admin: NavItem[] = isAdmin
-    ? [
-        { to: '/admin', label: 'Administración', icon: <Settings size={18} /> },
-        { to: `${e}/ceremonia`, label: 'Ceremonia', icon: <Tv size={18} /> },
-      ]
-    : [{ to: `${e}/ceremonia`, label: 'Ceremonia', icon: <Tv size={18} /> }]
+  const admin: NavItem[] = isAdmin ? [{ to: '/admin', label: 'Administración', icon: <Settings size={18} /> }] : []
   return { edicion, organizacion, banda, admin, e }
 }
 
@@ -115,7 +107,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
   const confirmed = rsvps.filter((r) => r.status === 'YES' && r.planVersion === (edition?.planVersion ?? 1)).length
 
-  const sideWidth = collapsed ? 64 : 232
+  const sideWidth = collapsed ? 64 : 248
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -127,19 +119,22 @@ export function Shell({ children }: { children: ReactNode }) {
       >
         <div className={`px-2 pt-2 pb-5 ${collapsed ? 'text-center' : ''}`}>
           {!collapsed ? (
-            <>
-              <p className="font-extrabold leading-tight text-lg">{GRUPO.nombre}</p>
-              <p className="eyebrow mt-2 text-[10px]">{edition?.title ?? 'Cena anual'}</p>
-            </>
+            <div className="flex items-center gap-3">
+              <img src={LOGO} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+              <div>
+                <p className="font-extrabold leading-tight text-base">{GRUPO.nombre}</p>
+                <p className="eyebrow mt-1 text-[10px]">{edition?.title ?? 'Comida anual'}</p>
+              </div>
+            </div>
           ) : (
-            <p className="font-extrabold text-xl text-gold font-serif">C</p>
+            <img src={LOGO} alt={GRUPO.nombre} className="w-10 h-10 rounded-full object-cover mx-auto" />
           )}
         </div>
         <nav className="flex-1">
           <Group title="Esta edición" items={nav.edicion} collapsed={collapsed} />
           <Group title="Organización" items={nav.organizacion} collapsed={collapsed} />
           <Group title="La banda" items={nav.banda} collapsed={collapsed} />
-          <Group title="Más" items={nav.admin} collapsed={collapsed} />
+          {nav.admin.length ? <Group title="Más" items={nav.admin} collapsed={collapsed} /> : null}
         </nav>
         <button type="button" className="nav-link mt-2" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}>
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -151,7 +146,8 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="md:ml-[var(--side-w)]" style={{ ['--side-w' as string]: sideWidth + 'px' }}>
           {/* Topbar */}
           <header className="sticky top-0 z-30 h-14 bg-card/90 backdrop-blur border-b border-line flex items-center justify-between px-4 sm:px-6 gap-3">
-            <div className="text-sm truncate">
+            <div className="text-sm truncate flex items-center gap-2">
+              <img src={LOGO} alt="" className="w-7 h-7 rounded-full object-cover md:hidden" />
               <span className="muted">{GRUPO.nombreCorto}</span>
               <span className="muted"> / </span>
               <span className="font-semibold">{edition?.title ?? '…'}</span>

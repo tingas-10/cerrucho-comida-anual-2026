@@ -138,9 +138,9 @@ export function AmigoInvisible() {
       {gift.state === 'ENROLLMENT_OPEN' || gift.state === 'ENROLLMENT_CLOSED' ? (
         <Section title="Inscripción">
           <Card>
-            {mine.data?.accepted ? <Notice tone="ok">Estás anotado. {gift.enrollCloseAt ? `Cierra ${fmtDateTime(gift.enrollCloseAt)}.` : ''}</Notice> : <p className="small muted">Me sumo significa aceptar el monto y la fecha límite. Confirmar la cena no te anota: esto es aparte.</p>}
+            {mine.data?.accepted ? <Notice tone="ok">Estás anotado. {gift.enrollCloseAt ? `Cierra ${fmtDateTime(gift.enrollCloseAt)}.` : ''}</Notice> : <p className="small muted">Me sumo significa aceptar el monto y la fecha límite. Confirmar la comida anual no te anota: esto es aparte.</p>}
             <div className="grid sm:grid-cols-2 gap-3 mt-4">
-              <Field label="¿Vas a estar en la cena?" id="attending">
+              <Field label="¿Vas a estar en la comida anual?" id="attending">
                 <select id="attending" className="input" value={attending ? 'si' : 'no'} disabled={!enrollOpen} onChange={(e) => setAttending(e.target.value === 'si')}>
                   <option value="si">Sí, voy</option>
                   <option value="no">No, pero participo igual</option>

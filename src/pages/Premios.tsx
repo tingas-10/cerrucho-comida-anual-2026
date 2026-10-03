@@ -72,7 +72,7 @@ export function Premios() {
 
   return (
     <div>
-      <PageHeader eyebrow="Los premios de la banda" title="Elegí quién se lo ganó" intro="Un voto por categoría. Los resultados se guardan hasta la ceremonia." />
+      <PageHeader eyebrow="Los premios de la banda" title="Elegí quién se lo ganó" intro="Un voto por categoría. Los resultados quedan guardados hasta que Agus los revela." />
 
       {voting.length > 0 ? (
         <Card className="mb-4">
@@ -141,7 +141,7 @@ export function Premios() {
       })}
 
       {sealed.length > 0 ? (
-        <Section title="Esperando la ceremonia">
+        <Section title="Esperando la revelación">
           <Card>
             {sealed.map((a) => (
               <div key={a.code} className="row">

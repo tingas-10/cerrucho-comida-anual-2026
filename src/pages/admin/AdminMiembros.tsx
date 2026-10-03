@@ -146,7 +146,7 @@ export function AdminMiembros() {
 
   function copyInvite() {
     const url = window.location.href.split('#')[0]
-    const text = `Hola banda 👋 Ya está la web de la cena: ${url}\nEntrás con tu mail (te llega un link, sin contraseña). Primera misión: votar la fecha.`
+    const text = `Hola banda 👋 Ya está la web de la comida anual: ${url}\nEntrás con tu mail (te llega un link, sin contraseña). Primera misión: votar la fecha.`
     navigator.clipboard?.writeText(text).then(
       () => toast.ok('Mensaje de invitación copiado'),
       () => toast.error('No se pudo copiar'),

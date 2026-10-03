@@ -7,7 +7,7 @@ import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
 import { useCollection, useEdition, useMembers } from '../../data/hooks'
 import { P } from '../../data/paths'
 import { ensureEdition } from '../../data/seed'
-import type { AfterpartyInfo, ArchiveEntry, Award, DietaryProfile, Edition, FoodInfo, Poll, VenueInfo } from '../../data/types'
+import type { AfterpartyInfo, ArchiveEntry, Award, Edition, FoodInfo, Poll, VenueInfo } from '../../data/types'
 import { parseArs } from '../../domain/expenses'
 import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, Notice, Section, Textarea } from '../../ui/components'
@@ -30,7 +30,6 @@ export function AdminEdicion() {
   const members = useMembers()
   const { rows: polls } = useCollection<Poll>(P.polls(slug))
   const { rows: awards } = useCollection<Award>(P.awards(slug))
-  const { rows: dietary } = useCollection<DietaryProfile>(P.dietary(slug))
   const [title, setTitle] = useState('')
   const [state, setState] = useState<Edition['state']>('DRAFT')
   const [hero, setHero] = useState('')
@@ -383,38 +382,9 @@ export function AdminEdicion() {
         </Button>
       </Card>
 
-      <Card>
-        <p className="h3">Restricciones alimentarias</p>
-        <p className="small muted mb-2">{dietary.length} personas cargaron algo. El grupo ve sólo categorías con 3 o más; por debajo ve un aviso genérico.</p>
-        <div className="small">
-          {dietary.map((d) => (
-            <div key={d.id} className="row">
-              <span>{members.aliasOf(d.id)}</span>
-              <span className="muted">
-                {d.tags.join(', ') || '—'} {d.note ? `· ${d.note}` : ''}
-              </span>
-            </div>
-          ))}
-        </div>
-        <Button
-          className="mt-3"
-          size="sm"
-          loading={busy === 'diet'}
-          onClick={() =>
-            void run('diet', async () => {
-              const summary: Record<string, number> = {}
-              for (const d of dietary) for (const t of d.tags) summary[t] = (summary[t] ?? 0) + 1
-              await db.updateDoc(P.edition(slug), { dietarySummary: summary, updatedAt: Date.now() })
-            }, 'Resumen publicado')
-          }
-        >
-          Publicar resumen agregado
-        </Button>
-      </Card>
-
       <Section title="Cierre de la edición" className="mt-2">
         <Card>
-          <p className="small muted">Archivar exige que no haya votaciones abiertas. Guarda en el Archivo la cena y los premios ya revelados; lo no revelado nunca se publica.</p>
+          <p className="small muted">Archivar exige que no haya votaciones abiertas. Guarda en el Archivo la comida anual y los premios ya revelados; lo no revelado nunca se publica.</p>
           <div className="flex gap-2 mt-3 flex-wrap">
             <Button variant="line" onClick={() => setArchiveOpen(true)}>
               Archivar {edition.title}
@@ -426,7 +396,7 @@ export function AdminEdicion() {
                 void run('next', async () => {
                   const next = String(edition.year + 1)
                   if (await db.getDoc(P.edition(next))) throw new Error('Ya existe la edición ' + next)
-                  await ensureEdition(db, next, edition.year + 1, `Cena de fin de año ${edition.year + 1}`)
+                  await ensureEdition(db, next, edition.year + 1, `Comida anual ${edition.year + 1}`)
                   await logAudit(db, slug, memberId!, 'edition.create', next)
                 }, `Edición ${edition.year + 1} creada. Para activarla hay que cambiar EDICION_ACTUAL en el código (pedíselo a Claude).`)
               }

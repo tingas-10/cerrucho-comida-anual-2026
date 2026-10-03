@@ -21,7 +21,7 @@ export interface Foto {
 
 export const ALBUMES: Array<{ id: string; titulo: string; descripcion?: string }> = [
   { id: 'recuerdos', titulo: 'Recuerdos', descripcion: 'Fotos de la banda de todos los tiempos.' },
-  { id: '2026', titulo: 'Cena 2026', descripcion: 'Lo que pase esa noche.' },
+  { id: '2026', titulo: 'Comida anual 2026', descripcion: 'Lo que pase esa noche.' },
 ]
 
 export const FOTOS: Foto[] = [

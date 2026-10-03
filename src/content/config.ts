@@ -19,7 +19,7 @@ export const GRUPO = {
 export const EDICION_ACTUAL = {
   slug: '2026',
   anio: 2026,
-  titulo: 'Cena de fin de año 2026',
+  titulo: 'Comida anual 2026',
   heroFoto: 'galeria/recuerdos/10_grupo_portada.jpeg',
   heroFotoSecundaria: 'galeria/recuerdos/04_grupo_noche.jpeg',
 } as const
@@ -27,7 +27,7 @@ export const EDICION_ACTUAL = {
 export const TEXTOS = {
   loginAyuda: 'Usá el mail con el que te invitaron.',
   loginRespuesta: 'Si ese mail tiene una invitación activa, te va a llegar un link para entrar.',
-  heroSinFecha: 'La cena está por armarse. Tu primera misión es votar la fecha.',
+  heroSinFecha: 'La comida anual está por armarse. Tu primera misión es votar la fecha.',
   heroConFecha: 'Ya hay fecha. Confirmá si venís y sumate a lo que falta.',
   votoPrivado:
     'Tu voto no se muestra al grupo. Agus puede acceder a información reservada para resolver incidencias.',
@@ -39,33 +39,46 @@ export const TEXTOS = {
   faltaDefinir: 'Falta definir',
 } as const
 
-// Alias observados en el grupo de WhatsApp. Son borradores sin mail:
-// Agus los vincula y les carga el correo desde Administración > Miembros.
-export const ALIAS_INICIALES = [
-  'Agus',
-  'Choclo',
-  'Facu',
-  'Felix',
-  'Francisco',
-  'Marcos',
-  'Mateo',
-  'Mene',
-  'Nacho',
-  'Pato',
-  'pay',
-  'Pipe',
-  'rodri',
-  'Saimon',
-  'Santi',
-  'Thomas',
-  'Tita',
-  'tobi',
-  'Tomas',
-  'Tomi',
-  'Topo',
-  'Torta',
-  'Ucky',
-] as const
+// Miembros del grupo de WhatsApp (alias + nombre). Se cargan sin mail: Agus les carga el
+// correo desde Administración > Miembros, donde también puede editar alias y nombre.
+export const MIEMBROS_INICIALES: Array<{ alias: string; nombre: string }> = [
+  { alias: 'pay', nombre: 'Pay Aguilar' },
+  { alias: 'Saimon', nombre: 'Simon Avellaneda' },
+  { alias: 'tobi', nombre: 'Tobi Aguilar' },
+  { alias: 'Francisco', nombre: 'Francisco Chueco Baque' },
+  { alias: 'Ucky', nombre: 'Ucky Baliña' },
+  { alias: 'Pato', nombre: 'Pato Carrere' },
+  { alias: 'Choclo', nombre: 'Choclo' },
+  { alias: 'Facu', nombre: 'Facu Caputo' },
+  { alias: 'Tomas', nombre: 'Tomas Chiocarelli' },
+  { alias: 'Marcos', nombre: 'Marcos D.W.' },
+  { alias: 'Felix', nombre: 'Felix' },
+  { alias: 'Nacho', nombre: 'Nacho Furesz' },
+  { alias: 'rodri', nombre: 'Rodri Landaburu' },
+  { alias: 'Santi', nombre: 'Santi Lilo' },
+  { alias: 'Mene', nombre: 'Mene' },
+  { alias: 'Pipe', nombre: 'Pipe Martignone' },
+  { alias: 'Topo', nombre: 'Topo Mao' },
+  { alias: 'Tomi', nombre: 'Tomi Orreily' },
+  { alias: 'Mateo', nombre: 'Mateo Ramirez' },
+  { alias: 'Tita', nombre: 'Jero Sasiain' },
+  { alias: 'Torta', nombre: 'Torta' },
+  { alias: 'Agus', nombre: 'Agus Vayo' },
+  { alias: 'Thomas', nombre: 'Thomas Warner' },
+]
+
+// Compatibilidad: lista de alias (derivada de MIEMBROS_INICIALES).
+export const ALIAS_INICIALES = MIEMBROS_INICIALES.map((m) => m.alias)
+
+// Fechas candidatas iniciales para la consulta de disponibilidad: todos los jueves,
+// viernes y sábados entre estas dos fechas (inclusive), a la hora indicada.
+export const FECHAS_CANDIDATAS = {
+  desde: '2026-11-05',
+  hasta: '2026-12-19',
+  diasSemana: [4, 5, 6] as number[], // 0 = domingo … 4 = jueves, 5 = viernes, 6 = sábado
+  hora: '21:00',
+  cierreConsulta: '2026-10-31', // hasta cuándo se puede responder (23:59)
+}
 
 // Propuestas de comida en borrador (nunca son opciones reales hasta que Agus las publique).
 export const COMIDA_BORRADORES = ['Asado', 'Pizzas', 'Catering', 'Restaurante'] as const

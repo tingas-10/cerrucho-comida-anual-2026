@@ -60,8 +60,8 @@ export function leaders(counts: Record<string, number>): string[] {
     .map(([k]) => k)
 }
 
-export function participation(poll: Poll, responded: number): { pct: number; quorumMet: boolean } {
-  const n = poll.electorate.length
+export function participation(poll: Poll, responded: number, electorateSize = poll.electorate.length): { pct: number; quorumMet: boolean } {
+  const n = electorateSize
   const pct = n === 0 ? 0 : Math.round((responded / n) * 100)
   return { pct, quorumMet: n > 0 && pct >= poll.quorumPct }
 }

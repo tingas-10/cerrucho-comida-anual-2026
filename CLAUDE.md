@@ -10,10 +10,10 @@ Que los cambios chicos salgan rápido por chat: editar el archivo correspondient
 
 | Qué cambiar | Archivo |
 | --- | --- |
-| Nombre del grupo, mail del dueño, textos de la web, alias iniciales, montos del regalo, quórum | `src/content/config.ts` |
+| Nombre del grupo, mail del dueño, textos de la web, miembros iniciales (alias + nombre), fechas candidatas, montos del regalo, quórum | `src/content/config.ts` |
 | Fotos de la galería y álbumes (las imágenes van en `public/galeria/<album>/`) | `src/content/galeria.ts` |
 | Categorías iniciales de premios y regla "Nadie" | `src/content/premios.ts` |
-| Bebidas, recetas, envases, reserva, agua/hielo | `src/content/bebidas.ts` |
+| Bebidas, frases del nivel de consumo (barra 0-100), recetas, envases, reserva, agua/hielo | `src/content/bebidas.ts` |
 | Plantillas de tareas, lista personal y agenda | `src/content/tareas.ts` |
 | Colores, tipografía, radios, estilos globales | `src/index.css` |
 | Config de Firebase (pública por diseño; excepción autorizada por Agus) | `src/firebase/firebase.config.json` |
@@ -33,9 +33,10 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 ## Reglas del dominio que no se negocian
 
 - Premios: una selección por categoría; `NOBODY` es candidato real. Primera ronda: diferencia ≥ 3 gana; si no, ballotage con todos los votados a menos de 3 del líder. Ballotage: gana el mayor; empate = EMPATE (sin tercera ronda). Sin votos = SIN VOTOS. Los casos están en `docs/spec/06_Casos_reglas.json` y son tests.
+- No hay módulo de ceremonia ni de gastos (Agus los sacó el 2026-10-02). Los premios se revelan desde Administración > Premios > Revelar.
 - Nunca mostrar recuentos ni ganadores antes de revelar. El doc público `awards/{code}` sólo lleva `finalists` al abrir ballotage y `result` al revelar; lo sellado va en `awards/{code}/private/sealed` (sólo admin).
 - Amigo invisible: `crypto.getRandomValues`, sin autoasignación, mínimo 3, una sola publicación por versión; el miembro sólo lee `giftAssignments/{suId}`.
-- Bebidas: seis claves fijas; porcentajes enteros que suman 100; porciones 1–20; `noAlcohol` = todo cero y cuenta como respuesta. Compras: sumar ingredientes, reserva 10 %, restar stock una vez, redondear por envase; nunca sumar reserva después de redondear.
+- Bebidas: nivel 0–100 en pasos de 10 (0 = no toma; 100 = `PORCIONES_AL_100` porciones para compras); seis claves fijas; porcentajes enteros que suman 100 cuando el nivel es > 0. Compras: sumar ingredientes, reserva 10 %, restar stock una vez, redondear por envase; nunca sumar reserva después de redondear.
 - Gastos: centavos enteros; resto repartido de a 1 por orden de id; suma exacta.
 - Fechas en ms UTC, mostradas en `America/Argentina/Buenos_Aires` (UTC-3 fijo).
 

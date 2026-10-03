@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { TEXTOS } from '../content/config'
 import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
-import { useCollection, useDoc, useDocs, useEdition, useMembers, useNow } from '../data/hooks'
+import { electorateOf, useCollection, useDoc, useDocs, useEdition, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Award, Ballot, BeverageProfile, GiftCampaign, GiftParticipant, Member, Poll, PollResponse, Proposal, Rsvp, Task } from '../data/types'
 import { countdown, fmtDayLong, fmtTime, timeLeft } from '../domain/format'
@@ -38,7 +38,7 @@ export function Inicio() {
   const myRsvp = useDoc<Rsvp>(memberId ? P.rsvp(slug, memberId) : null)
   const myBev = useDoc<BeverageProfile>(memberId ? P.beverage(slug, memberId) : null)
   const myGift = useDoc<GiftParticipant>(memberId ? P.giftParticipant(slug, memberId) : null)
-  const openPolls = polls.filter((p) => isPollOpen(p, now) && memberId && p.electorate.includes(memberId))
+  const openPolls = polls.filter((p) => isPollOpen(p, now) && memberId && electorateOf(p, members).includes(memberId))
   const { docs: myResponses } = useDocs<PollResponse>(memberId ? openPolls.map((p) => P.response(slug, p.id, memberId)) : [])
   const openAwards = awards.filter((a) => (a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN') && memberId && a.electorate.includes(memberId))
   const { docs: myBallots } = useDocs<Ballot>(memberId ? openAwards.map((a) => P.ballot(slug, a.code, memberId)) : [])
@@ -206,6 +206,8 @@ export function DecisionPill({ status }: { status: string }) {
 
 function AdminDigest({ edition, polls, members, proposals, now }: { edition: { title: string; slug: string }; polls: Poll[]; members: Member[]; proposals: Proposal[]; now: number }) {
   const toast = useToast()
+  const activeCount = members.filter((m) => m.status === 'active' && m.participating).length
+  const sizeOf = (p: Poll) => (p.electorateMode === 'ALL_ACTIVE' ? activeCount : p.electorate.length)
   const open = polls.filter((p) => isPollOpen(p, now)).sort((a, b) => (a.closeAt ?? Infinity) - (b.closeAt ?? Infinity))
   const expired = polls.filter((p) => p.state === 'OPEN' && !isPollOpen(p, now))
   const noEmail = members.filter((m) => m.status === 'draft')
@@ -215,7 +217,7 @@ function AdminDigest({ edition, polls, members, proposals, now }: { edition: { t
     const lines = [`*${edition.title}* — pendientes`, '']
     for (const p of open) {
       const n = allResponses[p.id] ?? 0
-      lines.push(`• ${p.title}: respondieron ${n} de ${p.electorate.length} (${timeLeft(p.closeAt, now)})`)
+      lines.push(`• ${p.title}: respondieron ${n} de ${sizeOf(p)} (${timeLeft(p.closeAt, now)})`)
     }
     if (open.length === 0) lines.push('• No hay consultas abiertas.')
     lines.push('', `Entrá acá: ${window.location.href.split('#')[0]}#/e/${edition.slug}`)
@@ -231,7 +233,7 @@ function AdminDigest({ edition, polls, members, proposals, now }: { edition: { t
           <p className="h3 mb-2">Próximos cierres</p>
           {open.length === 0 ? <p className="small muted">Nada abierto.</p> : null}
           {open.map((p) => {
-            const part = participation(p, allResponses[p.id] ?? 0)
+            const part = participation(p, allResponses[p.id] ?? 0, sizeOf(p))
             return (
               <div key={p.id} className="row">
                 <span className="small">{p.title}</span>

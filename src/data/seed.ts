@@ -8,12 +8,13 @@ import {
   RECETAS,
   RESERVA_COMPRA_PCT,
 } from '../content/bebidas'
-import { ALIAS_INICIALES, EDICION_ACTUAL, GRUPO, REGALO_TOLERANCIA_PCT } from '../content/config'
+import { EDICION_ACTUAL, FECHAS_CANDIDATAS, GRUPO, MIEMBROS_INICIALES, QUORUM_LOGISTICO_PCT, REGALO_TOLERANCIA_PCT } from '../content/config'
 import { CATEGORIAS_INICIALES } from '../content/premios'
 import { AGENDA_PLANTILLA, TAREAS_PLANTILLA } from '../content/tareas'
 import type { DataAdapter } from './adapter'
 import { P } from './paths'
-import type { Award, Ceremony, Edition, GiftCampaign, Member, MemberPrivate, Task } from './types'
+import type { Award, Edition, GiftCampaign, Member, MemberPrivate, Poll, PollOption, Task } from './types'
+import { fmtDayLong } from '../domain/format'
 
 export const OWNER_ID = 'owner'
 
@@ -112,10 +113,6 @@ export function newGift(now: number): GiftCampaign {
   }
 }
 
-export function newCeremony(now: number): Ceremony {
-  return { state: 'IDLE', stage: 'WELCOME', currentCode: null, order: [], nominees: {}, sequence: 0, replayAt: null, updatedAt: now }
-}
-
 export function newMember(id: string, alias: string, now: number, over: Partial<Member> = {}): Member {
   return {
     id,
@@ -167,7 +164,53 @@ export async function ensureEdition(db: DataAdapter, slug: string = EDICION_ACTU
     }
   }
   if (!(await db.getDoc(P.gift(slug)))) await db.setDoc(P.gift(slug), newGift(now))
-  if (!(await db.getDoc(P.ceremony(slug)))) await db.setDoc(P.ceremony(slug), newCeremony(now))
+  await ensureDatesPoll(db, slug)
+}
+
+/** Opciones de fecha: todos los días de la semana indicados entre `desde` y `hasta`, a la hora dada (Buenos Aires). */
+export function datesOptions(cfg = FECHAS_CANDIDATAS): PollOption[] {
+  const [hh, mm] = cfg.hora.split(':').map(Number)
+  const [y1, m1, d1] = cfg.desde.split('-').map(Number)
+  const [y2, m2, d2] = cfg.hasta.split('-').map(Number)
+  const out: PollOption[] = []
+  for (let t = Date.UTC(y1, m1 - 1, d1); t <= Date.UTC(y2, m2 - 1, d2); t += 86400000) {
+    const d = new Date(t)
+    if (!cfg.diasSemana.includes(d.getUTCDay())) continue
+    const startsAt = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hh + 3, mm)
+    out.push({ id: 'd-' + d.toISOString().slice(0, 10), label: fmtDayLong(startsAt), detail: 'A la noche', startsAt, special: null })
+  }
+  return out
+}
+
+/** Consulta de disponibilidad inicial, abierta para todos los miembros activos que participan. */
+export async function ensureDatesPoll(db: DataAdapter, slug: string) {
+  const id = 'fechas-' + slug
+  if (await db.getDoc(P.poll(slug, id))) return
+  const now = Date.now()
+  const [y, m, d] = FECHAS_CANDIDATAS.cierreConsulta.split('-').map(Number)
+  const closeAt = Date.UTC(y, m - 1, d, 23 + 3, 59)
+  const poll: Poll = {
+    id,
+    kind: 'dates',
+    title: '¿Qué día nos juntamos?',
+    description: 'Marcá todas las fechas en las que podés. Son jueves, viernes y sábados, siempre a la noche. Estar disponible todavía no confirma asistencia.',
+    method: 'AVAILABILITY',
+    state: 'OPEN',
+    options: datesOptions(),
+    electorate: [],
+    electorateMode: 'ALL_ACTIVE',
+    audience: 'ALL',
+    openAt: now,
+    closeAt,
+    quorumPct: QUORUM_LOGISTICO_PCT,
+    version: 1,
+    closure: null,
+    decision: null,
+    createdAt: now,
+    updatedAt: now,
+  }
+  await db.setDoc(P.poll(slug, id), poll)
+  await db.updateDoc(P.edition(slug), { 'decisions.fecha': { status: 'VOTING', pollId: id }, state: 'ORGANIZING', updatedAt: now })
 }
 
 /** Crea al propietario (si no existe) y los borradores de alias (una sola vez). */
@@ -183,9 +226,9 @@ export async function ensureOwnerAndDrafts(db: DataAdapter, uid: string, email: 
   await db.setDoc(P.uid(uid), { memberId: OWNER_ID })
   const members = await db.getCollection<Member>(P.members)
   if (members.filter((m) => m.id !== OWNER_ID).length === 0) {
-    for (const alias of ALIAS_INICIALES) {
-      const id = 'm-' + slugify(alias)
-      await db.setDoc(P.member(id), newMember(id, alias, now))
+    for (const m of MIEMBROS_INICIALES) {
+      const id = 'm-' + slugify(m.alias)
+      await db.setDoc(P.member(id), newMember(id, m.alias, now, { name: m.nombre }))
     }
   }
 }
