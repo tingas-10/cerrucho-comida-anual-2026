@@ -121,18 +121,14 @@ export function Shell({ children }: { children: ReactNode }) {
           {!collapsed ? (
             <div className="flex items-center gap-3">
               <img src={LOGO} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
-              <div>
-                <p className="font-extrabold leading-tight text-base">{GRUPO.nombre}</p>
-                <p className="eyebrow mt-1 text-[10px]">{edition?.title ?? 'Comida anual'}</p>
-              </div>
+              <p className="font-extrabold leading-tight text-base">{GRUPO.nombre}</p>
             </div>
           ) : (
             <img src={LOGO} alt={GRUPO.nombre} className="w-10 h-10 rounded-full object-cover mx-auto" />
           )}
         </div>
         <nav className="flex-1">
-          <Group title="Esta edición" items={nav.edicion} collapsed={collapsed} />
-          <Group title="Organización" items={nav.organizacion} collapsed={collapsed} />
+          <Group title={edition?.title ?? 'Comida anual'} items={[...nav.edicion, ...nav.organizacion]} collapsed={collapsed} />
           <Group title="La banda" items={nav.banda} collapsed={collapsed} />
           {nav.admin.length ? <Group title="Más" items={nav.admin} collapsed={collapsed} /> : null}
         </nav>
