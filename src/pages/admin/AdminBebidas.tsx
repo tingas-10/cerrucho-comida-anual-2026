@@ -141,62 +141,60 @@ export function AdminBebidas() {
         <p className="tiny muted mb-3">
           {attendees.length} asistentes confirmados · {attendeeProfiles.length} respondieron. Precios en pesos por envase; stock en envases.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="tiny muted text-left">
-                <th className="py-1 pr-2">Insumo</th>
-                <th className="py-1 pr-2">Necesita</th>
-                <th className="py-1 pr-2">Envase</th>
-                <th className="py-1 pr-2">Stock</th>
-                <th className="py-1 pr-2">Comprar</th>
-                <th className="py-1 pr-2">Precio</th>
-                <th className="py-1 pr-2">Responsable</th>
-                <th className="py-1 pr-2">Comprado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.ingredients.map((ing) => {
-                const l = purchases.lines.find((x) => x.ingredientId === ing.id)
-                return (
-                  <tr key={ing.id} className="border-t border-line">
-                    <td className="py-1.5 pr-2 font-semibold whitespace-nowrap">{ing.label}</td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap">{l ? formatAmount(l.protectedAmount, l.unit) : '—'}</td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap">
-                      <input className="input w-20 inline-block mr-1" type="number" aria-label={`Envase ${ing.label}`} value={ing.envaseMl} onChange={(e) => setS({ ...s, ingredients: s.ingredients.map((x) => (x.id === ing.id ? { ...x, envaseMl: Number(e.target.value) } : x)) })} />
-                      {ing.unidad}
-                      {ing.packUnidades ? (
-                        <>
-                          {' '}
-                          × pack <input className="input w-14 inline-block" type="number" aria-label={`Pack ${ing.label}`} value={ing.packUnidades} onChange={(e) => setS({ ...s, ingredients: s.ingredients.map((x) => (x.id === ing.id ? { ...x, packUnidades: Number(e.target.value) || undefined } : x)) })} />
-                        </>
-                      ) : null}
-                    </td>
-                    <td className="py-1.5 pr-2">
-                      <input className="input w-16" type="number" min={0} aria-label={`Stock ${ing.label}`} value={s.stock[ing.id] ?? 0} onChange={(e) => setS({ ...s, stock: { ...s.stock, [ing.id]: Number(e.target.value) } })} />
-                    </td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap font-semibold">{l ? (l.packs !== null ? `${l.packs} packs (${l.packs * (l.packUnits ?? 1)} u.)` : `${l.units} u.`) : '0'}</td>
-                    <td className="py-1.5 pr-2">
-                      <input className="input w-24" inputMode="decimal" aria-label={`Precio ${ing.label}`} value={s.prices[ing.id] ? String(s.prices[ing.id] / 100) : ''} placeholder="ARS" onChange={(e) => setS({ ...s, prices: { ...s.prices, [ing.id]: parseArs(e.target.value) ?? 0 } })} />
-                    </td>
-                    <td className="py-1.5 pr-2">
-                      <select className="input" aria-label={`Responsable ${ing.label}`} value={s.responsible[ing.id] ?? ''} onChange={(e) => setS({ ...s, responsible: { ...s.responsible, [ing.id]: e.target.value || null } })}>
-                        <option value="">—</option>
-                        {members.active.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.alias}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="py-1.5 pr-2 text-center">
-                      <input type="checkbox" aria-label={`Comprado ${ing.label}`} checked={!!s.bought[ing.id]} onChange={(e) => setS({ ...s, bought: { ...s.bought, [ing.id]: e.target.checked } })} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {s.ingredients.map((ing) => {
+            const l = purchases.lines.find((x) => x.ingredientId === ing.id)
+            const setIng = (patch: Partial<typeof ing>) => setS({ ...s, ingredients: s.ingredients.map((x) => (x.id === ing.id ? { ...x, ...patch } : x)) })
+            return (
+              <div key={ing.id} className="rounded-xl border border-line p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-bold">{ing.label}</p>
+                    <p className="tiny muted">Necesita {l ? formatAmount(l.protectedAmount, l.unit) : '—'}</p>
+                  </div>
+                  <p className="text-right">
+                    <span className="tiny muted block">Comprar</span>
+                    <b>{l ? (l.packs !== null ? `${l.packs} packs (${l.packs * (l.packUnits ?? 1)} u.)` : `${l.units} u.`) : '0'}</b>
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <label className="tiny muted">
+                    Envase ({ing.unidad})
+                    <input className="input mt-1" type="number" inputMode="numeric" aria-label={`Envase ${ing.label}`} value={ing.envaseMl} onChange={(e) => setIng({ envaseMl: Number(e.target.value) })} />
+                  </label>
+                  {ing.packUnidades ? (
+                    <label className="tiny muted">
+                      Unidades por pack
+                      <input className="input mt-1" type="number" inputMode="numeric" aria-label={`Pack ${ing.label}`} value={ing.packUnidades} onChange={(e) => setIng({ packUnidades: Number(e.target.value) || undefined })} />
+                    </label>
+                  ) : null}
+                  <label className="tiny muted">
+                    Stock (envases)
+                    <input className="input mt-1" type="number" inputMode="numeric" min={0} aria-label={`Stock ${ing.label}`} value={s.stock[ing.id] ?? 0} onChange={(e) => setS({ ...s, stock: { ...s.stock, [ing.id]: Number(e.target.value) } })} />
+                  </label>
+                  <label className="tiny muted">
+                    Precio por envase
+                    <input className="input mt-1" inputMode="decimal" aria-label={`Precio ${ing.label}`} value={s.prices[ing.id] ? String(s.prices[ing.id] / 100) : ''} placeholder="ARS" onChange={(e) => setS({ ...s, prices: { ...s.prices, [ing.id]: parseArs(e.target.value) ?? 0 } })} />
+                  </label>
+                  <label className="tiny muted col-span-2">
+                    Responsable
+                    <select className="input mt-1" aria-label={`Responsable ${ing.label}`} value={s.responsible[ing.id] ?? ''} onChange={(e) => setS({ ...s, responsible: { ...s.responsible, [ing.id]: e.target.value || null } })}>
+                      <option value="">—</option>
+                      {members.active.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.alias}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className="flex items-center gap-2 small mt-3 min-h-[40px]">
+                  <input type="checkbox" className="w-5 h-5" aria-label={`Comprado ${ing.label}`} checked={!!s.bought[ing.id]} onChange={(e) => setS({ ...s, bought: { ...s.bought, [ing.id]: e.target.checked } })} />
+                  Ya está comprado
+                </label>
+              </div>
+            )
+          })}
         </div>
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
           <p className="small">

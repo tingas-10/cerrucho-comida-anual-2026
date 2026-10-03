@@ -126,7 +126,8 @@ export function Bebidas() {
               setDirty(true)
               setLevel(Number(e.target.value))
             }}
-            className="w-full mt-3 accent-[var(--gold)] h-3"
+            className="slider mt-2"
+            style={{ ['--fill' as string]: `${level}%` }}
             aria-valuetext={`${level}%: ${fraseNivel(level)}`}
           />
           <div className="flex justify-between tiny muted mt-1">
@@ -173,7 +174,8 @@ export function Bebidas() {
                     value={pct[k] ?? 0}
                     disabled={!open}
                     onChange={(e) => setOne(k, Number(e.target.value))}
-                    className="w-full accent-[var(--gold)] h-2"
+                    className="slider"
+                    style={{ ['--fill' as string]: `${pct[k] ?? 0}%` }}
                   />
                 </div>
               ))}

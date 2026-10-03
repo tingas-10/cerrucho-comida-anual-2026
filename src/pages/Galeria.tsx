@@ -107,7 +107,7 @@ export function Galeria() {
                           type="button"
                           onClick={() => void react(f, e)}
                           aria-pressed={mine}
-                          className={`text-sm rounded-full px-1.5 py-0.5 border ${mine ? 'border-accent bg-soft' : 'border-transparent'}`}
+                          className={`inline-flex items-center justify-center min-w-[38px] min-h-[38px] text-base rounded-full px-1.5 border ${mine ? 'border-accent bg-soft' : 'border-transparent'}`}
                           aria-label={`Reaccionar ${e}`}
                         >
                           {e}

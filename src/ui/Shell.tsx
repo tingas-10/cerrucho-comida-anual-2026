@@ -146,7 +146,10 @@ export function Shell({ children }: { children: ReactNode }) {
     })
   const [sheet, setSheet] = useState<'organizar' | 'mas' | null>(null)
   const location = useLocation()
-  useEffect(() => setSheet(null), [location.pathname])
+  useEffect(() => {
+    setSheet(null)
+    window.scrollTo(0, 0) // cada pantalla arranca arriba (clave en celular)
+  }, [location.pathname])
 
   const { data: edition } = useEdition()
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
@@ -188,13 +191,14 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="md:ml-[var(--side-w)]" style={{ ['--side-w' as string]: sideWidth + 'px' }}>
           {/* Topbar */}
           <header className="sticky top-0 z-30 h-14 bg-card/90 backdrop-blur border-b border-line flex items-center justify-between px-4 sm:px-6 gap-3">
-            <div className="text-sm truncate flex items-center gap-2">
-              <img src={LOGO} alt="" className="w-7 h-7 rounded-full object-cover md:hidden" />
-              <span className="muted">{GRUPO.nombreCorto}</span>
-              <span className="muted"> / </span>
-              <span className="font-semibold">{edition?.title ?? '…'}</span>
+            <div className="text-sm min-w-0 flex items-center gap-2">
+              <img src={LOGO} alt="" className="w-8 h-8 rounded-full object-cover md:hidden shrink-0" />
+              <span className="font-bold truncate md:hidden">{GRUPO.nombre}</span>
+              <span className="muted hidden md:inline">{GRUPO.nombreCorto}</span>
+              <span className="muted hidden md:inline"> / </span>
+              <span className="font-semibold truncate hidden md:inline">{edition?.title ?? '…'}</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <NavLink to={`${nav.e}/fecha`} className="btn btn-line btn-sm" title="Asistentes confirmados">
                 <Users size={16} />
                 <span>{confirmed}</span>

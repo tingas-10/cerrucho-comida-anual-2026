@@ -22,7 +22,7 @@ export function FmoRanking() {
       {table.length === 0 ? (
         <Empty title={year === 'all' ? 'Todavía no hay partidos jugados' : `Todavía no hay partidos jugados en ${year}`} text="Guardá un partido y el ranking se arma solo." />
       ) : (
-        <Card>
+        <Card className="!p-3 sm:!p-5">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -33,19 +33,21 @@ export function FmoRanking() {
                   <th className="py-2 pr-2 text-right" title="Ganados">G</th>
                   <th className="py-2 pr-2 text-right" title="Empatados">E</th>
                   <th className="py-2 pr-2 text-right" title="Perdidos">P</th>
-                  <th className="py-2 pr-2 text-right">Goles</th>
-                  <th className="py-2 text-right">Puntos</th>
+                  <th className="py-2 pr-2 text-right" title="Goles">Gol</th>
+                  <th className="py-2 text-right" title="Puntos">Pts</th>
                 </tr>
               </thead>
               <tbody>
                 {table.map((s, i) => (
                   <tr key={s.playerId} className={`border-t border-line ${i < 3 ? 'font-semibold' : ''}`}>
                     <td className="py-2 pr-2">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
-                    <td className="py-2 pr-2 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-2">
-                        <Avatar id={s.playerId} alias={players.nameOf(s.playerId)} size={24} color={players.byId[s.playerId]?.color} />
-                        {players.nameOf(s.playerId)}
-                        {players.byId[s.playerId]?.guest ? <Pill tone="muted">Invitado</Pill> : null}
+                    <td className="py-2 pr-2 max-w-[120px] sm:max-w-none">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="hidden sm:inline-flex">
+                          <Avatar id={s.playerId} alias={players.nameOf(s.playerId)} size={24} color={players.byId[s.playerId]?.color} />
+                        </span>
+                        <span className="truncate">{players.nameOf(s.playerId)}</span>
+                        {players.byId[s.playerId]?.guest ? <Pill tone="muted">Inv.</Pill> : null}
                       </span>
                     </td>
                     <td className="py-2 pr-2 text-right tabular-nums">{s.played}</td>

@@ -179,7 +179,7 @@ export function FmoPartido() {
               </span>
             </div>
             <input className="input mb-2" placeholder="Buscar jugador" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Buscar jugador" />
-            <div className="max-h-64 overflow-y-auto">
+            <div className="max-h-72 overflow-y-auto overscroll-contain">
               {bench.length === 0 ? <p className="small muted py-2">No queda nadie en el banco.</p> : null}
               {bench.map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-line last:border-0">
@@ -235,7 +235,7 @@ export function FmoPartido() {
             </div>
           </Card>
 
-          <div className="flex gap-2 flex-wrap items-center">
+          <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] md:static z-10 flex gap-2 flex-wrap items-center rounded-xl border border-line bg-card p-2 shadow-lg md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <Button variant="gold" onClick={() => void save('PLAYED')} loading={busy}>
               {m.status === 'PLAYED' ? 'Guardar cambios' : 'Guardar partido'}
             </Button>
@@ -275,11 +275,11 @@ export function FmoPartido() {
 function Stepper({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
   return (
     <span className="inline-flex items-center gap-1" role="group" aria-label={label}>
-      <button type="button" className="btn btn-line btn-sm !px-2" aria-label="Restar" onClick={() => onChange(Math.max(0, value - 1))}>
+      <button type="button" className="btn btn-line btn-sm px-3" aria-label="Restar" onClick={() => onChange(Math.max(0, value - 1))}>
         <Minus size={14} />
       </button>
       <span className="w-7 text-center font-bold tabular-nums">{value}</span>
-      <button type="button" className="btn btn-line btn-sm !px-2" aria-label="Sumar" onClick={() => onChange(Math.min(30, value + 1))}>
+      <button type="button" className="btn btn-line btn-sm px-3" aria-label="Sumar" onClick={() => onChange(Math.min(30, value + 1))}>
         <Plus size={14} />
       </button>
     </span>

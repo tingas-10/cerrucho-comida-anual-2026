@@ -128,22 +128,24 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
           const v = answers[o.id]
           const leader = rec.leaders.includes(o.id)
           return (
-            <div key={o.id} className="rounded-xl border border-line p-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <p className="font-semibold">
-                    {o.startsAt ? `${fmtDayLong(o.startsAt)} · ${fmtTime(o.startsAt)} h` : o.label}
-                    {o.startsAt && o.label && o.label !== fmtDayLong(o.startsAt) ? <span className="tiny muted ml-2">· {o.label}</span> : null}
+            <div key={o.id} className="rounded-xl border border-line p-3 sm:flex sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex items-center justify-between gap-2 sm:block sm:min-w-[210px]">
+                <div className="min-w-0">
+                  <p className="font-semibold leading-tight">
+                    {o.startsAt ? fmtDayLong(o.startsAt) : o.label}
+                    {leader && rec.leaders.length === 1 && poll.state === 'OPEN' ? <Pill className="ml-2">Va ganando</Pill> : null}
                   </p>
-                  {o.detail ? <p className="tiny muted">{o.detail}</p> : null}
+                  <p className="tiny muted">
+                    {o.startsAt ? `${fmtTime(o.startsAt)} h` : ''}
+                    {o.detail ? `${o.startsAt ? ' · ' : ''}${o.detail}` : ''}
+                  </p>
                 </div>
-                <div className="tiny muted">
+                <div className="tiny muted text-right sm:text-left shrink-0">
                   <span className="text-ok font-semibold">{r.yes} puedo</span> · {r.maybe} capaz · {r.no} no
-                  {leader && rec.leaders.length === 1 && poll.state === 'OPEN' ? <Pill className="ml-2">Va ganando</Pill> : null}
                 </div>
               </div>
               {open && isElector ? (
-                <div className="grid grid-cols-3 gap-2 mt-3" role="radiogroup" aria-label={o.label}>
+                <div className="grid grid-cols-3 gap-2 mt-2 sm:mt-0 sm:w-[300px] shrink-0" role="radiogroup" aria-label={o.startsAt ? fmtDayLong(o.startsAt) : o.label}>
                   {(
                     [
                       ['yes', 'Puedo'],
@@ -156,7 +158,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
                       type="button"
                       role="radio"
                       aria-checked={v === val}
-                      className="choice justify-center"
+                      className="choice justify-center text-center px-2 text-sm min-h-[44px]"
                       onClick={() => {
                         setDirty(true)
                         setAnswers((a) => ({ ...a, [o.id]: val }))
@@ -173,8 +175,8 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
       </div>
 
       {open && isElector ? (
-        <div className="flex items-center justify-between gap-3 mt-4 flex-wrap">
-          <span className="tiny muted">{complete ? 'Respondiste todas las fechas.' : 'Respondé todas las fechas para guardar.'}</span>
+        <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4 z-10 mt-4 flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3 py-2 shadow-lg">
+          <span className="tiny muted">{complete ? 'Respondiste todas las fechas.' : `Respondiste ${poll.options.filter((o) => answers[o.id]).length} de ${poll.options.length}. Faltan para guardar.`}</span>
           <Button variant="gold" onClick={() => void save()} loading={busy} disabled={!complete || (!dirty && !!mine.data)}>
             {mine.data ? (dirty ? 'Guardar cambios' : 'Ya respondiste') : 'Guardar'}
           </Button>
@@ -205,7 +207,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left tiny muted">
-                <th className="py-1 pr-2">Persona</th>
+                <th className="py-1 pr-2 sticky left-0 bg-card">Persona</th>
                 {poll.options.map((o) => (
                   <th key={o.id} className="py-1 pr-2 whitespace-nowrap">
                     {o.startsAt ? fmtDayShort(o.startsAt) : o.label}
@@ -219,7 +221,7 @@ function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string)
                 const payload = (r?.payload as Record<string, Availability>) ?? null
                 return (
                   <tr key={id} className="border-t border-line">
-                    <td className="py-1.5 pr-2 whitespace-nowrap">
+                    <td className="py-1.5 pr-2 whitespace-nowrap sticky left-0 bg-card">
                       <span className="inline-flex items-center gap-2">
                         <Avatar id={id} alias={aliasOf(id)} size={22} /> {aliasOf(id)}
                       </span>

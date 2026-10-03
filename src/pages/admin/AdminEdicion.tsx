@@ -350,7 +350,7 @@ export function AdminEdicion() {
           </label>
         </div>
         {agenda.map((item, i) => (
-          <div key={item.key} className="grid grid-cols-[1fr_110px_1fr] gap-2 items-end py-2 border-b border-line last:border-0">
+          <div key={item.key} className="grid grid-cols-2 sm:grid-cols-[1fr_110px_1fr] gap-x-2 items-end py-2 border-b border-line last:border-0">
             <Field label={`Etapa ${i + 1}`} id={`ag-l-${i}`}>
               <Input id={`ag-l-${i}`} value={item.label} onChange={(e) => setAgenda((a) => a.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
             </Field>

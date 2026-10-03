@@ -181,7 +181,7 @@ export function AdminPremios() {
       {VAO_ACTIVO && !edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO (Viaje Anual Obligatorio) quedan bloqueadas hasta que confirmes en Miembros quiénes fueron al viaje. Ahora hay {vao.length} marcados.</Notice> : null}
       <Card>
         <p className="h3 mb-2">Abrir y cerrar</p>
-        <div className="grid grid-cols-[1fr_120px] gap-2 max-w-sm">
+        <div className="grid grid-cols-2 gap-2 max-w-sm">
           <Field label="Cierre de la ronda" id="aw-close">
             <Input id="aw-close" type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} />
           </Field>

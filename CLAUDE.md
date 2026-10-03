@@ -43,6 +43,10 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - Gastos: centavos enteros; resto repartido de a 1 por orden de id; suma exacta.
 - Fechas en ms UTC, mostradas en `America/Argentina/Buenos_Aires` (UTC-3 fijo).
 
+## Celular primero
+
+La banda usa la web desde el celular. Reglas: nada de scroll horizontal de página a 330 px de ancho; campos con `font-size` de 16 px o más (si no, el iPhone hace zoom); botones y controles de 40 px de alto o más; tablas anchas se convierten en tarjetas debajo de `md`; las acciones de guardar largas van en una barra `sticky` arriba de la barra inferior. Los estilos propios de `src/index.css` viven dentro de `@layer base/components` para que las clases de Tailwind los puedan pisar: no escribir CSS fuera de capa.
+
 ## Modo demo
 
 Con `VITE_DEMO=1` (o si `firebase.config.json` tiene `PEGAR_...`) la app usa `MemoryAdapter` + `DemoAuthAdapter` con datos ficticios (`demoSeed.ts`), sin tocar Firebase. Es lo que usa el servidor local `cerrucho` de `Documentos/Claude/.claude/launch.json` para verificar cambios de UI: entrar como "Agustín (administrador)". En producción la web usa siempre Firebase.

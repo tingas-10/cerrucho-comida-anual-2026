@@ -14,6 +14,11 @@ import { useToast } from '../../ui/toast'
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
+// Columnas de la tabla en escritorio (en celular cada miembro es una tarjeta de dos columnas).
+const COLS = VAO_ACTIVO
+  ? 'md:grid-cols-[minmax(90px,1fr)_minmax(120px,1.2fr)_minmax(180px,1.8fr)_120px_70px_80px_170px]'
+  : 'md:grid-cols-[minmax(90px,1fr)_minmax(120px,1.2fr)_minmax(180px,1.8fr)_120px_70px_170px]'
+
 /** Guarda alias, nombre y mail de un miembro existente. Devuelve un mensaje de error o null. */
 async function saveMember(db: DataAdapter, slug: string, actorId: string, m: Member, prevEmail: string, alias: string, name: string, email: string, taken: (e: string) => boolean): Promise<string | null> {
   const a = alias.trim()
@@ -175,44 +180,32 @@ export function AdminMiembros() {
         <p className="tiny muted mb-3" hidden={!VAO_ACTIVO}>
           VAO es el Viaje Anual Obligatorio. Tildá "Fue al VAO" en los que viajaron y confirmá la lista: los premios Revelación, MVP y Rey de la noche VAO sólo se pueden abrir con esa lista confirmada, y sólo ellos pueden ganarlos.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left tiny muted">
-                <th className="py-2 pr-2 min-w-[110px]">Alias</th>
-                <th className="py-2 pr-2 min-w-[150px]">Nombre</th>
-                <th className="py-2 pr-2 min-w-[210px]">Mail</th>
-                <th className="py-2 pr-2">Estado</th>
-                <th className="py-2 pr-2 text-center">Participa</th>
-                {VAO_ACTIVO ? <th className="py-2 pr-2 text-center">Fue al VAO</th> : null}
-                <th className="py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-t border-line bg-soft/40">
-                <td className="py-2 pr-2">
-                  <input className="input" placeholder="Nuevo alias" value={newAlias} onChange={(e) => setNewAlias(e.target.value)} aria-label="Alias del nuevo miembro" />
-                </td>
-                <td className="py-2 pr-2">
-                  <input className="input" placeholder="Nombre" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Nombre del nuevo miembro" />
-                </td>
-                <td className="py-2 pr-2">
-                  <input className="input" type="email" placeholder="mail@ejemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} aria-label="Mail del nuevo miembro" />
-                </td>
-                <td className="py-2 pr-2 tiny muted" colSpan={VAO_ACTIVO ? 3 : 2}>
-                  Para sumar a alguien que no está en la lista.
-                </td>
-                <td className="py-2">
-                  <Button size="sm" variant="gold" onClick={() => void add()} loading={busy} disabled={newAlias.trim().length < 2}>
-                    Agregar
-                  </Button>
-                </td>
-              </tr>
-              {list.map((m) => (
-                <MemberRow key={m.id} m={m} email={emailOf[m.id] ?? ''} taken={taken} onToggle={toggle} onStatus={setStatus} onRemove={setRemoveTarget} />
-              ))}
-            </tbody>
-          </table>
+        {/* En celular cada miembro es una tarjeta; en escritorio, una fila. */}
+        <div className={`hidden md:grid ${COLS} gap-2 tiny muted pb-1`}>
+          <span>Alias</span>
+          <span>Nombre</span>
+          <span>Mail</span>
+          <span>Estado</span>
+          <span className="text-center">Participa</span>
+          {VAO_ACTIVO ? <span className="text-center">Fue al VAO</span> : null}
+          <span />
+        </div>
+        <div className={`grid grid-cols-2 ${COLS} gap-2 items-center rounded-xl bg-soft/50 p-3 md:px-0 md:py-2 md:rounded-none md:bg-transparent md:border-t md:border-line`}>
+          <p className="col-span-2 md:hidden small font-semibold">Sumar a alguien que no está en la lista</p>
+          <input className="input" placeholder="Nuevo alias" value={newAlias} onChange={(e) => setNewAlias(e.target.value)} aria-label="Alias del nuevo miembro" />
+          <input className="input" placeholder="Nombre" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Nombre del nuevo miembro" />
+          <input className="input col-span-2 md:col-span-1" type="email" inputMode="email" autoCapitalize="none" placeholder="mail@ejemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} aria-label="Mail del nuevo miembro" />
+          <span className={`hidden md:block tiny muted ${VAO_ACTIVO ? 'md:col-span-3' : 'md:col-span-2'}`}>Para sumar a alguien que no está en la lista.</span>
+          <div className="col-span-2 md:col-span-1">
+            <Button size="sm" variant="gold" className="w-full md:w-auto" onClick={() => void add()} loading={busy} disabled={newAlias.trim().length < 2}>
+              Agregar
+            </Button>
+          </div>
+        </div>
+        <div className="grid gap-3 mt-3 md:gap-0 md:mt-0">
+          {list.map((m) => (
+            <MemberRow key={m.id} m={m} email={emailOf[m.id] ?? ''} taken={taken} onToggle={toggle} onStatus={setStatus} onRemove={setRemoveTarget} />
+          ))}
         </div>
       </Card>
 
@@ -277,51 +270,45 @@ function MemberRow({ m, email, taken, onToggle, onStatus, onRemove }: { m: Membe
   }
 
   return (
-    <tr className="border-t border-line align-middle">
-      <td className="py-2 pr-2">
-        <input className="input" value={alias} onChange={(e) => setAlias(e.target.value)} aria-label={`Alias de ${m.alias}`} />
-      </td>
-      <td className="py-2 pr-2">
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" aria-label={`Nombre de ${m.alias}`} />
-      </td>
-      <td className="py-2 pr-2">
-        <input className="input" type="email" value={mail} disabled={isOwner} onChange={(e) => setMail(e.target.value)} placeholder="sin mail" aria-label={`Mail de ${m.alias}`} onKeyDown={(e) => e.key === 'Enter' && dirty && void save()} />
-      </td>
-      <td className="py-2 pr-2 whitespace-nowrap">
+    <div className={`grid grid-cols-2 ${COLS} gap-2 items-center rounded-xl border border-line p-3 md:px-0 md:py-2 md:rounded-none md:border-0 md:border-t`}>
+      <input className="input font-semibold" value={alias} onChange={(e) => setAlias(e.target.value)} aria-label={`Alias de ${m.alias}`} />
+      <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" aria-label={`Nombre de ${m.alias}`} />
+      <input className="input col-span-2 md:col-span-1" type="email" inputMode="email" autoCapitalize="none" value={mail} disabled={isOwner} onChange={(e) => setMail(e.target.value)} placeholder="sin mail" aria-label={`Mail de ${m.alias}`} onKeyDown={(e) => e.key === 'Enter' && dirty && void save()} />
+      <span className="whitespace-nowrap">
         {isOwner ? <Pill>Dueño</Pill> : m.status === 'active' ? <Pill tone="ok">Activo{m.uid ? '' : ' · no entró'}</Pill> : m.status === 'draft' ? <Pill tone="muted">Borrador</Pill> : <Pill tone="danger">Suspendido</Pill>}
-      </td>
-      <td className="py-2 pr-2 text-center">
+      </span>
+      <label className="flex items-center justify-end md:justify-center gap-2 small min-h-[40px]">
+        <span className="md:hidden">Participa</span>
         <input type="checkbox" className="w-5 h-5" aria-label={`Participa ${m.alias}`} checked={m.participating} onChange={() => onToggle(m, 'participating')} />
-      </td>
+      </label>
       {VAO_ACTIVO ? (
-        <td className="py-2 pr-2 text-center">
+        <label className="col-span-2 md:col-span-1 flex items-center justify-end md:justify-center gap-2 small min-h-[40px]">
+          <span className="md:hidden">Fue al VAO</span>
           <input type="checkbox" className="w-5 h-5" aria-label={`Fue al VAO ${m.alias}`} checked={m.vao} onChange={() => onToggle(m, 'vao')} />
-        </td>
+        </label>
       ) : null}
-      <td className="py-2 whitespace-nowrap">
-        <span className="inline-flex gap-1">
-          {dirty ? (
-            <Button size="sm" variant="gold" onClick={() => void save()} loading={busy}>
-              Guardar
-            </Button>
-          ) : null}
-          {m.status === 'active' && !isOwner ? (
-            <Button size="sm" variant="line" onClick={() => onStatus(m, 'suspended')}>
-              Suspender
-            </Button>
-          ) : null}
-          {m.status === 'suspended' ? (
-            <Button size="sm" variant="line" onClick={() => onStatus(m, 'active')}>
-              Reactivar
-            </Button>
-          ) : null}
-          {m.status === 'draft' && !isOwner && !dirty ? (
-            <Button size="sm" variant="line" onClick={() => onRemove(m)}>
-              Eliminar
-            </Button>
-          ) : null}
-        </span>
-      </td>
-    </tr>
+      <span className="col-span-2 md:col-span-1 flex gap-1 flex-wrap md:justify-end empty:hidden">
+        {dirty ? (
+          <Button size="sm" variant="gold" className="flex-1 md:flex-none" onClick={() => void save()} loading={busy}>
+            Guardar
+          </Button>
+        ) : null}
+        {m.status === 'active' && !isOwner ? (
+          <Button size="sm" variant="line" onClick={() => onStatus(m, 'suspended')}>
+            Suspender
+          </Button>
+        ) : null}
+        {m.status === 'suspended' ? (
+          <Button size="sm" variant="line" onClick={() => onStatus(m, 'active')}>
+            Reactivar
+          </Button>
+        ) : null}
+        {m.status === 'draft' && !isOwner && !dirty ? (
+          <Button size="sm" variant="line" onClick={() => onRemove(m)}>
+            Eliminar
+          </Button>
+        ) : null}
+      </span>
+    </div>
   )
 }

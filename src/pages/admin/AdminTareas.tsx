@@ -110,7 +110,7 @@ export function AdminTareas() {
                   {vols.length ? ` · ${vols.map((id) => `${members.aliasOf(id)}${t.volunteers[id].status === 'DONE' ? ' ✓' : ''}`).join(', ')}` : ''}
                 </p>
                 <div className="flex gap-1 flex-wrap mt-1 items-center">
-                  <select className="input !min-h-[32px] !py-1 w-auto text-xs" aria-label={`Asignar a ${t.title}`} value="" onChange={(e) => e.target.value && void assign(t, e.target.value, true)}>
+                  <select className="input w-auto min-h-[40px] py-1.5" aria-label={`Asignar a ${t.title}`} value="" onChange={(e) => e.target.value && void assign(t, e.target.value, true)}>
                     <option value="">Asignar a…</option>
                     {members.active.filter((m) => !t.volunteers?.[m.id]).map((m) => (
                       <option key={m.id} value={m.id}>
@@ -119,7 +119,7 @@ export function AdminTareas() {
                     ))}
                   </select>
                   {vols.map((id) => (
-                    <button key={id} type="button" className="tiny underline" onClick={() => void assign(t, id, false)}>
+                    <button key={id} type="button" className="tiny underline min-h-[40px] px-1" onClick={() => void assign(t, id, false)}>
                       quitar {members.aliasOf(id)}
                     </button>
                   ))}

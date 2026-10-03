@@ -145,7 +145,7 @@ export function ProposalsBoard({
                   </a>
                 ) : null}
                 {(p.authorId === memberId || isAdmin) && p.state === 'PENDING' ? (
-                  <button type="button" className="tiny underline muted block mt-1" onClick={() => void withdraw(p)}>
+                  <button type="button" className="tiny underline muted block min-h-[36px]" onClick={() => void withdraw(p)}>
                     Retirar
                   </button>
                 ) : null}

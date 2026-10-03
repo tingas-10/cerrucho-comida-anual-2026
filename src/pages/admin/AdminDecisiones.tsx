@@ -361,7 +361,7 @@ export function AdminDecisiones() {
         </Field>
         <p className="label">Opciones</p>
         {options.map((o, i) => (
-          <div key={i} className={`grid gap-2 mb-2 ${kind === 'dates' ? 'grid-cols-[1fr_100px_1fr_auto]' : 'grid-cols-[1fr_1fr_auto]'}`}>
+          <div key={i} className={`grid gap-2 mb-3 pb-3 border-b border-line sm:border-0 sm:pb-0 sm:mb-2 ${kind === 'dates' ? 'grid-cols-[minmax(0,1fr)_110px] sm:grid-cols-[1fr_110px_1fr_auto]' : 'grid-cols-1 sm:grid-cols-[1fr_1fr_auto]'}`}>
             {kind === 'dates' ? (
               <>
                 <Input type="date" aria-label="Día" value={o.date} onChange={(e) => setOptions((os) => os.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))} />
@@ -387,7 +387,7 @@ export function AdminDecisiones() {
             <input type="checkbox" checked={includeNone} onChange={(e) => setIncludeNone(e.target.checked)} /> Incluir "No me sirve ninguna"
           </label>
         ) : null}
-        <div className="grid grid-cols-[1fr_110px_100px] gap-2 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-[1fr_110px_100px] gap-2 mt-4">
           <Field label="Cierra el" id="np-cd">
             <Input id="np-cd" type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} />
           </Field>

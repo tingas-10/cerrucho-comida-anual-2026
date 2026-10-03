@@ -17,30 +17,18 @@ export function AdminAuditoria() {
       <p className="h3 mb-2">Registro</p>
       <p className="tiny muted mb-3">Actor, acción, entidad y motivo. No contiene votos ni destinatarios.</p>
       {list.length === 0 ? <p className="small muted">Sin registros todavía.</p> : null}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="tiny muted text-left">
-              <th className="py-1 pr-2">Cuándo</th>
-              <th className="py-1 pr-2">Quién</th>
-              <th className="py-1 pr-2">Acción</th>
-              <th className="py-1 pr-2">Entidad</th>
-              <th className="py-1 pr-2">Motivo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((e) => (
-              <tr key={e.id} className="border-t border-line">
-                <td className="py-1.5 pr-2 whitespace-nowrap tiny">{fmtDateTime(e.at)}</td>
-                <td className="py-1.5 pr-2">{members.aliasOf(e.actorId)}</td>
-                <td className="py-1.5 pr-2 font-mono text-xs">{e.action}</td>
-                <td className="py-1.5 pr-2 text-xs">{e.entity}</td>
-                <td className="py-1.5 pr-2 tiny muted">{e.reason}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {list.map((e) => (
+        <div key={e.id} className="py-2 border-t border-line small">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-semibold">{members.aliasOf(e.actorId)}</span>
+            <span className="tiny muted whitespace-nowrap">{fmtDateTime(e.at)}</span>
+          </div>
+          <p className="break-words">
+            <span className="font-mono text-xs">{e.action}</span> <span className="tiny muted">· {e.entity}</span>
+          </p>
+          {e.reason ? <p className="tiny muted break-words">{e.reason}</p> : null}
+        </div>
+      ))}
     </Card>
   )
 }
