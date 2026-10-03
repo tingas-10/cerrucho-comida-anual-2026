@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { VAO_ACTIVO } from '../content/premios'
 import { useSession } from '../data/DataContext'
 import { useCollection, useEdition, useMembers } from '../data/hooks'
 import { P } from '../data/paths'
@@ -50,7 +51,7 @@ export function Miembros() {
                   <Avatar id={m.id} alias={m.alias} color={m.avatarColor} />
                   <div>
                     <p className="font-semibold">{m.alias}</p>
-                    {m.vao ? <p className="tiny muted">Fue al VAO</p> : null}
+                    {VAO_ACTIVO && m.vao ? <p className="tiny muted">Fue al VAO</p> : null}
                   </div>
                 </div>
                 <div>

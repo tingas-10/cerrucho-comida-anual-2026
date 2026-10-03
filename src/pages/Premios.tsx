@@ -1,7 +1,7 @@
 // Premios: boleta personal por categoría, ballotage y resultados revelados.
 import { useMemo, useState } from 'react'
 import { TEXTOS } from '../content/config'
-import { NOBODY, NOBODY_LABEL } from '../content/premios'
+import { NOBODY, NOBODY_LABEL, VAO_ACTIVO } from '../content/premios'
 import { useSession } from '../data/DataContext'
 import { errorText } from '../data/actions'
 import { DataError } from '../data/adapter'
@@ -24,7 +24,7 @@ export function Premios() {
   const { data: edition, loading } = useEdition()
   const members = useMembers()
   const { rows: awards } = useCollection<Award>(P.awards(slug))
-  const list = useMemo(() => awards.filter((a) => a.enabled && a.state !== 'VOID').sort((a, b) => a.order - b.order), [awards])
+  const list = useMemo(() => awards.filter((a) => a.enabled && a.state !== 'VOID' && (VAO_ACTIVO || a.eligibility !== 'VAO')).sort((a, b) => a.order - b.order), [awards])
   const { docs: ballots } = useDocs<Ballot>(memberId ? list.map((a) => P.ballot(slug, a.code, memberId)) : [])
   const [busy, setBusy] = useState<string | null>(null)
   const [showCounts, setShowCounts] = useState<Record<string, boolean>>({})

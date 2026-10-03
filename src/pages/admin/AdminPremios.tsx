@@ -1,7 +1,7 @@
 // Premios: categorías, apertura y cierre de rondas, sellado sin mirar, ballotage, anulación y acceso reservado.
 import { useMemo, useState } from 'react'
 import { BALLOTAGE_HORAS } from '../../content/config'
-import { NOBODY } from '../../content/premios'
+import { NOBODY, VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
 import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
 import { DataError } from '../../data/adapter'
@@ -20,7 +20,7 @@ export function AdminPremios() {
   const { data: edition } = useEdition()
   const members = useMembers()
   const { rows: awards } = useCollection<Award>(P.awards(slug))
-  const list = useMemo(() => [...awards].sort((a, b) => a.order - b.order), [awards])
+  const list = useMemo(() => awards.filter((a) => VAO_ACTIVO || a.eligibility !== 'VAO').sort((a, b) => a.order - b.order), [awards])
   const [busy, setBusy] = useState<string | null>(null)
   const [closeDate, setCloseDate] = useState('')
   const [closeTime, setCloseTime] = useState('23:59')
@@ -178,7 +178,7 @@ export function AdminPremios() {
 
   return (
     <div className="grid gap-4">
-      {!edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO (Viaje Anual Obligatorio) quedan bloqueadas hasta que confirmes en Miembros quiénes fueron al viaje. Ahora hay {vao.length} marcados.</Notice> : null}
+      {VAO_ACTIVO && !edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO (Viaje Anual Obligatorio) quedan bloqueadas hasta que confirmes en Miembros quiénes fueron al viaje. Ahora hay {vao.length} marcados.</Notice> : null}
       <Card>
         <p className="h3 mb-2">Abrir y cerrar</p>
         <div className="grid grid-cols-[1fr_120px] gap-2 max-w-sm">

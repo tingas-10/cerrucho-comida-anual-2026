@@ -9,7 +9,7 @@ import {
   RESERVA_COMPRA_PCT,
 } from '../content/bebidas'
 import { EDICION_ACTUAL, FECHAS_CANDIDATAS, GRUPO, MIEMBROS_INICIALES, QUORUM_LOGISTICO_PCT, REGALO_TOLERANCIA_PCT } from '../content/config'
-import { CATEGORIAS_INICIALES } from '../content/premios'
+import { CATEGORIAS_INICIALES, VAO_ACTIVO } from '../content/premios'
 import { AGENDA_PLANTILLA, TAREAS_PLANTILLA } from '../content/tareas'
 import type { DataAdapter } from './adapter'
 import { P } from './paths'
@@ -138,7 +138,7 @@ export async function ensureEdition(db: DataAdapter, slug: string = EDICION_ACTU
   if (!existing) await db.setDoc(P.edition(slug), newEdition(slug, year, title, now))
   const awards = await db.getCollection<Award>(P.awards(slug))
   if (awards.length === 0) {
-    for (const c of CATEGORIAS_INICIALES) await db.setDoc(P.award(slug, c.code), newAward(c, now))
+    for (const c of CATEGORIAS_INICIALES.filter((x) => VAO_ACTIVO || x.eligibility !== 'VAO')) await db.setDoc(P.award(slug, c.code), newAward(c, now))
   }
   const tasks = await db.getCollection<Task>(P.tasks(slug))
   if (tasks.length === 0) {

@@ -7,6 +7,10 @@
 
 export type Eligibilidad = 'VAO' | 'EDITION'
 
+// El VAO (Viaje Anual Obligatorio) todavía no forma parte de la web. Con `false` se ocultan sus
+// tres premios y la columna "Fue al VAO". Para sumarlo más adelante, pasar a `true`.
+export const VAO_ACTIVO = false
+
 export interface CategoriaInicial {
   code: string
   label: string

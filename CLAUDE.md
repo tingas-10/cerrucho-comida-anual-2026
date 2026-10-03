@@ -35,6 +35,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 ## Reglas del dominio que no se negocian
 
 - Premios: una selección por categoría; `NOBODY` es candidato real. Primera ronda: diferencia ≥ 3 gana; si no, ballotage con todos los votados a menos de 3 del líder. Ballotage: gana el mayor; empate = EMPATE (sin tercera ronda). Sin votos = SIN VOTOS. Los casos están en `docs/spec/06_Casos_reglas.json` y son tests.
+- El VAO (Viaje Anual Obligatorio) está apagado con `VAO_ACTIVO = false` en `src/content/premios.ts`: oculta sus tres premios y la columna "Fue al VAO". Agus lo va a sumar más adelante (VAO 2027); no mostrar nada de VAO hasta que lo pida.
 - No hay módulo de ceremonia ni de gastos (Agus los sacó el 2026-10-02). Los premios se revelan desde Administración > Premios > Revelar.
 - Nunca mostrar recuentos ni ganadores antes de revelar. El doc público `awards/{code}` sólo lleva `finalists` al abrir ballotage y `result` al revelar; lo sellado va en `awards/{code}/private/sealed` (sólo admin).
 - Amigo invisible: `crypto.getRandomValues`, sin autoasignación, mínimo 3, una sola publicación por versión; el miembro sólo lee `giftAssignments/{suId}`.

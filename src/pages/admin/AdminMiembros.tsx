@@ -1,6 +1,7 @@
 // Miembros: alta y edición en la misma tabla (alias, nombre, mail), participación, quiénes fueron al VAO, suspensión e importación.
 import { Copy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
 import { errorText, logAudit } from '../../data/actions'
 import type { DataAdapter } from '../../data/adapter'
@@ -163,13 +164,15 @@ export function AdminMiembros() {
       <Card>
         <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
           <p className="small muted">
-            {members.list.length} en total · {withEmail} con mail · {vaoCount} fueron al VAO
+            {members.list.length} en total · {withEmail} con mail{VAO_ACTIVO ? ` · ${vaoCount} fueron al VAO` : ''}
           </p>
+          {VAO_ACTIVO ? (
           <Button size="sm" variant={edition?.vaoRosterConfirmed ? 'line' : 'solid'} onClick={() => void db.updateDoc(P.edition(slug), { vaoRosterConfirmed: !edition?.vaoRosterConfirmed, updatedAt: Date.now() })}>
             {edition?.vaoRosterConfirmed ? 'Lista del VAO confirmada ✓ (reabrir)' : 'Confirmar quiénes fueron al VAO'}
           </Button>
+          ) : null}
         </div>
-        <p className="tiny muted mb-3">
+        <p className="tiny muted mb-3" hidden={!VAO_ACTIVO}>
           VAO es el Viaje Anual Obligatorio. Tildá "Fue al VAO" en los que viajaron y confirmá la lista: los premios Revelación, MVP y Rey de la noche VAO sólo se pueden abrir con esa lista confirmada, y sólo ellos pueden ganarlos.
         </p>
         <div className="overflow-x-auto">
@@ -181,7 +184,7 @@ export function AdminMiembros() {
                 <th className="py-2 pr-2 min-w-[210px]">Mail</th>
                 <th className="py-2 pr-2">Estado</th>
                 <th className="py-2 pr-2 text-center">Participa</th>
-                <th className="py-2 pr-2 text-center">Fue al VAO</th>
+                {VAO_ACTIVO ? <th className="py-2 pr-2 text-center">Fue al VAO</th> : null}
                 <th className="py-2"></th>
               </tr>
             </thead>
@@ -196,7 +199,7 @@ export function AdminMiembros() {
                 <td className="py-2 pr-2">
                   <input className="input" type="email" placeholder="mail@ejemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} aria-label="Mail del nuevo miembro" />
                 </td>
-                <td className="py-2 pr-2 tiny muted" colSpan={3}>
+                <td className="py-2 pr-2 tiny muted" colSpan={VAO_ACTIVO ? 3 : 2}>
                   Para sumar a alguien que no está en la lista.
                 </td>
                 <td className="py-2">
@@ -290,9 +293,11 @@ function MemberRow({ m, email, taken, onToggle, onStatus, onRemove }: { m: Membe
       <td className="py-2 pr-2 text-center">
         <input type="checkbox" className="w-5 h-5" aria-label={`Participa ${m.alias}`} checked={m.participating} onChange={() => onToggle(m, 'participating')} />
       </td>
-      <td className="py-2 pr-2 text-center">
-        <input type="checkbox" className="w-5 h-5" aria-label={`Fue al VAO ${m.alias}`} checked={m.vao} onChange={() => onToggle(m, 'vao')} />
-      </td>
+      {VAO_ACTIVO ? (
+        <td className="py-2 pr-2 text-center">
+          <input type="checkbox" className="w-5 h-5" aria-label={`Fue al VAO ${m.alias}`} checked={m.vao} onChange={() => onToggle(m, 'vao')} />
+        </td>
+      ) : null}
       <td className="py-2 whitespace-nowrap">
         <span className="inline-flex gap-1">
           {dirty ? (

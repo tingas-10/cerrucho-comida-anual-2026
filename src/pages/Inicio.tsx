@@ -3,6 +3,7 @@ import { Copy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TEXTOS } from '../content/config'
+import { VAO_ACTIVO } from '../content/premios'
 import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
 import { electorateOf, useCollection, useDoc, useDocs, useEdition, useMembers, useNow } from '../data/hooks'
@@ -40,7 +41,7 @@ export function Inicio() {
   const myGift = useDoc<GiftParticipant>(memberId ? P.giftParticipant(slug, memberId) : null)
   const openPolls = polls.filter((p) => isPollOpen(p, now) && memberId && electorateOf(p, members).includes(memberId))
   const { docs: myResponses } = useDocs<PollResponse>(memberId ? openPolls.map((p) => P.response(slug, p.id, memberId)) : [])
-  const openAwards = awards.filter((a) => (a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN') && memberId && a.electorate.includes(memberId))
+  const openAwards = awards.filter((a) => (VAO_ACTIVO || a.eligibility !== 'VAO') && (a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN') && memberId && a.electorate.includes(memberId))
   const { docs: myBallots } = useDocs<Ballot>(memberId ? openAwards.map((a) => P.ballot(slug, a.code, memberId)) : [])
 
   const pending = useMemo<Pending[]>(() => {

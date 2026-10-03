@@ -1,6 +1,6 @@
 # La Banda del cerrucho · Cena de fin de año
 
-Web privada para organizar la comida anual con amigos: fecha, comida y lugar (propuestas con 👍/👎), bebidas y lista de compras, amigo invisible, nueve premios con ballotage, tareas, galería y archivo.
+Web privada para organizar la comida anual con amigos: fecha, comida y lugar (propuestas con 👍/👎), bebidas y lista de compras, amigo invisible, premios con ballotage, tareas, galería, archivo y FMO (fútbol de la banda).
 
 - **Web:** https://tingas-10.github.io/cerrucho-comida-anual-2026/
 - **Hosting:** GitHub Pages (se publica solo con cada push a `main`).
@@ -44,7 +44,7 @@ En el repo de GitHub: **Settings → Pages → Build and deployment → Source: 
 
 ### 4. Primer ingreso
 
-Entrá a la web con `agustin@abndigital.com.ar`. Te llega un link al mail; al abrirlo, la app crea tu usuario de propietario, la edición 2026, las nueve categorías de premios, las tareas en borrador y los 23 alias del grupo como borradores sin mail. Desde **Administración → Miembros** cargás los mails (uno por uno o pegando una lista `alias, mail`). Nadie puede entrar hasta que tenga mail cargado.
+Entrá a la web con `agustin@abndigital.com.ar`. Te llega un link al mail; al abrirlo, la app crea tu usuario de propietario, la edición 2026, las categorías de premios, las tareas en borrador y los 23 alias del grupo como borradores sin mail. Desde **Administración → Miembros** cargás los mails (uno por uno o pegando una lista `alias, mail`). Nadie puede entrar hasta que tenga mail cargado.
 
 No se mandan mails automáticos: el link de la web se comparte por el grupo de WhatsApp (hay un botón "Copiar invitación para WhatsApp").
 
@@ -56,7 +56,7 @@ No se mandan mails automáticos: el link de la web se comparte por el grupo de W
 
 ## Checklist del organizador
 
-1. Cargar mails de los miembros y marcar quién participa este año y quién fue al VAO (Administración → Miembros, botón **Confirmar padrón VAO**).
+1. Cargar mails de los miembros y marcar quién participa este año (Administración → Miembros). El VAO todavía no está en la web.
 2. La consulta de fechas (jueves, viernes y sábados del 5/11 al 19/12) ya está abierta desde el primer ingreso; en Decisiones la cerrás cuando quieras.
 3. Cerrar la consulta y **confirmar la fecha** (o fijarla desde Edición). Eso abre el RSVP.
 4. Aprobar propuestas de comida y lugar, publicar las consultas y confirmar las decisiones. Cargar lugar, menú, agenda y salida en Edición.
