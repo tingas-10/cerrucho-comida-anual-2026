@@ -1,9 +1,9 @@
 {
-  "_ayuda": "Pegar acá la configuración web del proyecto de Firebase (Consola > Configuración del proyecto > Tus apps > SDK de Firebase > Config). Mientras apiKey empiece con PEGAR_, la web corre en modo demo sin guardar nada.",
-  "apiKey": "PEGAR_API_KEY",
-  "authDomain": "PEGAR_PROYECTO.firebaseapp.com",
-  "projectId": "PEGAR_PROYECTO",
-  "storageBucket": "",
-  "messagingSenderId": "",
-  "appId": "PEGAR_APP_ID"
+  "_ayuda": "Configuración web del proyecto de Firebase (pública por diseño). Proyecto personal de Agus, creado el 2026-10-02 con agustinbrea1@gmail.com.",
+  "apiKey": "AIzaSyBGLKGbPmVXRrSe-phYEOZg7J9dxAU_k8A",
+  "authDomain": "cerrucho-comida-anual-2026.firebaseapp.com",
+  "projectId": "cerrucho-comida-anual-2026",
+  "storageBucket": "cerrucho-comida-anual-2026.firebasestorage.app",
+  "messagingSenderId": "463432119330",
+  "appId": "1:463432119330:web:704d6d7a1ce99351b3467b"
 }
