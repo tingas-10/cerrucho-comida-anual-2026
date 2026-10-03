@@ -14,7 +14,8 @@ const BASE = import.meta.env.BASE_URL
 const EMOJIS = ['❤️', '😂', '🔥', '🫠']
 
 export function Galeria() {
-  const { db, memberId } = useSession()
+  const { db, memberId: sessionMemberId, isMember } = useSession()
+  const memberId = isMember ? sessionMemberId : null
   const toast = useToast()
   const [album, setAlbum] = useState<string>('todos')
   const [kind, setKind] = useState<'all' | 'photo' | 'meme'>('all')
@@ -105,7 +106,8 @@ export function Galeria() {
                         <button
                           key={e}
                           type="button"
-                          onClick={() => void react(f, e)}
+                          onClick={() => (memberId ? void react(f, e) : undefined)}
+                          disabled={!memberId}
                           aria-pressed={mine}
                           className={`inline-flex items-center justify-center min-w-[38px] min-h-[38px] text-base rounded-full px-1.5 border ${mine ? 'border-accent bg-soft' : 'border-transparent'}`}
                           aria-label={`Reaccionar ${e}`}

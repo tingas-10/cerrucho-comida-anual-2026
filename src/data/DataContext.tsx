@@ -1,17 +1,19 @@
-// Sesión: adaptadores, usuario autenticado y miembro resuelto.
+// Sesión: adaptadores, usuario autenticado, miembro resuelto y permisos.
+// Sin sesión se navega como visitante (sólo lectura). Los permisos de verdad los hacen cumplir las reglas de Firestore.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { EDICION_ACTUAL, GRUPO } from '../content/config'
+import { EDICION_ACTUAL } from '../content/config'
 import type { AuthAdapter, AuthUser, DataAdapter } from './adapter'
-import { DemoAuthAdapter, FirebaseAuthAdapter } from './auth'
+import { DemoAuthAdapter, FirebaseAuthAdapter, demoResetAccounts } from './auth'
 import { seedDemo } from './demoSeed'
 import { IS_DEMO, firebaseConfig } from './env'
 import { FirestoreAdapter } from './firestoreAdapter'
 import { MemoryAdapter } from './memoryAdapter'
 import { P } from './paths'
-import { ensureEdition, ensureOwnerAndDrafts } from './seed'
-import type { Member, MemberPrivate } from './types'
+import { OWNER_ID, ensureEdition } from './seed'
+import type { Member, RolesConfig } from './types'
 
-export type SessionStatus = 'loading' | 'anon' | 'not-member' | 'suspended' | 'ready'
+// visitor = sin sesión · no-access = entró pero su cuenta no está activa · ready = miembro activo
+export type SessionStatus = 'loading' | 'visitor' | 'no-access' | 'suspended' | 'ready'
 
 export interface Session {
   db: DataAdapter
@@ -20,8 +22,13 @@ export interface Session {
   user: AuthUser | null
   member: Member | null
   memberId: string | null
-  isAdmin: boolean
   status: SessionStatus
+  isMember: boolean // miembro activo con sesión: puede votar y editar lo propio
+  isAdmin: boolean // gestiona cuentas, sorteo y configuración
+  isAgus: boolean // único que ve resultados de premios
+  isPresident: boolean
+  canDecide: boolean // confirma fecha, lugar y comida (presidente o administrador)
+  presidentId: string | null
   slug: string
   error: string | null
   signOut: () => Promise<void>
@@ -31,10 +38,7 @@ export interface Session {
 const Ctx = createContext<Session | null>(null)
 
 function buildAdapters(): { db: DataAdapter; auth: AuthAdapter } {
-  if (IS_DEMO || !firebaseConfig) {
-    const db = new MemoryAdapter()
-    return { db, auth: new DemoAuthAdapter() }
-  }
+  if (IS_DEMO || !firebaseConfig) return { db: new MemoryAdapter(), auth: new DemoAuthAdapter() }
   return { db: new FirestoreAdapter(firebaseConfig), auth: new FirebaseAuthAdapter(firebaseConfig) }
 }
 
@@ -45,19 +49,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [memberId, setMemberId] = useState<string | null>(null)
   const [status, setStatus] = useState<SessionStatus>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [presidentId, setPresidentId] = useState<string | null>(null)
   const [demoReady, setDemoReady] = useState(!IS_DEMO)
   const unsubMember = useRef<(() => void) | null>(null)
+  const seeded = useRef(false)
 
-  // Demo: sembrar datos de ejemplo una sola vez.
   useEffect(() => {
     if (!IS_DEMO) return
-    const db = adapters.db as MemoryAdapter
-    seedDemo(db).then(() => setDemoReady(true))
+    seedDemo(adapters.db as MemoryAdapter).then(() => setDemoReady(true))
   }, [adapters])
 
   useEffect(() => adapters.auth.onChange((u) => setUser(u)), [adapters])
 
-  // Resolver miembro a partir del usuario autenticado.
+  // Rol de presidente (público).
+  useEffect(() => {
+    if (!demoReady) return
+    return adapters.db.subscribeDoc<RolesConfig>(P.roles, (r) => setPresidentId(r?.presidentId ?? null), () => setPresidentId(null))
+  }, [adapters, demoReady])
+
+  // Resolver el miembro de la cuenta: uids/{uid} → memberId (lo escribe sólo el administrador).
   useEffect(() => {
     if (!demoReady || user === undefined) return
     unsubMember.current?.()
@@ -66,66 +76,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setMemberId(null)
     setError(null)
     if (!user) {
-      setStatus('anon')
+      setStatus('visitor')
       return
     }
     let cancelled = false
     setStatus('loading')
     ;(async () => {
       try {
-        const db = adapters.db
-        const email = user.email.toLowerCase()
-        let id: string | null = null
-        const isOwnerEmail = email === GRUPO.ownerEmail.toLowerCase()
-        if (isOwnerEmail) {
-          await ensureOwnerAndDrafts(db, user.uid, email)
-          await ensureEdition(db)
-          id = 'owner'
-        } else {
-          const rows = await db.getCollection<MemberPrivate>(P.memberPrivates, [{ field: 'email', op: '==', value: email }])
-          id = rows[0]?.id ?? null
-        }
+        const link = await adapters.db.getDoc<{ memberId: string }>(P.uid(user.uid))
         if (cancelled) return
-        if (!id) {
-          setStatus('not-member')
+        if (!link?.memberId) {
+          setStatus('no-access')
           return
         }
-        const m = await db.getDoc<Member>(P.member(id))
-        if (!m || m.status === 'draft') {
-          setStatus('not-member')
-          return
-        }
-        if (m.status === 'suspended') {
-          setStatus('suspended')
-          return
-        }
-        if (m.uid !== user.uid) {
-          await db.updateDoc(P.member(id), { uid: user.uid, updatedAt: Date.now() })
-          await db.setDoc(P.uid(user.uid), { memberId: id })
-        } else {
-          const link = await db.getDoc(P.uid(user.uid))
-          if (!link) await db.setDoc(P.uid(user.uid), { memberId: id })
-        }
+        const id = link.memberId
         setMemberId(id)
-        unsubMember.current = db.subscribeDoc<Member>(
+        unsubMember.current = adapters.db.subscribeDoc<Member>(
           P.member(id),
           (data) => {
             setMember(data)
-            if (data?.status === 'suspended') setStatus('suspended')
-            else setStatus('ready')
+            setStatus(!data ? 'no-access' : data.status === 'active' ? 'ready' : data.status === 'suspended' ? 'suspended' : 'no-access')
           },
           (e) => setError(e.message),
         )
       } catch (e) {
         if (cancelled) return
         setError((e as Error).message)
-        setStatus('not-member')
+        setStatus('no-access')
       }
     })()
     return () => {
       cancelled = true
     }
   }, [user, adapters, demoReady])
+
+  const isMember = status === 'ready' && !!member
+  const isAdmin = isMember && member!.role === 'owner'
+  const isAgus = isMember && memberId === OWNER_ID
+  const isPresident = isMember && !!presidentId && presidentId === memberId
+
+  // El administrador completa lo que falte de la edición (idempotente, no pisa nada).
+  useEffect(() => {
+    if (!isAdmin || seeded.current) return
+    seeded.current = true
+    ensureEdition(adapters.db).catch(() => undefined)
+  }, [isAdmin, adapters])
 
   const signOut = useCallback(async () => {
     await adapters.auth.signOut()
@@ -134,6 +129,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => {
     if (!IS_DEMO) return
     ;(adapters.db as MemoryAdapter).reset()
+    demoResetAccounts()
     adapters.auth.signOut()
     window.location.reload()
   }, [adapters])
@@ -146,14 +142,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       user: user ?? null,
       member,
       memberId,
-      isAdmin: !!member && member.role === 'owner' && member.status === 'active',
-      status: user === undefined ? 'loading' : status,
+      status: user === undefined || !demoReady ? 'loading' : status,
+      isMember,
+      isAdmin,
+      isAgus,
+      isPresident,
+      canDecide: isAdmin || isPresident,
+      presidentId,
       slug: EDICION_ACTUAL.slug,
       error,
       signOut,
       resetDemo,
     }),
-    [adapters, user, member, memberId, status, error, signOut, resetDemo],
+    [adapters, user, member, memberId, status, demoReady, isMember, isAdmin, isAgus, isPresident, presidentId, error, signOut, resetDemo],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

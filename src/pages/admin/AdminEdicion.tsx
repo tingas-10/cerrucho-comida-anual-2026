@@ -12,7 +12,6 @@ import { parseArs } from '../../domain/expenses'
 import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, Notice, Section, Textarea } from '../../ui/components'
 import { useToast } from '../../ui/toast'
-import { awardTitle } from '../Premios'
 
 const STATES: Array<{ value: Edition['state']; label: string }> = [
   { value: 'DRAFT', label: 'Borrador' },
@@ -430,10 +429,7 @@ export function AdminEdicion() {
               year: edition.year,
               date: edition.date.startsAt ? fmtDayLong(edition.date.startsAt) : undefined,
               venue: edition.venue?.name,
-              awards: awards
-                .filter((a) => a.state === 'REVEALED' && a.result)
-                .sort((a, b) => a.order - b.order)
-                .map((a) => ({ label: awardTitle(a, edition.year), winner: resultText(a.result!, members.aliasOf), manual: a.result!.manual })),
+              awards: [], // los resultados de premios nunca se publican
               updatedAt: Date.now(),
             }
             await db.setDoc(P.archiveEntry(slug), entry)
@@ -447,10 +443,4 @@ export function AdminEdicion() {
   )
 }
 
-function resultText(r: Award['result'] & object, aliasOf: (k: string) => string): string {
-  if (r.outcome === 'WINNER' && r.winner) return aliasOf(r.winner)
-  if (r.outcome === 'TIE') return 'EMPATE: ' + (r.tied ?? []).map(aliasOf).join(' · ')
-  if (r.outcome === 'DESERTED') return 'DESIERTO'
-  return 'SIN VOTOS'
-}
 

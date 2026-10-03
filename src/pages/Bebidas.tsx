@@ -10,17 +10,17 @@ import type { BeverageProfile, Rsvp } from '../data/types'
 import { computePurchases, emptyPct, formatAmount, pctTotal, portionsOf, summarize, validateProfile } from '../domain/beverages'
 import { formatArs } from '../domain/expenses'
 import { timeLeft } from '../domain/format'
-import { Button, Card, Loading, Notice, PageHeader, Pill } from '../ui/components'
+import { Button, Card, Loading, LoginPrompt, Notice, PageHeader, Pill } from '../ui/components'
 import { useToast } from '../ui/toast'
 
 export function Bebidas() {
-  const { db, slug, memberId, isAdmin } = useSession()
+  const { db, slug, memberId, isAdmin, isMember } = useSession()
   const toast = useToast()
   const now = useNow()
   const { data: edition, loading } = useEdition()
   const members = useMembers()
-  const mine = useDoc<BeverageProfile>(memberId ? P.beverage(slug, memberId) : null)
-  const { rows: profiles } = useCollection<BeverageProfile>(P.beverages(slug))
+  const mine = useDoc<BeverageProfile>(isMember && memberId ? P.beverage(slug, memberId) : null)
+  const { rows: profiles } = useCollection<BeverageProfile>(isMember ? P.beverages(slug) : null)
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
   const [level, setLevel] = useState(50)
   const [pct, setPct] = useState<Record<string, number>>(emptyPct())
@@ -47,6 +47,14 @@ export function Bebidas() {
   const purchases = useMemo(() => (settings ? computePurchases(settings, attendeeProfiles, edition?.date.startsAt ? attendees.length : 0) : null), [settings, attendeeProfiles, attendees, edition])
 
   if (loading || !edition || !settings) return <Loading />
+  if (!isMember) {
+    return (
+      <div>
+        <PageHeader eyebrow={edition.title} title="Qué vas a tomar" intro="Cada uno carga cuánto y qué toma, y con eso se arma la lista de compras." />
+        <LoginPrompt text="Entrá para cargar lo que vas a tomar." />
+      </div>
+    )
+  }
 
   const total = pctTotal(pct)
   const validation = validateProfile({ level, pct })

@@ -9,8 +9,8 @@ import { useDoc } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { FmoGuest, FmoMatch } from '../../data/types'
 import { defaultPosition, scoreOf, teamOf, type Team } from '../../domain/fmo'
-import { initials, localToMs, msToLocalParts } from '../../domain/format'
-import { Button, Card, ConfirmDialog, Field, Input, Loading, Notice, Pill } from '../../ui/components'
+import { fmtDayLong, initials, localToMs, msToLocalParts } from '../../domain/format'
+import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from './fmoShared'
 
@@ -18,7 +18,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 
 export function FmoPartido() {
   const { id } = useParams()
-  const { db, memberId } = useSession()
+  const { db, memberId, isMember } = useSession()
   const toast = useToast()
   const navigate = useNavigate()
   const remote = useDoc<FmoMatch>(id ? P.fmoMatch(id) : null)
@@ -106,7 +106,42 @@ export function FmoPartido() {
     }
   }
 
-  const sel = selected && m.players[selected] ? selected : null
+  const sel = isMember && selected && m.players[selected] ? selected : null
+
+  if (!isMember) {
+    return (
+      <div>
+        <Link to="/fmo" className="tiny underline muted">
+          ← Partidos
+        </Link>
+        <h1 className="h1 mt-1 mb-1">
+          {m.nameA} <span className="tabular-nums">{score.a} – {score.b}</span> {m.nameB}
+        </h1>
+        <p className="small muted mb-4">{m.status === 'PLAYED' ? fmtDayLong(m.playedAt) : 'Todavía no se jugó'}</p>
+        <div className="grid lg:grid-cols-[minmax(0,520px)_1fr] gap-4 items-start">
+          <Pitch match={m} players={players} selected={null} onSelect={() => undefined} onMove={() => undefined} readOnly />
+          <Card>
+            {(['A', 'B'] as const).map((t) => (
+              <div key={t} className="mb-3 last:mb-0">
+                <p className="font-bold mb-1">
+                  {t === 'A' ? m.nameA : m.nameB} <span className="text-accent tabular-nums">{t === 'A' ? score.a : score.b}</span>
+                </p>
+                {(t === 'A' ? teamA : teamB).map((pid) => (
+                  <div key={pid} className="flex justify-between small py-1 border-b border-line last:border-0">
+                    <span>{players.nameOf(pid)}</span>
+                    <span>{m.players[pid].goals ? `⚽ ${m.players[pid].goals}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </Card>
+        </div>
+        <div className="mt-4">
+          <LoginPrompt text="Entrá para armar o editar partidos." />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -286,11 +321,12 @@ function Stepper({ value, onChange, label }: { value: number; onChange: (v: numb
   )
 }
 
-function Pitch({ match, players, selected, onSelect, onMove }: { match: FmoMatch; players: FmoPlayers; selected: string | null; onSelect: (id: string | null) => void; onMove: (id: string, x: number, y: number) => void }) {
+function Pitch({ match, players, selected, onSelect, onMove, readOnly }: { match: FmoMatch; players: FmoPlayers; selected: string | null; onSelect: (id: string | null) => void; onMove: (id: string, x: number, y: number) => void; readOnly?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; sx: number; sy: number; moved: boolean } | null>(null)
 
   function onDown(e: React.PointerEvent, id: string) {
+    if (readOnly) return
     e.currentTarget.setPointerCapture(e.pointerId)
     drag.current = { id, sx: e.clientX, sy: e.clientY, moved: false }
   }

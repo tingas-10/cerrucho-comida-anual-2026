@@ -2,24 +2,19 @@ rules_version = '2';
 
 // Reglas de seguridad de Firestore para La Banda del cerrucho.
 // La UI no es una barrera de permisos: estas reglas son las que protegen los datos.
-// Publicarlas con: npx firebase deploy --only firestore:rules  (ver README).
+// Roles: visitante (sin sesión, sólo lee lo público) · miembro · presidente (confirma fecha, lugar y comida)
+// · administrador (role 'owner'). Los resultados de premios los lee SOLO el miembro 'owner' (Agus).
+// Publicar con: npx firebase-tools deploy --only firestore:rules --project cerrucho-comida-anual-2026
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------- Helpers ----------
     function signedIn() {
-      return request.auth != null && request.auth.token.email_verified == true;
-    }
-    function email() {
-      return request.auth.token.email.lower();
-    }
-    // Propietario y único administrador inicial. Cambiar acá si cambia el dueño.
-    function isOwnerEmail() {
-      return signedIn() && email() == 'agustin@abndigital.com.ar';
+      return request.auth != null;
     }
     function hasLink() {
-      return exists(/databases/$(database)/documents/uids/$(request.auth.uid));
+      return signedIn() && exists(/databases/$(database)/documents/uids/$(request.auth.uid));
     }
     function myId() {
       return get(/databases/$(database)/documents/uids/$(request.auth.uid)).data.memberId;
@@ -28,10 +23,18 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/members/$(myId())).data;
     }
     function isActive() {
-      return signedIn() && hasLink() && myMember().status == 'active';
+      return hasLink() && myMember().status == 'active';
     }
     function isAdmin() {
-      return isOwnerEmail() || (isActive() && myMember().role == 'owner');
+      return isActive() && myMember().role == 'owner';
+    }
+    // Sólo Agus: resultados de premios. No se extiende a otros administradores.
+    function isAgus() {
+      return isActive() && myId() == 'owner';
+    }
+    function isPresident() {
+      return isActive() && exists(/databases/$(database)/documents/config/roles)
+        && get(/databases/$(database)/documents/config/roles).data.presidentId == myId();
     }
     function now() {
       return request.time.toMillis();
@@ -39,77 +42,89 @@ service cloud.firestore {
     function onlyKeys(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
-    function privateEmail(memberId) {
-      return get(/databases/$(database)/documents/memberPrivate/$(memberId)).data.email;
-    }
 
-    // ---------- Identidad ----------
+    // ---------- Cuentas y perfiles ----------
+    // Perfil público: alias, nombre, foto, cumpleaños (día y mes) y gustos para el regalo.
     match /members/{memberId} {
-      // Un miembro recién invitado puede leer su propio doc antes de vincular su uid.
-      allow read: if isActive() || isOwnerEmail() || (signedIn() && privateEmail(memberId) == email());
+      allow read: if true;
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
-        // Perfil propio
-        || (isActive() && memberId == myId() && onlyKeys(['alias', 'avatarColor', 'consentAt', 'updatedAt']))
-        // Primer ingreso: vincular el uid de Auth al miembro cuyo mail coincide
-        || (signedIn() && resource.data.status == 'active' && privateEmail(memberId) == email()
-            && request.resource.data.uid == request.auth.uid && onlyKeys(['uid', 'updatedAt']));
+        || (isActive() && memberId == myId()
+            && onlyKeys(['alias', 'avatarColor', 'photo', 'birthday', 'giftPrefs', 'profileDone', 'updatedAt'])
+            && (!('photo' in request.resource.data) || request.resource.data.photo == null || request.resource.data.photo.size() < 80000)
+            && (!('giftPrefs' in request.resource.data) || request.resource.data.giftPrefs.size() <= 600)
+            && (!('alias' in request.resource.data) || (request.resource.data.alias.size() >= 2 && request.resource.data.alias.size() <= 24)));
     }
 
+    // Privado: usuario, cuenta vigente y año de nacimiento. Nunca hay contraseñas acá.
     match /memberPrivate/{memberId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.email == email());
+      allow read: if isAdmin() || (isActive() && memberId == myId());
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isActive() && memberId == myId() && onlyKeys(['birthYear', 'updatedAt']));
+    }
+
+    // Vínculo cuenta → miembro. Lo escribe sólo el administrador al crear o resetear un acceso.
+    match /uids/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow write: if isAdmin();
     }
 
-    match /uids/{uid} {
-      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
-      allow create, update: if isAdmin()
-        || (signedIn() && request.auth.uid == uid
-            && privateEmail(request.resource.data.memberId) == email()
-            && get(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.status == 'active');
-      allow delete: if isAdmin();
+    // Usuario → mail interno, para poder entrar con usuario y contraseña. Se consulta de a uno, no se lista.
+    match /logins/{username} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin();
+    }
+
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /reactions/{reactionId} {
-      allow read: if isActive();
+      allow read: if true;
       allow create, update: if isActive() && request.resource.data.memberId == myId()
         && reactionId == request.resource.data.photoId + '_' + myId();
       allow delete: if isActive() && resource.data.memberId == myId();
     }
 
     match /archive/{slug} {
-      allow read: if isActive();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    // ---------- FMO (fútbol): todos los miembros activos pueden hacer todo ----------
+    // ---------- FMO (fútbol): cualquiera mira, los miembros cargan y editan ----------
     match /fmoMatches/{matchId} {
-      allow read, write: if isActive();
+      allow read: if true;
+      allow write: if isActive();
     }
     match /fmoGuests/{guestId} {
-      allow read, write: if isActive();
+      allow read: if true;
+      allow write: if isActive();
     }
 
-    // ---------- Edición ----------
+    // ---------- Edición anual ----------
     match /editions/{slug} {
-      allow read: if isActive();
+      allow read: if true;
       allow write: if isAdmin();
+      // El presidente confirma fecha, lugar y comida.
+      allow update: if isPresident() && onlyKeys(['date', 'venue', 'menu', 'decisions', 'planVersion', 'state', 'news', 'updatedAt']);
 
       function edition() {
         return get(/databases/$(database)/documents/editions/$(slug)).data;
       }
 
       match /polls/{pollId} {
-        allow read: if isActive();
+        allow read: if true;
         allow write: if isAdmin();
+        allow update: if isPresident() && onlyKeys(['decision', 'updatedAt']);
 
         function poll() {
           return get(/databases/$(database)/documents/editions/$(slug)/polls/$(pollId)).data;
         }
 
         match /responses/{memberId} {
-          // Las consultas logísticas muestran recuento y, en fechas, la matriz identificada.
-          allow read: if isActive();
+          allow read: if true;
           allow create, update: if isActive() && memberId == myId()
             && poll().state == 'OPEN'
             && (poll().closeAt == null || now() < poll().closeAt)
@@ -118,26 +133,21 @@ service cloud.firestore {
         }
       }
 
+      // Propuestas de lugar, comida y salida: pasan directo a votación (👍/👎).
       match /proposals/{proposalId} {
-        allow read: if isActive();
+        allow read: if true;
         allow create: if isActive() && request.resource.data.authorId == myId() && request.resource.data.state == 'PENDING';
         allow update: if isAdmin()
-          // Voto con pulgar: cada miembro sólo toca su propia clave en `votes`
+          // Voto: cada miembro sólo toca su propia clave en `votes`
           || (isActive() && onlyKeys(['votes', 'updatedAt'])
               && request.resource.data.votes.diff(resource.data.get('votes', {})).affectedKeys().hasOnly([myId()]))
-          || (isActive() && resource.data.authorId == myId() && resource.data.state == 'PENDING'
-              && request.resource.data.authorId == myId()
-              && (request.resource.data.state == 'PENDING' || request.resource.data.state == 'WITHDRAWN'));
+          // El autor puede retirarla
+          || (isActive() && resource.data.authorId == myId() && onlyKeys(['state', 'updatedAt']) && request.resource.data.state == 'WITHDRAWN');
         allow delete: if isAdmin();
       }
 
       match /rsvps/{memberId} {
-        allow read: if isActive();
-        allow write: if isActive() && memberId == myId();
-      }
-
-      match /dietary/{memberId} {
-        allow read: if isAdmin() || (isActive() && memberId == myId());
+        allow read: if true;
         allow write: if isActive() && memberId == myId();
       }
 
@@ -150,13 +160,16 @@ service cloud.firestore {
         allow read, write: if isActive() && memberId == myId();
       }
 
-      // ---------- Premios ----------
+      // ---------- Premios: se vota dentro del período; los resultados sólo los ve Agus ----------
       match /awards/{code} {
-        allow read: if isActive();
+        allow read: if true;
         allow write: if isAdmin();
 
         function award() {
           return get(/databases/$(database)/documents/editions/$(slug)/awards/$(code)).data;
+        }
+        function inWindow(r) {
+          return r != null && r.get('openAt', 0) <= now() && now() < r.closeAt;
         }
         function validR1() {
           return request.resource.data.r1 == 'NOBODY' || request.resource.data.r1 in award().candidates;
@@ -164,75 +177,48 @@ service cloud.firestore {
         function validR2() {
           return request.resource.data.r2 in award().finalists;
         }
-        function r1Unchanged() {
-          return resource == null ? request.resource.data.r1 == null : request.resource.data.r1 == resource.data.r1;
+        function round1Open() {
+          return award().state == 'ROUND1_OPEN' && inWindow(award().round1) && validR1();
         }
-        function r2Unchanged() {
-          return resource == null ? request.resource.data.r2 == null : request.resource.data.r2 == resource.data.r2;
+        function round2Open() {
+          return award().state == 'ROUND2_OPEN' && inWindow(award().round2) && validR2();
         }
 
         match /ballots/{memberId} {
-          // Cada uno ve sólo su boleta. El administrador la lee para el escrutinio.
-          allow read: if isAdmin() || (isActive() && memberId == myId());
-          allow create, update: if isActive() && memberId == myId() && myId() in award().electorate
+          // Cada uno ve sólo su boleta. Para contar, sólo Agus.
+          allow read: if isAgus() || (isActive() && memberId == myId());
+          // Boleta nueva: sólo el voto de la ronda abierta (la otra queda vacía).
+          allow create: if isActive() && memberId == myId() && myId() in award().electorate
             && (
-              (award().state == 'ROUND1_OPEN' && now() < award().round1.closeAt && validR1() && r2Unchanged())
-              || (award().state == 'ROUND2_OPEN' && now() < award().round2.closeAt && validR2() && r1Unchanged())
+              (round1Open() && request.resource.data.get('r2', null) == null)
+              || (round2Open() && request.resource.data.get('r1', null) == null)
+            );
+          // Cambio de voto: sólo se toca la ronda abierta; la otra queda como estaba.
+          allow update: if isActive() && memberId == myId() && myId() in award().electorate
+            && (
+              (round1Open() && request.resource.data.get('r2', null) == resource.data.get('r2', null))
+              || (round2Open() && request.resource.data.get('r1', null) == resource.data.get('r1', null))
             );
           allow delete: if false;
         }
 
         match /private/{doc} {
-          allow read, write: if isAdmin();
+          allow read, write: if isAgus();
         }
       }
 
-      match /ceremony/{doc} {
-        allow read: if isActive();
-        allow write: if isAdmin();
-      }
-
-      // ---------- Amigo invisible ----------
+      // ---------- Amigo invisible: participan todos; cada uno ve sólo a quién le regala ----------
       match /gift/{doc} {
-        allow read: if isActive();
+        allow read: if true;
         allow write: if isAdmin();
-      }
-
-      function campaign() {
-        return get(/databases/$(database)/documents/editions/$(slug)/gift/campaign).data;
-      }
-      function myAssignment() {
-        return get(/databases/$(database)/documents/editions/$(slug)/giftAssignments/$(myId())).data;
-      }
-      function iGiveTo(memberId) {
-        return exists(/databases/$(database)/documents/editions/$(slug)/giftAssignments/$(myId()))
-          && myAssignment().receiverId == memberId;
-      }
-
-      match /giftParticipants/{memberId} {
-        allow read: if isAdmin() || (isActive() && (memberId == myId() || iGiveTo(memberId)));
-        allow create: if isActive() && memberId == myId() && campaign().state == 'ENROLLMENT_OPEN';
-        allow update: if isActive() && memberId == myId()
-          && (campaign().state == 'ENROLLMENT_OPEN' || onlyKeys(['wishes', 'avoid', 'updatedAt']));
-        allow delete: if isAdmin();
       }
 
       match /giftAssignments/{giverId} {
         allow read: if isAdmin() || (isActive() && giverId == myId());
-        allow create, delete: if isAdmin();
-        allow update: if isAdmin()
-          || (isActive() && giverId == myId() && onlyKeys(['viewedAt', 'readyAt', 'deliveredAt', 'revealedAt', 'giverRevealedId']));
+        allow write: if isAdmin();
       }
 
-      match /giftReceived/{receiverId} {
-        allow read: if isAdmin() || (isActive() && receiverId == myId());
-        allow create, update: if isAdmin()
-          || (isActive() && receiverId == myId())
-          || (isActive() && iGiveTo(receiverId) && request.resource.data.giverRevealedId == myId()
-              && (resource == null || request.resource.data.receivedAt == resource.data.receivedAt));
-      }
-
-      // ---------- Tareas, gastos, transporte ----------
+      // ---------- Organización (sólo miembros) ----------
       match /tasks/{taskId} {
         allow read: if isActive();
         allow create, delete: if isAdmin();
@@ -243,19 +229,6 @@ service cloud.firestore {
               && request.resource.data.volunteers.size() <= resource.data.capacity);
       }
 
-      match /expenses/{expenseId} {
-        allow read: if isActive();
-        allow create: if isActive() && request.resource.data.payerId == myId() && request.resource.data.state == 'PROPOSED';
-        allow update, delete: if isAdmin();
-      }
-
-      match /settlements/{settlementId} {
-        allow read: if isActive();
-        allow create: if isActive() && request.resource.data.fromId == myId() && request.resource.data.state == 'PROPOSED';
-        allow update: if isAdmin() || (isActive() && resource.data.toId == myId() && onlyKeys(['state']));
-        allow delete: if isAdmin();
-      }
-
       match /transport/{entryId} {
         allow read: if isActive();
         allow create: if isActive() && request.resource.data.memberId == myId();
@@ -263,9 +236,12 @@ service cloud.firestore {
       }
 
       match /audit/{entryId} {
-        allow read, create: if isAdmin();
+        allow read: if isAdmin();
+        allow create: if isActive() && request.resource.data.actorId == myId();
         allow update, delete: if false;
       }
+
+      // Lo que no aparece acá (gastos, ceremonia, inscripción al regalo, restricciones) queda cerrado por defecto.
     }
   }
 }

@@ -1,5 +1,7 @@
 // Componentes básicos reutilizados en todas las pantallas.
-import { X } from 'lucide-react'
+import { LogIn, X } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { useMembers } from '../data/hooks'
 import { useEffect, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { colorFor, initials } from '../domain/format'
 
@@ -35,8 +37,9 @@ export function Pill({ children, tone = 'accent', className = '' }: { children: 
   return <span className={`pill ${t} ${className}`}>{children}</span>
 }
 
-export function Avatar({ id, alias, size = 32, color }: { id: string; alias: string; size?: number; color?: string }) {
+export function Avatar({ id, alias, size = 32, color, photo }: { id: string; alias: string; size?: number; color?: string; photo?: string | null }) {
   const bg = color ?? colorFor(id)
+  if (photo) return <img src={photo} alt="" width={size} height={size} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} aria-hidden />
   return (
     <span
       className="inline-flex items-center justify-center rounded-full font-extrabold shrink-0"
@@ -287,6 +290,26 @@ export function Segmented<T extends string>({ value, onChange, options, ariaLabe
           {o.label}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** Avatar de un miembro con su foto (si cargó una) o sus iniciales. */
+export function MemberAvatar({ id, size = 32 }: { id: string; size?: number }) {
+  const members = useMembers()
+  const m = members.byId[id]
+  return <Avatar id={id} alias={members.aliasOf(id)} size={size} color={m?.avatarColor} photo={m?.photo} />
+}
+
+/** Para visitantes: explica que hay que entrar y lleva al login, volviendo después a esta pantalla. */
+export function LoginPrompt({ text = 'Entrá con tu usuario para participar.' }: { text?: string }) {
+  const location = useLocation()
+  return (
+    <div className="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <p className="small">{text}</p>
+      <Link to="/entrar" state={{ from: location.pathname }} className="btn btn-gold btn-sm">
+        <LogIn size={16} /> Entrar
+      </Link>
     </div>
   )
 }

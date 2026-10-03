@@ -1,40 +1,52 @@
 // Datos de ejemplo del modo demo (sin Firebase). Sólo se cargan en memoria/localStorage.
-// Marcan miembros ficticios con mails @demo.test para que se pueda entrar como cualquiera.
-import { EDICION_ACTUAL, GRUPO } from '../content/config'
-import { P } from './paths'
-import type { MemoryAdapter } from './memoryAdapter'
+// Cada miembro de ejemplo tiene usuario = su alias en minúsculas y contraseña "demo123".
+import { EDICION_ACTUAL } from '../content/config'
+import { authEmailFor, normalizeUsername } from '../domain/accounts'
 import { defaultPosition } from '../domain/fmo'
-import { ensureEdition, ensureOwnerAndDrafts, newMember, slugify } from './seed'
-import type { BeverageProfile, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
+import { demoRegisterAccount } from './auth'
+import type { MemoryAdapter } from './memoryAdapter'
+import { P } from './paths'
+import { OWNER_ID, ensureEdition, ensureOwnerAndDrafts, slugify } from './seed'
+import type { BeverageProfile, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
 
-export const DEMO_OWNER_UID = 'demo-owner'
-
+export const DEMO_PASSWORD = 'demo123'
 export const DEMO_ACTIVE_ALIASES = ['Choclo', 'Facu', 'Felix', 'Marcos', 'Mateo', 'Nacho', 'Pato', 'Pipe', 'Santi', 'Tomi', 'Topo', 'Ucky']
 
-export function demoEmailFor(alias: string): string {
-  return `${slugify(alias)}@demo.test`
+/** Cuentas de ejemplo para el selector rápido del login demo. */
+export function demoAccounts(): Array<{ id: string; label: string; uid: string; email: string }> {
+  return [
+    { id: OWNER_ID, label: 'Agustín (administrador)', uid: 'demo-owner', email: authEmailFor('agustin', 'demo') },
+    ...DEMO_ACTIVE_ALIASES.map((a) => ({ id: 'm-' + slugify(a), label: a === 'Facu' ? 'Facu (presidente)' : a, uid: 'demo-m-' + slugify(a), email: authEmailFor(normalizeUsername(a), 'demo') })),
+  ]
 }
 
 export async function seedDemo(db: MemoryAdapter) {
   if (db.size > 0) return
   const now = Date.now()
   const slug = EDICION_ACTUAL.slug
-  await ensureOwnerAndDrafts(db, DEMO_OWNER_UID, GRUPO.ownerEmail)
+  await ensureOwnerAndDrafts(db)
   await ensureEdition(db)
 
-  // Activar algunos miembros con mail ficticio.
-  for (const alias of DEMO_ACTIVE_ALIASES) {
-    const id = 'm-' + slugify(alias)
-    const existing = await db.getDoc<Member>(P.member(id))
-    await db.setDoc(P.member(id), {
-      ...(existing ?? newMember(id, alias, now)),
+  // Cuentas de ejemplo: el propietario y algunos miembros activos.
+  const birthdays: Record<string, { d: number; m: number }> = { owner: { d: 14, m: 3 }, 'm-choclo': { d: 5, m: 10 }, 'm-facu': { d: 22, m: 10 }, 'm-pato': { d: 9, m: 12 }, 'm-felix': { d: 30, m: 1 }, 'm-nacho': { d: 18, m: 7 } }
+  const prefs: Record<string, string> = { 'm-pato': 'Algo para el asado: cuchillo, tabla, delantal.', 'm-choclo': 'Remeras de fútbol, birra artesanal.', 'm-facu': 'Libros de historia y vinos.' }
+  for (const acc of demoAccounts()) {
+    const username = acc.email.split('.demo@')[0]
+    const existing = await db.getDoc<Member>(P.member(acc.id))
+    if (!existing) continue
+    await db.setDoc<Member>(P.member(acc.id), {
+      ...existing,
       status: 'active',
-      hasEmail: true,
-      uid: 'demo-' + id,
-      vao: ['Choclo', 'Facu', 'Marcos', 'Pato', 'Pipe', 'Tomi'].includes(alias),
+      hasLogin: true,
+      profileDone: acc.id !== 'm-mateo',
+      birthday: birthdays[acc.id] ?? null,
+      giftPrefs: prefs[acc.id] ?? '',
+      vao: ['m-choclo', 'm-facu', 'm-marcos', 'm-pato', 'm-pipe', 'm-tomi'].includes(acc.id),
     })
-    await db.setDoc<MemberPrivate>(P.memberPrivate(id), { email: demoEmailFor(alias), invitedAt: now })
-    await db.setDoc(P.uid('demo-' + id), { memberId: id })
+    await db.setDoc(P.uid(acc.uid), { memberId: acc.id })
+    await db.setDoc<LoginDoc>(P.login(username), { memberId: acc.id, email: acc.email })
+    await db.setDoc<MemberPrivate>(P.memberPrivate(acc.id), { username, authEmail: acc.email, uid: acc.uid, birthYear: 1990, updatedAt: now })
+    demoRegisterAccount(acc.email, acc.uid, DEMO_PASSWORD)
   }
 
   // Respuestas de ejemplo a la consulta real de fechas (la crea ensureEdition).
@@ -96,12 +108,9 @@ export async function seedDemo(db: MemoryAdapter) {
     await db.setDoc(P.rsvp(slug, id), r)
   }
 
-  // Regalo: monto ya definido y dos anotados, para poder probar el sorteo.
+  // Regalo: monto de referencia ya definido.
   await db.updateDoc(P.gift(slug), { amountCents: 10000000, updatedAt: now })
   await db.updateDoc(P.edition(slug), { 'decisions.regalo': { status: 'CONFIRMED', label: '$ 100.000', confirmedBy: 'owner', confirmedAt: now } })
-  for (const id of ['m-choclo', 'm-pato']) {
-    await db.setDoc(P.giftParticipant(slug, id), { accepted: true, acceptedBudgetVersion: 1, attending: true, delegateId: null, wishes: id === 'm-pato' ? 'Algo para el asado' : '', avoid: '', updatedAt: now })
-  }
 
   // FMO: un invitado y dos partidos de ejemplo.
   await db.setDoc(P.fmoGuest('g-demo-primo'), { id: 'g-demo-primo', name: 'Primo de Topo', createdBy: 'm-topo', createdAt: now, updatedAt: now })
@@ -123,7 +132,7 @@ export async function seedDemo(db: MemoryAdapter) {
     label: 'Asado en lo de Topo',
     detail: 'Topo tiene parrilla y lugar para 25.',
     state: 'PENDING',
-    votes: { 'm-nacho': 'up', 'm-pato': 'up', 'm-felix': 'down' },
+    votes: { 'm-nacho': 'up', 'm-pato': 'up', 'm-felix': 'down', 'm-choclo': 'up' },
     createdAt: now - 7200000,
     updatedAt: now - 7200000,
   })

@@ -7,17 +7,17 @@ import { P } from '../data/paths'
 import type { Poll, Rsvp, TransportEntry } from '../data/types'
 import { formatArs } from '../domain/expenses'
 import { fmtDayLong, fmtTime } from '../domain/format'
-import { Button, Card, Field, Input, Loading, Notice, PageHeader, Pill, Section } from '../ui/components'
+import { Button, Card, Field, Input, Loading, LoginPrompt, Notice, PageHeader, Pill, Section } from '../ui/components'
 import { PollCard } from '../ui/PollCard'
 import { ProposalsBoard } from '../ui/Proposals'
 import { useToast } from '../ui/toast'
 
 export function Agenda() {
-  const { slug, memberId, db } = useSession()
+  const { slug, memberId, db, isMember } = useSession()
   const { data: edition, loading } = useEdition()
   const members = useMembers()
   const { rows: polls } = useCollection<Poll>(P.polls(slug), [{ field: 'kind', op: '==', value: 'afterparty' }])
-  const myRsvp = useDoc<Rsvp>(memberId ? P.rsvp(slug, memberId) : null)
+  const myRsvp = useDoc<Rsvp>(isMember && memberId ? P.rsvp(slug, memberId) : null)
   if (loading || !edition) return <Loading />
   const hasDate = !!edition.date.startsAt
   const visiblePolls = polls.filter((p) => p.state !== 'DRAFT' && p.state !== 'VOID')
@@ -53,7 +53,7 @@ export function Agenda() {
 
   return (
     <div>
-      <PageHeader eyebrow="Esta edición" title="Agenda y salida" intro={hasDate ? 'La noche, paso a paso.' : 'Secuencia borrador. Los horarios se publican cuando haya fecha oficial.'} actions={hasDate ? <Button variant="line" onClick={icsDownload}>Agregar al calendario</Button> : null} />
+      <PageHeader eyebrow={edition.title} title="Agenda y salida" intro={hasDate ? 'La noche, paso a paso.' : 'Secuencia borrador. Los horarios se publican cuando haya fecha oficial.'} actions={hasDate ? <Button variant="line" onClick={icsDownload}>Agregar al calendario</Button> : null} />
 
       <Card>
         {hasDate ? (
@@ -96,7 +96,7 @@ export function Agenda() {
             ) : null}
           </Card>
         ) : null}
-        <Card className="mb-3">
+        <Card className={isMember ? 'mb-3' : 'hidden'}>
           <p className="small muted">Tu plan después de comer: {myRsvp.data?.afterparty === 'JOIN' ? 'me sumo a salir' : myRsvp.data?.afterparty === 'LEAVE_AFTER_DINNER' ? 'me vuelvo después de comer' : myRsvp.data?.afterparty === 'STAY_AWARDS' ? 'me quedo hasta los premios' : 'sin definir'}. Se cambia desde Fecha y asistencia.</p>
         </Card>
         {visiblePolls.map((p) => (
@@ -105,11 +105,11 @@ export function Agenda() {
             {p.audience === 'AFTERPARTY' ? <p className="tiny muted mt-1">Votan sólo quienes marcaron "Me sumo a salir".</p> : null}
           </div>
         ))}
-        <ProposalsBoard types={['afterparty']} title="A dónde seguimos" intro="Proponé un lugar para después; la banda lo vota con 👍 o 👎." placeholder="ej. Bar de Topo" />
+        <ProposalsBoard type="afterparty" title="A dónde seguimos" decisionKey="salida" placeholder="ej. Bar de Topo" />
       </Section>
 
       <Section title="Transporte">
-        <Transport memberId={memberId} db={db} slug={slug} aliasOf={members.aliasOf} />
+        {isMember ? <Transport memberId={memberId} db={db} slug={slug} aliasOf={members.aliasOf} /> : <LoginPrompt text="Entrá para coordinar quién lleva a quién." />}
       </Section>
     </div>
   )

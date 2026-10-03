@@ -1,71 +1,52 @@
-# La Banda del cerrucho · Cena de fin de año
+# La Banda del cerrucho
 
-Web privada para organizar la comida anual con amigos: fecha, comida y lugar (propuestas con 👍/👎), bebidas y lista de compras, amigo invisible, premios con ballotage, tareas, galería, archivo y FMO (fútbol de la banda).
+La web permanente de la banda: portada, **Comida anual** (fecha con calendario, lugar y comida con 👍/👎, bebidas, amigo invisible, premios, agenda y tareas), **FMO** (fútbol de la banda) y **Cumpleaños**. Pensada para usarse desde el celular.
 
 - **Web:** https://tingas-10.github.io/cerrucho-comida-anual-2026/
 - **Hosting:** GitHub Pages (se publica solo con cada push a `main`).
-- **Datos y login:** Firebase plan gratis (Auth por link de mail + Firestore). Sin Firebase, la web corre en **modo demostración** con datos ficticios y nada se guarda.
-- **Fotos:** viven en el repo (`public/galeria/`), sin costo.
+- **Datos y acceso:** Firebase plan gratis (Auth + Firestore). Sin Firebase, la web corre en **modo demostración** con datos ficticios y nada se guarda.
+- **Fotos de la galería:** viven en el repo (`public/galeria/`). Las fotos de perfil se guardan chiquitas (160 px) dentro de Firestore, sin costo.
 
-## Puesta en marcha (una sola vez)
+## Quién ve y hace qué
 
-### 1. Crear el proyecto de Firebase
+| Rol | Quién | Puede |
+| --- | --- | --- |
+| Visitante | Cualquiera con el link, sin entrar | Mirar portada, comida anual (fecha, lugar, comida, regalo, premios sin resultados), FMO y cumpleaños. No vota ni edita. |
+| Miembro | Cada integrante, con usuario y contraseña | Responder fechas, votar 👍/👎, proponer lugar o comida, cargar bebidas, ver a quién le regala, votar premios dentro del período, editar su perfil. |
+| Presidente | Facu Caputo (se cambia en Administración → Miembros) | Lo mismo que un miembro, más **confirmar fecha, lugar y comida** como definitivos. |
+| Administrador | Agus | Todo: usuarios y contraseñas, fechas candidatas, sorteo del amigo invisible, períodos de votación. **Sólo Agus ve los resultados de los premios.** |
 
-1. Entrá a https://console.firebase.google.com con tu cuenta personal de Google y creá un proyecto nuevo (por ejemplo `cerrucho-cena`). Desactivá Google Analytics si te lo ofrece.
-2. **Authentication → Comenzar → Email/Password → activá "Email link (sin contraseña)"** y guardá.
-3. **Authentication → Settings → Authorized domains → Add domain:** `tingas-10.github.io`.
-4. **Firestore Database → Crear base de datos → modo producción**, región `southamerica-east1` (San Pablo).
-5. **Configuración del proyecto (engranaje) → Tus apps → Web (`</>`) → registrá la app** con cualquier apodo. Te muestra un bloque `firebaseConfig` con `apiKey`, `authDomain`, `projectId`, `appId`, etc. **Copialo entero y pegáselo a Claude en el chat.** Claude lo deja en `src/firebase/firebase.config.json` y lo publica.
-
-### 2. Publicar las reglas de seguridad
-
-Las reglas protegen los datos (votos, destinatarios, mails). Están en `firestore.rules`. Para publicarlas hay dos caminos:
-
-- **Fácil (sin terminal):** en la consola de Firebase, **Firestore Database → Reglas**, borrá todo, pegá el contenido de `firestore.rules` y tocá **Publicar**.
-- **Con terminal:** desde la carpeta del repo:
-
-```bash
-npx firebase-tools login
-```
-
-```bash
-npx firebase-tools use --add
-```
-
-```bash
-npx firebase-tools deploy --only firestore:rules
-```
-
-Cada vez que Claude cambie `firestore.rules`, hay que volver a publicarlas (Claude te avisa).
-
-### 3. Activar GitHub Pages
-
-En el repo de GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Listo: cada push a `main` corre los tests, construye la web y la publica.
-
-### 4. Primer ingreso
-
-Entrá a la web con `agustin@abndigital.com.ar`. Te llega un link al mail; al abrirlo, la app crea tu usuario de propietario, la edición 2026, las categorías de premios, las tareas en borrador y los 23 alias del grupo como borradores sin mail. Desde **Administración → Miembros** cargás los mails (uno por uno o pegando una lista `alias, mail`). Nadie puede entrar hasta que tenga mail cargado.
-
-No se mandan mails automáticos: el link de la web se comparte por el grupo de WhatsApp (hay un botón "Copiar invitación para WhatsApp").
+Las reglas de `firestore.rules` hacen cumplir esto en el servidor, no sólo en pantalla.
 
 ## Cómo funciona el acceso
 
-- Login **sin contraseña**: ingresás el mail, te llega un link (vence a la hora), lo abrís y entrás. Si abrís el link en otro dispositivo, te pide confirmar el mail.
-- Sólo entran mails cargados por Agus como **miembros activos**. Cualquier otro mail ve "Ese mail no tiene invitación activa".
-- El administrador es el dueño del mail fijado en `firestore.rules` y en `src/content/config.ts`.
+- **Usuario y contraseña, sin mail.** Agus crea los usuarios desde **Administración → Miembros** ("Crear los N usuarios" o uno por uno) y la web le muestra un texto listo para pasar por WhatsApp.
+- Por dentro, Firebase necesita un mail: la web usa uno interno inventado (`usuario.xxxxxx@miembros.cerrucho.invalid`) que nadie ve ni recibe.
+- **Resetear contraseña:** Agus toca "Resetear contraseña" y la web genera una nueva. Nadie ve la contraseña vieja (por dentro se crea una cuenta de acceso nueva y la vieja queda desconectada).
+- Cada miembro puede cambiar su contraseña desde **Mi perfil**.
+- En el primer ingreso se pide el cumpleaños (día y mes los ve la banda; el año queda privado) y, opcionalmente, foto y contraseña propia.
+
+## Datos que se conservan entre años
+
+Miembros, cumpleaños, gustos, fotos, FMO y archivo de ediciones viven fuera de la edición. Cada comida anual es una edición nueva (`EDICION_ACTUAL` en `src/content/config.ts`).
 
 ## Checklist del organizador
 
-1. Cargar mails de los miembros y marcar quién participa este año (Administración → Miembros). El VAO todavía no está en la web.
-2. La consulta de fechas (jueves, viernes y sábados del 5/11 al 19/12) ya está abierta desde el primer ingreso; en Decisiones la cerrás cuando quieras.
-3. Cerrar la consulta y **confirmar la fecha** (o fijarla desde Edición). Eso abre el RSVP.
-4. Aprobar propuestas de comida y lugar, publicar las consultas y confirmar las decisiones. Cargar lugar, menú, agenda y salida en Edición.
-5. Regalo: confirmar monto (consulta o a mano), **abrir inscripción**, cerrarla y **sortear**. El sorteo corre una sola vez en tu navegador; vos no ves el mapa salvo con acceso reservado (queda registrado).
-6. Premios: abrir primera ronda (todas las categorías), cerrar (se cuentan y sellan sin mostrarse), abrir ballotage si hace falta, cerrar.
-7. Bebidas: revisar lista de compras, stock, precios y responsables; cerrar con snapshot.
-8. Tareas: publicar y asignar lo que falte.
-9. La noche: desde Administración → Premios, tocá **Revelar** en cada categoría cuando la anuncies; recién ahí la banda lo ve en Premios.
-10. Archivar la edición y crear la siguiente (Edición → Cierre).
+1. **Crear tu propio usuario primero** (Administración → Miembros → tarjeta Agustín → Crear usuario), cerrar sesión y entrar con él.
+2. "Crear los N usuarios" y pasar la lista por WhatsApp.
+3. Fechas: la banda marca Puedo / No puedo / Capaz en el calendario; el presidente confirma la fecha.
+4. Lugar y comida: la banda propone y vota con 👍/👎; el presidente confirma.
+5. Amigo invisible: fijar monto y tocar **Sortear** (entra toda la banda). Cada uno ve sólo a quién le regala.
+6. Premios: programar el período de votación (abre y cierra solo). Al cierre, **Contar votos**: el resultado lo ves sólo vos.
+7. Archivar la edición y crear la siguiente (Edición → Cierre).
+
+## Reglas de seguridad
+
+Están en `firestore.rules`. Se prueban con el probador oficial de Firebase (36 casos por rol) y se publican con el Firebase CLI logueado con la cuenta dueña del proyecto:
+
+```bash
+npx firebase-tools deploy --only firestore:rules --project cerrucho-comida-anual-2026
+```
 
 ## Desarrollo
 
@@ -81,13 +62,11 @@ npm run dev
 npm test
 ```
 
-`npm run build` hace typecheck y genera `dist/`. Sin `firebase.config.json` real, el dev server corre en modo demo (podés entrar como Agus o como cualquier miembro ficticio; el botón "Reiniciar demo" borra los datos locales).
+`npm run build` hace typecheck y genera `dist/`. Con `VITE_DEMO=1` el dev server corre en modo demo: botones de entrada rápida para cada rol (contraseña demo `demo123`).
 
 ## Limitaciones conocidas (decisiones por costo cero)
 
-- **Sin servidor propio.** Firebase gratis no incluye Cloud Functions, así que el conteo de premios y el sorteo corren en el navegador del administrador al cerrar. El código no muestra los resultados, pero técnicamente pasan por su navegador. Las reglas de Firestore sí impiden que cualquier miembro lea boletas ajenas, resultados sellados o destinatarios ajenos.
-- **Sin mails de aviso.** Sólo se manda el mail de acceso (Firebase). Novedades y recordatorios se comparten por WhatsApp con los botones "Copiar".
-- **Sin subida de fotos desde la web.** Firebase Storage requiere plan pago. Las fotos se mandan por WhatsApp y Agus (o Claude) las agrega al repo.
-- **Plazos.** No hay un reloj en servidor que cierre solo las votaciones: las reglas rechazan votos después de la hora de cierre, y el administrador las cierra con un botón.
-- **Reautenticación reservada.** El acceso a información reservada pide motivo y queda auditado, pero no exige un segundo código por mail.
-- **Cuota gratis.** 50.000 lecturas y 20.000 escrituras por día en Firestore. Alcanza de sobra para 25 personas; si alguien ajeno abusara, la web deja de responder hasta el día siguiente (sin costo).
+- **Sin servidor propio.** Firebase gratis no incluye Cloud Functions, así que el conteo de premios y el sorteo corren en el navegador del administrador. Las reglas impiden que cualquier otro lea boletas ajenas, resultados sellados o destinatarios ajenos.
+- **Sin mails ni avisos automáticos.** Todo se comparte por WhatsApp con los botones "Copiar".
+- **Sin subida de fotos a la galería desde la web.** Firebase Storage requiere plan pago. Las fotos se mandan por WhatsApp y Agus (o Claude) las agrega al repo.
+- **Cuota gratis.** 50.000 lecturas y 20.000 escrituras por día en Firestore. Alcanza de sobra para la banda.

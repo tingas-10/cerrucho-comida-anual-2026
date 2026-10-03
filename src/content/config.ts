@@ -67,6 +67,18 @@ export const MIEMBROS_INICIALES: Array<{ alias: string; nombre: string }> = [
   { alias: 'Thomas', nombre: 'Thomas Warner' },
 ]
 
+// Presidente inicial (puede confirmar fecha, lugar y comida). Se cambia desde Administración > Miembros.
+export const PRESIDENTE_INICIAL = 'm-facu'
+
+// Acceso: usuario y contraseña, sin mail. Por dentro, Firebase necesita un mail: se arma uno
+// inventado con este dominio reservado (.invalid nunca existe ni recibe mails).
+export const LOGIN_DOMINIO_INTERNO = 'miembros.cerrucho.invalid'
+export const PASSWORD_MIN = 6
+
+// Opciones iniciales de la comida anual (las carga el administrador; la banda suma las suyas).
+export const LUGARES_INICIALES = ['El galpón de Pipe', 'Lo del Cufa', 'El SUM de Oliden Joven de Tingas']
+export const COMIDAS_INICIALES = ['Picada más asado', 'Picada grande']
+
 // Compatibilidad: lista de alias (derivada de MIEMBROS_INICIALES).
 export const ALIAS_INICIALES = MIEMBROS_INICIALES.map((m) => m.alias)
 

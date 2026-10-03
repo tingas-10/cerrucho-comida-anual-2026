@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 import { DataProvider } from './data/DataContext'
+import { MembersProvider } from './data/hooks'
 import './index.css'
 import { applyTheme } from './ui/theme'
 import { ToastProvider } from './ui/toast'
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
     <HashRouter>
       <ToastProvider>
         <DataProvider>
-          <App />
+          <MembersProvider>
+            <App />
+          </MembersProvider>
         </DataProvider>
       </ToastProvider>
     </HashRouter>

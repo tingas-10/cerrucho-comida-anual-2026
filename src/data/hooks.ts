@@ -1,5 +1,5 @@
 // Hooks de lectura en vivo sobre el adaptador de datos.
-import { useEffect, useMemo, useState } from 'react'
+import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { QueryFilter, WithId } from './adapter'
 import { useSession } from './DataContext'
 import { P } from './paths'
@@ -70,7 +70,21 @@ export interface MembersIndex {
   loading: boolean
 }
 
+const MembersCtx = createContext<MembersIndex | null>(null)
+
+/** Una sola suscripción a los miembros para toda la app. */
+export function MembersProvider({ children }: { children: ReactNode }) {
+  const value = useMembersQuery()
+  return createElement(MembersCtx.Provider, { value }, children)
+}
+
 export function useMembers(): MembersIndex {
+  const ctx = useContext(MembersCtx)
+  if (!ctx) throw new Error('useMembers fuera de MembersProvider')
+  return ctx
+}
+
+function useMembersQuery(): MembersIndex {
   const { rows, loading } = useCollection<Member>(P.members)
   return useMemo(() => {
     const byId: Record<string, WithId<Member>> = {}

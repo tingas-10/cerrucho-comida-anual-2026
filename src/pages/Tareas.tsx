@@ -8,14 +8,14 @@ import { useCollection, useDoc, useMembers } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Checklist, Task } from '../data/types'
 import { fmtDayShort } from '../domain/format'
-import { Avatar, Button, Card, Empty, Loading, PageHeader, Pill, Section } from '../ui/components'
+import { Avatar, Button, Card, Empty, Loading, LoginPrompt, PageHeader, Pill, Section } from '../ui/components'
 import { useToast } from '../ui/toast'
 
 export function Tareas() {
-  const { db, slug, memberId } = useSession()
+  const { db, slug, memberId, isMember } = useSession()
   const toast = useToast()
   const members = useMembers()
-  const { rows, loading } = useCollection<Task>(P.tasks(slug))
+  const { rows, loading } = useCollection<Task>(isMember ? P.tasks(slug) : null)
   const [busy, setBusy] = useState<string | null>(null)
   const tasks = rows.filter((t) => t.status === 'OPEN' || t.status === 'DONE').sort((a, b) => a.order - b.order)
 
@@ -62,6 +62,7 @@ export function Tareas() {
     }
   }
 
+  if (!isMember) return <LoginPrompt text="Las tareas y compras son para la banda: entrá con tu usuario." />
   if (loading) return <Loading />
   return (
     <div>

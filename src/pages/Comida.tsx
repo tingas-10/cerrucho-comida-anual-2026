@@ -1,88 +1,58 @@
-// Comida y lugar: decisiones oficiales, votaciones y propuestas con pulgares.
-import { useSession } from '../data/DataContext'
-import { useCollection, useEdition, useMembers } from '../data/hooks'
-import { P } from '../data/paths'
-import type { Poll } from '../data/types'
+// Lugar y comida: lo confirmado arriba (o "A definir") y abajo las opciones para votar.
+import { useEdition, useMembers } from '../data/hooks'
 import { formatArs } from '../domain/expenses'
-import { Card, Loading, PageHeader, Pill, Section } from '../ui/components'
-import { PollCard } from '../ui/PollCard'
+import { Card, Loading, PageHeader, Pill } from '../ui/components'
 import { ProposalsBoard } from '../ui/Proposals'
 
 export function Comida() {
-  const { slug } = useSession()
   const { data: edition, loading } = useEdition()
   const members = useMembers()
-  const { rows: polls } = useCollection<Poll>(P.polls(slug))
   if (loading || !edition) return <Loading />
-  const visible = polls.filter((p) => ['venue', 'food', 'custom'].includes(p.kind) && p.state !== 'DRAFT' && p.state !== 'VOID')
+  const lugar = edition.decisions?.lugar
+  const menu = edition.decisions?.menu
   return (
     <div>
-      <PageHeader eyebrow="Esta edición" title="Comida y lugar" intro="Dos decisiones separadas: dónde y qué comemos. Proponé, votá con el dedito y Agus confirma la oficial." />
+      <PageHeader eyebrow={edition.title} title="Lugar y comida" intro="Votá con el dedito las opciones que te gustan. Facu, como presidente, confirma las definitivas mirando la votación." />
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 gap-3">
         <Card>
-          <div className="flex justify-between items-center">
-            <p className="h3">Lugar</p>
-            {edition.venue ? <Pill tone={edition.venue.reserved ? 'ok' : 'warn'}>{edition.venue.reserved ? 'Reservado' : 'Pendiente de reserva'}</Pill> : <Pill tone="muted">Sin definir</Pill>}
+          <div className="flex justify-between items-center gap-2">
+            <p className="eyebrow">Lugar</p>
+            {edition.venue ? <Pill tone="ok">Confirmado</Pill> : <Pill tone="muted">A definir</Pill>}
           </div>
           {edition.venue ? (
-            <div className="mt-2 small">
-              <p className="font-semibold text-base">{edition.venue.name}</p>
+            <div className="mt-1 small">
+              <p className="font-bold text-lg">{edition.venue.name}</p>
               {edition.venue.address ? <p className="muted">{edition.venue.address}</p> : null}
-              {edition.venue.link ? (
-                <a className="text-accent underline" href={edition.venue.link} target="_blank" rel="noopener noreferrer">
-                  Ver link
-                </a>
-              ) : null}
-              {typeof edition.venue.costPerPersonCents === 'number' ? <p className="mt-1">Costo estimado: {formatArs(edition.venue.costPerPersonCents)} por persona</p> : null}
-              {edition.venue.capacity ? <p className="muted">Capacidad: {edition.venue.capacity}</p> : null}
-              {edition.venue.responsibleId ? <p className="muted">Responsable: {members.aliasOf(edition.venue.responsibleId)}</p> : null}
-              {edition.venue.notes ? <p className="mt-1">{edition.venue.notes}</p> : null}
+              {typeof edition.venue.costPerPersonCents === 'number' ? <p>Costo estimado: {formatArs(edition.venue.costPerPersonCents)} por persona</p> : null}
+              {lugar?.confirmedBy ? <p className="tiny muted mt-1">Confirmó {members.aliasOf(lugar.confirmedBy)}</p> : null}
             </div>
           ) : (
-            <p className="small muted mt-2">Todavía no hay lugar confirmado.</p>
+            <p className="small muted mt-1">Todavía no se confirmó.</p>
           )}
         </Card>
         <Card>
-          <div className="flex justify-between items-center">
-            <p className="h3">Menú</p>
-            {edition.menu ? <Pill tone="ok">Confirmado</Pill> : <Pill tone="muted">Sin definir</Pill>}
+          <div className="flex justify-between items-center gap-2">
+            <p className="eyebrow">Comida</p>
+            {edition.menu ? <Pill tone="ok">Confirmada</Pill> : <Pill tone="muted">A definir</Pill>}
           </div>
           {edition.menu ? (
-            <div className="mt-2 small">
-              <p className="font-semibold text-base">{edition.menu.name}</p>
+            <div className="mt-1 small">
+              <p className="font-bold text-lg">{edition.menu.name}</p>
               {edition.menu.modality ? <p className="muted">{edition.menu.modality}</p> : null}
-              {typeof edition.menu.costPerPersonCents === 'number' ? <p className="mt-1">Costo estimado: {formatArs(edition.menu.costPerPersonCents)} por persona</p> : null}
-              {edition.menu.includes ? <p className="mt-1">Incluye: {edition.menu.includes}</p> : null}
-              {edition.menu.responsibleId ? <p className="muted">Responsable: {members.aliasOf(edition.menu.responsibleId)}</p> : null}
+              {typeof edition.menu.costPerPersonCents === 'number' ? <p>Costo estimado: {formatArs(edition.menu.costPerPersonCents)} por persona</p> : null}
+              {menu?.confirmedBy ? <p className="tiny muted mt-1">Confirmó {members.aliasOf(menu.confirmedBy)}</p> : null}
             </div>
           ) : (
-            <p className="small muted mt-2">Todavía no hay menú confirmado.</p>
+            <p className="small muted mt-1">Todavía no se confirmó.</p>
           )}
         </Card>
       </div>
 
-      {visible.length ? (
-        <Section title="Votaciones">
-          <div className="grid gap-4">
-            {visible.map((p) => (
-              <PollCard key={p.id} poll={p} aliasOf={members.aliasOf} />
-            ))}
-          </div>
-        </Section>
-      ) : null}
-
-      <Section title="Propuestas">
-        <ProposalsBoard
-          types={['food', 'venue']}
-          typeOptions={[
-            { value: 'food', label: 'Comida' },
-            { value: 'venue', label: 'Lugar' },
-          ]}
-          intro="Lo que proponés lo ve toda la banda al instante y lo vota con 👍 o 👎. Agus confirma la opción oficial."
-          placeholder="ej. Asado en lo de Topo"
-        />
-      </Section>
+      <div className="grid lg:grid-cols-2 gap-4 mt-6">
+        <ProposalsBoard type="venue" title="Lugares" decisionKey="lugar" placeholder="ej. Quincho de Topo" />
+        <ProposalsBoard type="food" title="Comidas" decisionKey="menu" placeholder="ej. Pizzas a la parrilla" />
+      </div>
     </div>
   )
 }

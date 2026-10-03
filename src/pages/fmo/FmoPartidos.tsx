@@ -13,7 +13,7 @@ import { useToast } from '../../ui/toast'
 import { FmoTabs, useFmoMatches, useFmoPlayers } from './fmoShared'
 
 export function FmoPartidos() {
-  const { db, memberId } = useSession()
+  const { db, memberId, isMember } = useSession()
   const toast = useToast()
   const navigate = useNavigate()
   const { rows, loading } = useFmoMatches()
@@ -47,14 +47,16 @@ export function FmoPartidos() {
         title="Partidos"
         intro="Armá los equipos en la canchita, cargá los goles al terminar y guardá el partido. Cualquiera de la banda puede crear y editar."
         actions={
-          <Button variant="gold" onClick={() => void create()} loading={busy}>
-            Nuevo partido
-          </Button>
+          isMember ? (
+            <Button variant="gold" onClick={() => void create()} loading={busy}>
+              Nuevo partido
+            </Button>
+          ) : null
         }
       />
       <FmoTabs />
 
-      {drafts.length ? (
+      {isMember && drafts.length ? (
         <Section title="Armados, sin jugar" className="mt-0">
           <div className="grid sm:grid-cols-2 gap-3">
             {drafts.map((m) => (
@@ -89,7 +91,7 @@ export function FmoPartidos() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <p className="tiny muted">{fmtDayLong(m.playedAt)}</p>
                     <Link to={`/fmo/partido/${m.id}`} className="tiny underline text-accent">
-                      Ver o editar
+                      {isMember ? 'Ver o editar' : 'Ver'}
                     </Link>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-2">

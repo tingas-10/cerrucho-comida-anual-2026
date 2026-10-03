@@ -8,10 +8,10 @@ import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
 import { electorateOf, useCollection, useDoc, useDocs, useEdition, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
-import type { Award, Ballot, BeverageProfile, GiftCampaign, GiftParticipant, Member, Poll, PollResponse, Proposal, Rsvp, Task } from '../data/types'
+import type { Award, Ballot, BeverageProfile, Member, Poll, PollResponse, Rsvp, Task } from '../data/types'
 import { countdown, fmtDayLong, fmtTime, timeLeft } from '../domain/format'
 import { isPollOpen, participation } from '../domain/polls'
-import { Button, Card, Loading, Pill, Section } from '../ui/components'
+import { Button, Card, Loading, LoginPrompt, Pill, Section } from '../ui/components'
 import { useToast } from '../ui/toast'
 
 const BASE = import.meta.env.BASE_URL
@@ -26,19 +26,17 @@ interface Pending {
 }
 
 export function Inicio() {
-  const { slug, memberId, isAdmin } = useSession()
+  const { slug, memberId: sessionMemberId, isAdmin, isMember } = useSession()
+  const memberId = isMember ? sessionMemberId : null
   const now = useNow()
   const { data: edition, loading } = useEdition()
   const members = useMembers()
   const { rows: polls } = useCollection<Poll>(P.polls(slug))
   const { rows: awards } = useCollection<Award>(P.awards(slug))
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
-  const { rows: tasks } = useCollection<Task>(P.tasks(slug))
-  const { rows: proposals } = useCollection<Proposal>(P.proposals(slug))
-  const { data: gift } = useDoc<GiftCampaign>(P.gift(slug))
+  const { rows: tasks } = useCollection<Task>(isMember ? P.tasks(slug) : null)
   const myRsvp = useDoc<Rsvp>(memberId ? P.rsvp(slug, memberId) : null)
   const myBev = useDoc<BeverageProfile>(memberId ? P.beverage(slug, memberId) : null)
-  const myGift = useDoc<GiftParticipant>(memberId ? P.giftParticipant(slug, memberId) : null)
   const openPolls = polls.filter((p) => isPollOpen(p, now) && memberId && electorateOf(p, members).includes(memberId))
   const { docs: myResponses } = useDocs<PollResponse>(memberId ? openPolls.map((p) => P.response(slug, p.id, memberId)) : [])
   const openAwards = awards.filter((a) => (VAO_ACTIVO || a.eligibility !== 'VAO') && (a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN') && memberId && a.electorate.includes(memberId))
@@ -59,22 +57,20 @@ export function Inicio() {
         out.push({ key: 'rsvp', title: r ? 'Reconfirmá tu asistencia' : 'Confirmá si venís', text: r ? 'Cambió el plan: hay que volver a confirmar.' : `${fmtDayLong(edition.date.startsAt)} · ${fmtTime(edition.date.startsAt)} h`, to: `${e}/fecha`, closeAt: null, cta: 'Confirmar' })
       }
       if (edition.beverage.state === 'OPEN' && !myBev.data && (r?.status === 'YES' || !r)) {
-        out.push({ key: 'bev', title: 'Qué vas a tomar', text: 'Repartí el 100% y estimá tus porciones para calcular compras.', to: `${e}/bebidas`, closeAt: edition.beverage.closeAt ?? null, cta: 'Completar' })
+        out.push({ key: 'bev', title: 'Qué vas a tomar', text: 'Cuánto y qué tomás, para calcular las compras.', to: `${e}/bebidas`, closeAt: edition.beverage.closeAt ?? null, cta: 'Completar' })
       }
-    }
-    if (gift?.state === 'ENROLLMENT_OPEN' && !myGift.data?.accepted) {
-      out.push({ key: 'gift', title: 'Amigo invisible: ¿te sumás?', text: 'Aceptá el monto y la fecha límite para entrar al sorteo.', to: `${e}/amigo-invisible`, closeAt: gift.enrollCloseAt, cta: 'Me sumo' })
     }
     const missingR1 = openAwards.filter((a) => a.state === 'ROUND1_OPEN' && !myBallots[P.ballot(slug, a.code, memberId)]?.r1)
     const missingR2 = openAwards.filter((a) => a.state === 'ROUND2_OPEN' && !myBallots[P.ballot(slug, a.code, memberId)]?.r2)
     if (missingR1.length) out.push({ key: 'awards1', title: `Premios: te faltan ${missingR1.length} categorías`, text: 'Un voto por categoría. Nadie ve tu voto.', to: `${e}/premios`, closeAt: Math.min(...missingR1.map((a) => a.round1?.closeAt ?? Infinity)) || null, cta: 'Votar' })
+    // (las categorías programadas para más adelante no cuentan como pendientes hasta que abren)
     if (missingR2.length) out.push({ key: 'awards2', title: `Ballotage: ${missingR2.length} categorías`, text: 'Segunda vuelta entre los finalistas.', to: `${e}/premios`, closeAt: Math.min(...missingR2.map((a) => a.round2?.closeAt ?? Infinity)) || null, cta: 'Votar' })
     for (const t of tasks) {
       const v = t.volunteers?.[memberId]
       if (v && v.status === 'OFFERED' && t.status === 'OPEN') out.push({ key: 'task-' + t.id, title: `Te comprometiste: ${t.title}`, text: 'Marcá cuando esté hecho.', to: `${e}/tareas`, closeAt: t.dueAt ?? null, cta: 'Ver tarea' })
     }
     return out.sort((a, b) => (a.closeAt ?? Infinity) - (b.closeAt ?? Infinity)).slice(0, 8)
-  }, [edition, memberId, slug, openPolls, myResponses, myRsvp.data, myBev.data, gift, myGift.data, openAwards, myBallots, tasks])
+  }, [edition, memberId, slug, openPolls, myResponses, myRsvp.data, myBev.data, openAwards, myBallots, tasks])
 
   if (loading || !edition) return <Loading />
   const confirmed = rsvps.filter((r) => r.status === 'YES' && r.planVersion === edition.planVersion).length
@@ -87,8 +83,8 @@ export function Inicio() {
     <div>
       <div className="relative rounded-[20px] overflow-hidden min-h-[300px] sm:min-h-[340px] flex items-end p-6 sm:p-9 text-white" style={{ background: `linear-gradient(0deg, rgba(8,10,17,.92), rgba(8,10,17,.1)), url(${hero}) center 45% / cover` }}>
         <div>
-          <p className="eyebrow text-[#f2e7c8]">{edition.title}</p>
-          <h1 className="hero-title mt-2 mb-3 max-w-3xl">La Banda<br />del cerrucho.</h1>
+          <p className="eyebrow text-[#f2e7c8]">La Banda del cerrucho</p>
+          <h1 className="hero-title mt-2 mb-3 max-w-3xl">{edition.title}</h1>
           {edition.date.startsAt ? (
             <div className="text-[#f2e7c8]">
               <p className="font-semibold text-lg">
@@ -108,6 +104,12 @@ export function Inicio() {
         </div>
       </div>
 
+      {!isMember ? (
+        <div className="mt-6">
+          <LoginPrompt text="Entrá para ver tus pendientes y participar." />
+        </div>
+      ) : null}
+      {isMember ? (
       <Section title="Mis pendientes" aside={<span className="tiny muted">{pending.length === 0 ? 'Estás al día' : `${pending.length} por hacer`}</span>}>
         {pending.length === 0 ? (
           <Card>
@@ -132,13 +134,14 @@ export function Inicio() {
           </div>
         )}
       </Section>
+      ) : null}
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 mt-8">
         <Section title="El plan" className="mt-0">
           <Card>
-            {(['fecha', 'lugar', 'menu', 'regalo', 'premios', 'salida'] as const).map((k) => {
+            {(['fecha', 'lugar', 'menu', 'salida'] as const).map((k) => {
               const d = edition.decisions[k]
-              const labels: Record<string, string> = { fecha: 'Fecha', lugar: 'Lugar', menu: 'Menú', regalo: 'Regalo', premios: 'Premios', salida: 'Salida' }
+              const labels: Record<string, string> = { fecha: 'Fecha', lugar: 'Lugar', menu: 'Comida', salida: 'Salida' }
               return (
                 <div key={k} className="row">
                   <div>
@@ -185,7 +188,7 @@ export function Inicio() {
         </Section>
       </div>
 
-      {isAdmin ? <AdminDigest edition={edition} polls={polls} members={members.list} proposals={proposals} now={now} /> : null}
+      {isAdmin ? <AdminDigest edition={edition} polls={polls} members={members.list} now={now} /> : null}
     </div>
   )
 }
@@ -201,18 +204,17 @@ export function DecisionPill({ status }: { status: string }) {
     case 'CLOSED':
       return <Pill tone="muted">Cerrado</Pill>
     default:
-      return <Pill tone="muted">Sin definir</Pill>
+      return <Pill tone="muted">A definir</Pill>
   }
 }
 
-function AdminDigest({ edition, polls, members, proposals, now }: { edition: { title: string; slug: string }; polls: Poll[]; members: Member[]; proposals: Proposal[]; now: number }) {
+function AdminDigest({ edition, polls, members, now }: { edition: { title: string; slug: string }; polls: Poll[]; members: Member[]; now: number }) {
   const toast = useToast()
   const activeCount = members.filter((m) => m.status === 'active' && m.participating).length
   const sizeOf = (p: Poll) => (p.electorateMode === 'ALL_ACTIVE' ? activeCount : p.electorate.length)
   const open = polls.filter((p) => isPollOpen(p, now)).sort((a, b) => (a.closeAt ?? Infinity) - (b.closeAt ?? Infinity))
   const expired = polls.filter((p) => p.state === 'OPEN' && !isPollOpen(p, now))
-  const noEmail = members.filter((m) => m.status === 'draft')
-  const pendingProposals = proposals.filter((p) => p.state === 'PENDING')
+  const noLogin = members.filter((m) => m.status === 'draft')
   const { rows: allResponses } = useCollectionCounts(open)
   function copy() {
     const lines = [`*${edition.title}* — pendientes`, '']
@@ -251,15 +253,9 @@ function AdminDigest({ edition, polls, members, proposals, now }: { edition: { t
         <Card>
           <p className="h3 mb-2">Para revisar</p>
           <div className="row">
-            <span className="small">Propuestas pendientes</span>
-            <Link to="/admin/decisiones" className="font-bold">
-              {pendingProposals.length}
-            </Link>
-          </div>
-          <div className="row">
-            <span className="small">Miembros sin mail</span>
+            <span className="small">Miembros sin usuario</span>
             <Link to="/admin/miembros" className="font-bold">
-              {noEmail.length}
+              {noLogin.length}
             </Link>
           </div>
           <Link to="/admin" className="btn btn-line btn-sm mt-3">

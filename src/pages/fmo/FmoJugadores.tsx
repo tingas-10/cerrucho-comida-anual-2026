@@ -12,7 +12,7 @@ import { useToast } from '../../ui/toast'
 import { FmoTabs, YearSelect, useFmoMatches, useFmoPlayers } from './fmoShared'
 
 export function FmoJugadores() {
-  const { db, memberId } = useSession()
+  const { db, memberId, isMember } = useSession()
   const toast = useToast()
   const { rows, loading } = useFmoMatches()
   const players = useFmoPlayers()
@@ -106,6 +106,7 @@ export function FmoJugadores() {
         </Card>
       </Section>
 
+      {isMember ? (
       <Section title="Invitados">
         <Card>
           <p className="small muted mb-3">Gente que juega con nosotros pero no es de la banda. Tienen estadísticas, no entran a la web.</p>
@@ -127,6 +128,7 @@ export function FmoJugadores() {
           </div>
         </Card>
       </Section>
+      ) : null}
     </div>
   )
 }

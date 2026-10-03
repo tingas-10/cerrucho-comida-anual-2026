@@ -42,15 +42,18 @@ export interface AuthUser {
   uid: string
   email: string
   emailVerified: boolean
+  passwordLogin: boolean // entró con usuario y contraseña (y no con el acceso viejo por mail)
 }
 
 export interface AuthAdapter {
   readonly kind: 'firebase' | 'demo'
   onChange(cb: (user: AuthUser | null) => void): () => void
-  sendLink(email: string, returnTo: string): Promise<void>
-  isLinkSignIn(): boolean
-  completeLink(email: string): Promise<AuthUser>
-  storedEmail(): string | null
+  /** Inicia sesión con el mail interno de la cuenta y su contraseña. */
+  signIn(email: string, password: string): Promise<void>
+  /** Crea una cuenta nueva SIN cambiar la sesión actual (la usa el administrador). Devuelve el uid. */
+  createLogin(email: string, password: string): Promise<string>
+  /** Cambia la contraseña de la sesión actual, pidiendo la actual para confirmar. */
+  changePassword(current: string, next: string): Promise<void>
   signOut(): Promise<void>
   // Sólo demo: entrar como un usuario ficticio.
   demoSignIn?(uid: string, email: string): Promise<void>

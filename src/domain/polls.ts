@@ -74,9 +74,11 @@ export function validateResponse(poll: Poll, payload: PollResponse['payload']): 
   const ids = new Set(poll.options.map((o) => o.id))
   if (poll.method === 'AVAILABILITY') {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Respuesta inválida'
+    // Se puede responder de a una fecha: lo que falta queda "pendiente" (nunca "No puedo").
     const p = payload as Record<string, Availability>
-    for (const o of poll.options) {
-      if (!['yes', 'maybe', 'no'].includes(p[o.id])) return 'Respondé todas las fechas'
+    for (const [k, v] of Object.entries(p)) {
+      if (!ids.has(k)) return 'Fecha inválida'
+      if (!['yes', 'maybe', 'no'].includes(v)) return 'Respuesta inválida'
     }
     return null
   }
@@ -89,4 +91,43 @@ export function validateResponse(poll: Poll, payload: PollResponse['payload']): 
   }
   if (typeof payload !== 'string' || !ids.has(payload)) return 'Elegí una opción'
   return null
+}
+
+export interface DateSummary {
+  optionId: string
+  yes: string[]
+  maybe: string[]
+  no: string[]
+  pending: string[]
+}
+
+/** Resumen por fecha separando Puedo, Capaz, No puedo y pendientes (sobre el padrón dado). */
+export function summarizeDates(poll: Poll, responses: Array<PollResponse & { id: string }>, electorate: string[]): DateSummary[] {
+  const byMember = new Map(responses.map((r) => [r.id, (r.payload ?? {}) as Record<string, Availability>]))
+  return poll.options.map((o) => {
+    const s: DateSummary = { optionId: o.id, yes: [], maybe: [], no: [], pending: [] }
+    for (const id of electorate) {
+      const v = byMember.get(id)?.[o.id]
+      if (v === 'yes') s.yes.push(id)
+      else if (v === 'maybe') s.maybe.push(id)
+      else if (v === 'no') s.no.push(id)
+      else s.pending.push(id)
+    }
+    return s
+  })
+}
+
+/** Fechas destacadas: más "Puedo"; a igualdad, más "Capaz". Sólo las que tienen al menos un "Puedo". */
+export function bestDates(summary: DateSummary[], count = 3): DateSummary[] {
+  return summary
+    .filter((s) => s.yes.length > 0)
+    .sort((a, b) => b.yes.length - a.yes.length || b.maybe.length - a.maybe.length)
+    .slice(0, count)
+}
+
+/** Marca con `value` sólo las fechas sin respuesta; nunca pisa respuestas existentes. */
+export function fillPending(poll: Poll, current: Record<string, Availability>, value: Availability): Record<string, Availability> {
+  const out = { ...current }
+  for (const o of poll.options) if (!out[o.id]) out[o.id] = value
+  return out
 }

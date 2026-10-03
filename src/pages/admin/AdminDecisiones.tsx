@@ -6,7 +6,7 @@ import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
 import { DataError } from '../../data/adapter'
 import { electorateOf, useCollection, useEdition, useMembers } from '../../data/hooks'
 import { P } from '../../data/paths'
-import type { GiftCampaign, Poll, PollKind, PollOption, PollResponse, Proposal, Rsvp } from '../../data/types'
+import type { GiftCampaign, Poll, PollKind, PollOption, PollResponse, Rsvp } from '../../data/types'
 import { formatArs } from '../../domain/expenses'
 import { fmtDateTime, fmtDayLong, fmtTime, hoursFromNow, localToMs, msToLocalParts } from '../../domain/format'
 import { isPollOpen, leaders, participation, recommendDates, tallyApproval, tallyAvailability, tallySingle } from '../../domain/polls'
@@ -28,7 +28,6 @@ export function AdminDecisiones() {
   const members = useMembers()
   const { data: edition } = useEdition()
   const { rows: polls } = useCollection<Poll>(P.polls(slug))
-  const { rows: proposals } = useCollection<Proposal>(P.proposals(slug))
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
   const [createOpen, setCreateOpen] = useState(false)
   const [kind, setKind] = useState<PollKind>('dates')
@@ -42,7 +41,6 @@ export function AdminDecisiones() {
   const [busy, setBusy] = useState<string | null>(null)
 
   const sorted = useMemo(() => [...polls].sort((a, b) => b.createdAt - a.createdAt), [polls])
-  const pendingProposals = proposals.filter((p) => p.state === 'PENDING')
 
   function resetForm(k: PollKind = 'dates') {
     setKind(k)
@@ -274,29 +272,6 @@ export function AdminDecisiones() {
     toast.ok('Desempate publicado por 48 h')
   }
 
-  async function approveProposal(pr: Proposal, approve: boolean) {
-    try {
-      await db.updateDoc(P.proposal(slug, pr.id), { state: approve ? 'APPROVED' : 'REJECTED', updatedAt: Date.now() })
-      if (approve) {
-        const kindMap: Record<string, PollKind> = { food: 'food', venue: 'venue', afterparty: 'afterparty', date: 'dates' }
-        const k = kindMap[pr.type]
-        const draft = polls.find((x) => x.kind === k && x.state === 'DRAFT')
-        const opt: PollOption = { id: 'p-' + pr.id.slice(0, 6).toLowerCase(), label: pr.label, detail: pr.detail ?? '', startsAt: pr.startsAt ?? null, special: null }
-        if (draft) await db.updateDoc(P.poll(slug, draft.id), { options: [...draft.options, opt], updatedAt: Date.now() })
-        else {
-          const id = db.newId()
-          const now = Date.now()
-          const def = KINDS.find((x) => x.value === k)!
-          const poll: Poll = { id, kind: k, title: def.label.split(' (')[0], description: '', method: def.method, state: 'DRAFT', options: [opt], electorate: [], audience: k === 'afterparty' ? 'AFTERPARTY' : 'ALL', openAt: null, closeAt: null, quorumPct: QUORUM_LOGISTICO_PCT, version: 1, closure: null, decision: null, createdAt: now, updatedAt: now }
-          await db.setDoc(P.poll(slug, id), poll)
-        }
-        toast.ok('Aprobada y agregada a un borrador de consulta. Publicalo cuando esté listo.')
-      }
-      await logAudit(db, slug, memberId!, approve ? 'proposal.approve' : 'proposal.reject', pr.id)
-    } catch (e) {
-      toast.error(errorText(e))
-    }
-  }
 
   return (
     <div className="grid gap-4">
@@ -311,28 +286,6 @@ export function AdminDecisiones() {
           Nueva consulta
         </Button>
       </div>
-
-      {pendingProposals.length ? (
-        <Card>
-          <p className="h3 mb-2">Propuestas pendientes</p>
-          {pendingProposals.map((pr) => (
-            <div key={pr.id} className="row items-start">
-              <div className="small">
-                <b>{pr.label}</b> <span className="tiny muted">· {pr.type} · {members.aliasOf(pr.authorId)}</span>
-                {pr.detail ? <p className="muted">{pr.detail}</p> : null}
-              </div>
-              <span className="flex gap-1">
-                <Button size="sm" onClick={() => void approveProposal(pr, true)}>
-                  Aprobar
-                </Button>
-                <Button size="sm" variant="line" onClick={() => void approveProposal(pr, false)}>
-                  Rechazar
-                </Button>
-              </span>
-            </div>
-          ))}
-        </Card>
-      ) : null}
 
       <Section title="Consultas" className="mt-0">
         {sorted.length === 0 ? <Notice>Todavía no hay consultas. Empezá por las fechas.</Notice> : null}

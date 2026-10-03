@@ -1,243 +1,485 @@
-// Fecha y asistencia: disponibilidad por fecha, propuesta de otra fecha y RSVP.
+// Fecha y asistencia: calendario compacto de disponibilidad, fecha confirmada por el presidente y asistencia.
+import { Check, CircleHelp, Star, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '../data/DataContext'
-import { errorText } from '../data/actions'
+import { errorText, logAudit } from '../data/actions'
 import { DataError } from '../data/adapter'
+import { confirmDate } from '../data/decisions'
 import { electorateOf, useCollection, useDoc, useEdition, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
-import type { Availability, Poll, PollResponse, Proposal, Rsvp } from '../data/types'
-import { fmtDayLong, fmtDayShort, fmtTime, localToMs, timeLeft } from '../domain/format'
-import { isPollOpen, participation, recommendDates, tallyAvailability } from '../domain/polls'
-import { Avatar, Button, Card, Empty, Field, Input, Loading, Notice, PageHeader, Pill, Section, Textarea } from '../ui/components'
+import type { Availability, Edition, Poll, PollOption, PollResponse, Rsvp } from '../data/types'
+import { fmtDayLong, fmtTime, localToMs, timeLeft } from '../domain/format'
+import { bestDates, fillPending, isPollOpen, summarizeDates, type DateSummary } from '../domain/polls'
+import { MESES } from '../domain/birthdays'
+import { Button, Card, ConfirmDialog, Empty, Field, Input, Loading, LoginPrompt, MemberAvatar, Modal, Notice, PageHeader, Pill, Section } from '../ui/components'
 import { useToast } from '../ui/toast'
-import { saveResponse } from '../ui/PollCard'
+
+const LABEL: Record<Availability, string> = { yes: 'Puedo', maybe: 'Capaz', no: 'No puedo' }
 
 export function Fecha() {
-  const { slug } = useSession()
+  const { slug, isMember } = useSession()
   const { data: edition, loading } = useEdition()
   const { rows: polls } = useCollection<Poll>(P.polls(slug), [{ field: 'kind', op: '==', value: 'dates' }])
   const members = useMembers()
+  const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
   if (loading || !edition) return <Loading />
-  const visible = polls.filter((p) => p.state !== 'DRAFT' && p.state !== 'VOID').sort((a, b) => b.createdAt - a.createdAt)
-  const open = visible.find((p) => p.state === 'OPEN')
-  const closed = visible.filter((p) => p.state === 'CLOSED')
+  const poll = polls.filter((p) => p.state === 'OPEN' || p.state === 'CLOSED').sort((a, b) => (a.state === 'OPEN' ? -1 : 1) - (b.state === 'OPEN' ? -1 : 1) || b.createdAt - a.createdAt)[0]
+  const going = rsvps.filter((r) => r.status === 'YES' && r.planVersion === edition.planVersion).length
   return (
     <div>
-      <PageHeader eyebrow="Esta edición" title="Fecha y asistencia" intro="Primero elegimos cuándo. Después, con fecha oficial, cada uno confirma si viene." />
+      <PageHeader eyebrow={edition.title} title="Fecha y asistencia" intro="Marcá qué días podés. Facu (el presidente) elige la fecha definitiva mirando la disponibilidad." />
       {edition.date.startsAt ? (
         <Card className="mb-4">
-          <p className="eyebrow">Fecha oficial</p>
+          <p className="eyebrow">Fecha confirmada</p>
           <p className="h2 mt-1">
             {fmtDayLong(edition.date.startsAt)} · {fmtTime(edition.date.startsAt)} h
           </p>
-          {edition.date.label ? <p className="small muted mt-1">{edition.date.label}</p> : null}
+          {edition.date.confirmedBy ? (
+            <p className="tiny muted mt-1">
+              Confirmó {members.aliasOf(edition.date.confirmedBy)} · {fmtDayLong(edition.date.confirmedAt ?? null)}
+            </p>
+          ) : null}
           {edition.venue?.name ? <p className="small mt-1">{edition.venue.name}</p> : null}
+          <p className="small mt-2">
+            <b>{going}</b> confirmaron que van.
+          </p>
         </Card>
-      ) : null}
+      ) : (
+        <Notice>
+          Fecha: <b>a definir</b>. Cuando el presidente la confirme, cada uno marca si va.
+        </Notice>
+      )}
 
-      {edition.date.startsAt ? <RsvpCard edition={edition} /> : null}
+      {edition.date.startsAt ? isMember ? <RsvpCard edition={edition} /> : <LoginPrompt text="Entrá para confirmar si vas." /> : null}
 
       <Section title="Disponibilidad">
-        {open ? <AvailabilityPoll poll={open} aliasOf={members.aliasOf} /> : null}
-        {!open && !edition.date.startsAt ? (
-          <Empty title="Todavía no hay fechas para votar" text="Agus va a publicar las fechas candidatas. Mientras tanto, podés proponer una." />
-        ) : null}
-        {closed.map((p) => (
-          <div key={p.id} className="mt-3">
-            <AvailabilityPoll poll={p} aliasOf={members.aliasOf} />
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Proponer otra fecha">
-        <ProposeDate />
+        {poll ? <DateCalendar poll={poll} edition={edition} /> : <Empty title="Todavía no hay fechas para votar" text="Agus carga las fechas candidatas." />}
       </Section>
     </div>
   )
 }
 
-function AvailabilityPoll({ poll, aliasOf }: { poll: Poll; aliasOf: (id: string) => string }) {
-  const { db, slug, memberId } = useSession()
+interface Cell {
+  key: string // YYYY-MM-DD en hora de Buenos Aires
+  day: number
+  option: PollOption | null
+}
+
+function baParts(ms: number) {
+  const d = new Date(ms - 3 * 3600000)
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() }
+}
+
+/** Arma las grillas de cada mes (semana de lunes a domingo) con las fechas candidatas. */
+function monthGrids(options: PollOption[]): Array<{ y: number; m: number; cells: Array<Cell | null> }> {
+  const byKey = new Map<string, PollOption>()
+  const months = new Map<string, { y: number; m: number }>()
+  for (const o of options) {
+    if (!o.startsAt) continue
+    const p = baParts(o.startsAt)
+    byKey.set(`${p.y}-${p.m}-${p.d}`, o)
+    months.set(`${p.y}-${p.m}`, { y: p.y, m: p.m })
+  }
+  return Array.from(months.values())
+    .sort((a, b) => a.y - b.y || a.m - b.m)
+    .map(({ y, m }) => {
+      const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay()
+      const lead = (first + 6) % 7
+      const days = new Date(Date.UTC(y, m, 0)).getUTCDate()
+      const cells: Array<Cell | null> = Array.from({ length: lead }, () => null)
+      for (let d = 1; d <= days; d++) cells.push({ key: `${y}-${m}-${d}`, day: d, option: byKey.get(`${y}-${m}-${d}`) ?? null })
+      return { y, m, cells }
+    })
+}
+
+function AnswerIcon({ v, size = 14 }: { v: Availability | undefined; size?: number }) {
+  if (v === 'yes') return <Check size={size} aria-hidden />
+  if (v === 'maybe') return <CircleHelp size={size} aria-hidden />
+  if (v === 'no') return <X size={size} aria-hidden />
+  return null
+}
+
+function cellClass(v: Availability | undefined) {
+  if (v === 'yes') return 'bg-ok-soft text-ok border-ok/50'
+  if (v === 'maybe') return 'bg-warn-soft text-warn border-warn/50'
+  if (v === 'no') return 'bg-danger-soft text-danger border-danger/40'
+  return 'bg-card border-line'
+}
+
+function DateCalendar({ poll, edition }: { poll: Poll; edition: Edition }) {
+  const { db, slug, memberId, isMember, isAdmin, canDecide } = useSession()
   const toast = useToast()
   const now = useNow()
   const members = useMembers()
-  const electorate = electorateOf(poll, members)
-  const mine = useDoc<PollResponse>(memberId ? P.response(slug, poll.id, memberId) : null)
+  const electorate = useMemo(() => electorateOf(poll, members), [poll, members])
   const { rows: responses } = useCollection<PollResponse>(P.responses(slug, poll.id))
-  const [answers, setAnswers] = useState<Record<string, Availability>>({})
-  const [dirty, setDirty] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const serverMine = useMemo(() => (responses.find((r) => r.id === memberId)?.payload ?? {}) as Record<string, Availability>, [responses, memberId])
+  const [mine, setMine] = useState<Record<string, Availability>>({})
+  const [pendingSaves, setPendingSaves] = useState(0)
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [openOpt, setOpenOpt] = useState<PollOption | null>(null)
   useEffect(() => {
-    if (dirty) return
-    setAnswers((mine.data?.payload as Record<string, Availability>) ?? {})
-  }, [mine.data, dirty])
+    if (pendingSaves === 0) setMine(serverMine)
+  }, [serverMine, pendingSaves])
 
   const open = isPollOpen(poll, now)
-  const isElector = !!memberId && electorate.includes(memberId)
-  const rows = useMemo(() => tallyAvailability(poll, responses), [poll, responses])
-  const rec = useMemo(() => recommendDates(rows), [rows])
-  const part = participation(poll, responses.length, electorate.length)
-  const complete = poll.options.every((o) => answers[o.id])
+  const canAnswer = open && isMember && !!memberId && electorate.includes(memberId)
+  const summaries = useMemo(() => summarizeDates(poll, responses, electorate), [poll, responses, electorate])
+  const sumById = useMemo(() => Object.fromEntries(summaries.map((s) => [s.optionId, s])), [summaries])
+  const best = useMemo(() => bestDates(summaries, 3), [summaries])
+  const bestIds = new Set(best.map((b) => b.optionId))
+  const grids = useMemo(() => monthGrids(poll.options), [poll.options])
+  const answered = poll.options.filter((o) => mine[o.id]).length
+  const pendingCount = poll.options.length - answered
+  const confirmedOptionId = poll.decision?.optionId ?? null
 
-  function setAll(v: Availability) {
-    setDirty(true)
-    const next: Record<string, Availability> = {}
-    for (const o of poll.options) next[o.id] = v
-    setAnswers(next)
-  }
-
-  async function save() {
+  /** Guarda la respuesta de una o varias fechas (sin pisar las demás). null = dejar pendiente. */
+  async function save(patch: Record<string, Availability | null>) {
     if (!memberId) return
-    setBusy(true)
+    const optimistic = { ...mine }
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) optimistic[k] = v
+      else delete optimistic[k]
+    }
+    setMine(optimistic)
+    setPendingSaves((n) => n + 1)
     try {
-      await saveResponse(db, slug, poll, memberId, answers, mine.data?.revision ?? 0)
-      setDirty(false)
-      toast.ok('Disponibilidad guardada')
+      await db.runTransaction(async (tx) => {
+        const cur = await tx.get<PollResponse>(P.response(slug, poll.id, memberId))
+        const payload = { ...((cur?.payload ?? {}) as Record<string, Availability>) }
+        for (const [k, v] of Object.entries(patch)) {
+          if (v) payload[k] = v
+          else delete payload[k]
+        }
+        tx.set(P.response(slug, poll.id, memberId), { payload, revision: (cur?.revision ?? 0) + 1, updatedAt: Date.now() })
+      })
+      setSavedAt(Date.now())
     } catch (e) {
-      toast.error(errorText(e))
+      setMine(serverMine)
+      toast.error('No se guardó: ' + errorText(e))
     } finally {
-      setBusy(false)
+      setPendingSaves((n) => n - 1)
     }
   }
 
+  function bulk(v: Availability) {
+    const filled = fillPending(poll, mine, v)
+    const patch: Record<string, Availability> = {}
+    for (const [k, val] of Object.entries(filled)) if (!mine[k]) patch[k] = val
+    if (Object.keys(patch).length) void save(patch)
+  }
+
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-3 mb-1">
-        <div>
-          <p className="h3">{poll.title}</p>
-          {poll.description ? <p className="small muted mt-1">{poll.description}</p> : null}
+    <div className="grid gap-4">
+      <Card className="!p-3 sm:!p-5">
+        <div className="flex items-center justify-between gap-2 flex-wrap mb-2 px-1">
+          <p className="small">
+            {canAnswer ? (
+              <>
+                Respondiste <b>{answered}</b> de {poll.options.length}
+                {pendingCount ? ` · ${pendingCount} pendientes` : ' · ¡completo!'}
+              </>
+            ) : (
+              <span className="muted">Tocá una fecha para ver quién puede.</span>
+            )}
+          </p>
+          <span className="tiny muted" aria-live="polite">
+            {pendingSaves > 0 ? 'Guardando…' : savedAt ? 'Guardado ✓' : open ? timeLeft(poll.closeAt, now) : 'Votación cerrada'}
+          </span>
         </div>
-        {poll.state === 'OPEN' ? <Pill tone={open ? 'accent' : 'muted'}>{open ? timeLeft(poll.closeAt, now) : 'Cerró'}</Pill> : <Pill tone="muted">Cerrada</Pill>}
-      </div>
-      <p className="tiny muted mb-3">Respondieron {responses.length} de {electorate.length} · quórum {poll.quorumPct}% {part.quorumMet ? 'alcanzado' : 'pendiente'}</p>
 
-      {open && isElector ? (
-        <div className="flex gap-2 mb-3 flex-wrap">
-          <Button size="sm" variant="line" onClick={() => setAll('yes')}>
-            Marcar todas como puedo
-          </Button>
-          <Button size="sm" variant="line" onClick={() => setAll('no')}>
-            Marcar todas como no puedo
-          </Button>
-        </div>
-      ) : null}
-
-      <div className="grid gap-3">
-        {poll.options.map((o) => {
-          const r = rows.find((x) => x.optionId === o.id)!
-          const v = answers[o.id]
-          const leader = rec.leaders.includes(o.id)
-          return (
-            <div key={o.id} className="rounded-xl border border-line p-3 sm:flex sm:items-center sm:justify-between sm:gap-4">
-              <div className="flex items-center justify-between gap-2 sm:block sm:min-w-[210px]">
-                <div className="min-w-0">
-                  <p className="font-semibold leading-tight">
-                    {o.startsAt ? fmtDayLong(o.startsAt) : o.label}
-                    {leader && rec.leaders.length === 1 && poll.state === 'OPEN' ? <Pill className="ml-2">Va ganando</Pill> : null}
-                  </p>
-                  <p className="tiny muted">
-                    {o.startsAt ? `${fmtTime(o.startsAt)} h` : ''}
-                    {o.detail ? `${o.startsAt ? ' · ' : ''}${o.detail}` : ''}
-                  </p>
-                </div>
-                <div className="tiny muted text-right sm:text-left shrink-0">
-                  <span className="text-ok font-semibold">{r.yes} puedo</span> · {r.maybe} capaz · {r.no} no
-                </div>
-              </div>
-              {open && isElector ? (
-                <div className="grid grid-cols-3 gap-2 mt-2 sm:mt-0 sm:w-[300px] shrink-0" role="radiogroup" aria-label={o.startsAt ? fmtDayLong(o.startsAt) : o.label}>
-                  {(
-                    [
-                      ['yes', 'Puedo'],
-                      ['maybe', 'Capaz'],
-                      ['no', 'No puedo'],
-                    ] as const
-                  ).map(([val, label]) => (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {grids.map((g) => (
+            <div key={`${g.y}-${g.m}`}>
+              <p className="eyebrow px-1 mb-1">
+                {MESES[g.m - 1]} {g.y}
+              </p>
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
+                  <span key={i} className="tiny muted py-1">
+                    {d}
+                  </span>
+                ))}
+                {g.cells.map((c, i) => {
+                  if (!c) return <span key={'b' + i} />
+                  if (!c.option) {
+                    return (
+                      <span key={c.key} className="aspect-square flex items-center justify-center text-[12px] muted opacity-40">
+                        {c.day}
+                      </span>
+                    )
+                  }
+                  const o = c.option
+                  const v = mine[o.id]
+                  const sum = sumById[o.id]
+                  const isConfirmed = confirmedOptionId === o.id
+                  return (
                     <button
-                      key={val}
+                      key={c.key}
                       type="button"
-                      role="radio"
-                      aria-checked={v === val}
-                      className="choice justify-center text-center px-2 text-sm min-h-[44px]"
-                      onClick={() => {
-                        setDirty(true)
-                        setAnswers((a) => ({ ...a, [o.id]: val }))
-                      }}
+                      onClick={() => setOpenOpt(o)}
+                      className={`relative aspect-square min-h-[42px] rounded-lg border flex flex-col items-center justify-center leading-none ${cellClass(v)} ${bestIds.has(o.id) ? 'ring-2 ring-gold' : ''} ${isConfirmed ? 'outline outline-2 outline-accent' : ''}`}
+                      aria-label={`${fmtDayLong(o.startsAt ?? null)}: ${v ? LABEL[v] : 'pendiente'}. ${sum?.yes.length ?? 0} pueden.`}
                     >
-                      {label}
+                      <span className="font-bold text-[14px]">{c.day}</span>
+                      <span className="h-[14px] flex items-center">{v ? <AnswerIcon v={v} size={13} /> : <span className="tiny muted">·</span>}</span>
+                      {sum?.yes.length ? <span className="absolute top-0.5 right-1 text-[9px] font-bold text-ok">{sum.yes.length}</span> : null}
+                      {isConfirmed ? <Star size={10} className="absolute top-0.5 left-0.5 text-accent" fill="currentColor" aria-hidden /> : null}
                     </button>
-                  ))}
-                </div>
-              ) : null}
+                  )
+                })}
+              </div>
             </div>
-          )
-        })}
-      </div>
-
-      {open && isElector ? (
-        <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4 z-10 mt-4 flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3 py-2 shadow-lg">
-          <span className="tiny muted">{complete ? 'Respondiste todas las fechas.' : `Respondiste ${poll.options.filter((o) => answers[o.id]).length} de ${poll.options.length}. Faltan para guardar.`}</span>
-          <Button variant="gold" onClick={() => void save()} loading={busy} disabled={!complete || (!dirty && !!mine.data)}>
-            {mine.data ? (dirty ? 'Guardar cambios' : 'Ya respondiste') : 'Guardar'}
-          </Button>
+          ))}
         </div>
+
+        <div className="flex flex-wrap gap-x-3 gap-y-1 tiny muted mt-3 px-1">
+          <span className="inline-flex items-center gap-1 text-ok">
+            <Check size={12} /> Puedo
+          </span>
+          <span className="inline-flex items-center gap-1 text-warn">
+            <CircleHelp size={12} /> Capaz
+          </span>
+          <span className="inline-flex items-center gap-1 text-danger">
+            <X size={12} /> No puedo
+          </span>
+          <span>· pendiente</span>
+          <span>número verde = cuántos pueden</span>
+          <span className="text-accent">marco dorado = de las más votadas</span>
+        </div>
+
+        {canAnswer && pendingCount > 0 ? (
+          <div className="mt-4 rounded-xl bg-soft/60 p-3">
+            <p className="small font-semibold mb-2">Marcar las {pendingCount} pendientes como:</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(['yes', 'maybe', 'no'] as const).map((v) => (
+                <button key={v} type="button" className={`choice justify-center text-center px-2 text-sm min-h-[44px] ${cellClass(v)}`} onClick={() => bulk(v)}>
+                  <AnswerIcon v={v} /> {LABEL[v]}
+                </button>
+              ))}
+            </div>
+            <p className="tiny muted mt-2">No cambia las fechas que ya respondiste. Después ajustás las excepciones tocando cada día.</p>
+          </div>
+        ) : null}
+        {!isMember ? (
+          <div className="mt-4">
+            <LoginPrompt text="Entrá para marcar qué días podés." />
+          </div>
+        ) : null}
+      </Card>
+
+      {best.length ? (
+        <Card>
+          <p className="h3 mb-1">Las fechas con más disponibilidad</p>
+          <p className="tiny muted mb-2">"Capaz" no cuenta como confirmado. La decisión la toma el presidente.</p>
+          {best.map((b) => {
+            const o = poll.options.find((x) => x.id === b.optionId)!
+            return (
+              <button key={b.optionId} type="button" className="row w-full text-left" onClick={() => setOpenOpt(o)}>
+                <span className="font-semibold">
+                  {fmtDayLong(o.startsAt ?? null)}
+                  {confirmedOptionId === o.id ? <Pill tone="ok" className="ml-2">Confirmada</Pill> : null}
+                </span>
+                <SummaryCounts s={b} />
+              </button>
+            )
+          })}
+        </Card>
       ) : null}
 
-      {poll.state === 'CLOSED' ? (
-        <div className="mt-4">
-          {poll.closure?.lowParticipation ? <Notice tone="warn">Cierre con baja participación: respondieron {poll.closure.count} de {electorate.length}.</Notice> : null}
-          {!rec.viable ? <Notice tone="danger">Ninguna opción viable: ninguna fecha tuvo un Puedo.</Notice> : null}
-          {rec.viable && rec.leaders.length > 1 ? <Notice tone="warn">Empate de disponibilidad entre {rec.leaders.length} fechas. Agus elige con motivo.</Notice> : null}
-          {poll.decision ? (
-            <Notice tone="ok">
-              Fecha confirmada: {(() => {
-                const o = poll.options.find((x) => x.id === poll.decision!.optionId)
-                return o?.startsAt ? fmtDayLong(o.startsAt) : o?.label
-              })()}{' '}
-              · confirmó {aliasOf(poll.decision.by)}
-              {poll.decision.reason ? ` · ${poll.decision.reason}` : ''}
-            </Notice>
+      {isAdmin ? <AdminDates poll={poll} /> : null}
+
+      <Modal open={!!openOpt} onClose={() => setOpenOpt(null)} title={openOpt ? fmtDayLong(openOpt.startsAt ?? null) : ''}>
+        {openOpt ? (
+          <DateSheet
+            option={openOpt}
+            summary={sumById[openOpt.id]}
+            mine={mine[openOpt.id]}
+            canAnswer={canAnswer}
+            canDecide={canDecide}
+            isAdmin={isAdmin}
+            confirmed={confirmedOptionId === openOpt.id}
+            onAnswer={(v) => void save({ [openOpt.id]: v })}
+            onConfirm={async () => {
+              try {
+                await confirmDate(db, slug, edition, poll.id, openOpt, memberId!)
+                toast.ok('Fecha confirmada')
+                setOpenOpt(null)
+              } catch (e) {
+                toast.error(errorText(e))
+              }
+            }}
+            onRemove={async () => {
+              try {
+                await db.updateDoc(P.poll(slug, poll.id), { options: poll.options.filter((x) => x.id !== openOpt.id), updatedAt: Date.now() })
+                await logAudit(db, slug, memberId!, 'fecha.quitar', openOpt.id)
+                setOpenOpt(null)
+              } catch (e) {
+                toast.error(errorText(e))
+              }
+            }}
+          />
+        ) : null}
+      </Modal>
+    </div>
+  )
+}
+
+function SummaryCounts({ s }: { s: DateSummary }) {
+  return (
+    <span className="tiny whitespace-nowrap flex gap-2">
+      <span className="text-ok font-bold">✓ {s.yes.length}</span>
+      <span className="text-warn">? {s.maybe.length}</span>
+      <span className="text-danger">✕ {s.no.length}</span>
+      <span className="muted">· {s.pending.length}</span>
+    </span>
+  )
+}
+
+function DateSheet(props: {
+  option: PollOption
+  summary: DateSummary | undefined
+  mine: Availability | undefined
+  canAnswer: boolean
+  canDecide: boolean
+  isAdmin: boolean
+  confirmed: boolean
+  onAnswer: (v: Availability | null) => void
+  onConfirm: () => Promise<void>
+  onRemove: () => Promise<void>
+}) {
+  const { option, summary, mine, canAnswer, canDecide, isAdmin, confirmed } = props
+  const members = useMembers()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [removeOpen, setRemoveOpen] = useState(false)
+  const groups: Array<[string, string[], string]> = summary
+    ? [
+        ['Pueden', summary.yes, 'text-ok'],
+        ['Capaz', summary.maybe, 'text-warn'],
+        ['No pueden', summary.no, 'text-danger'],
+        ['Sin responder', summary.pending, 'muted'],
+      ]
+    : []
+  return (
+    <div>
+      <p className="small muted -mt-1 mb-3">{option.startsAt ? `${fmtTime(option.startsAt)} h · a la noche` : option.detail}</p>
+      {canAnswer ? (
+        <>
+          <p className="label">Tu respuesta</p>
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tu respuesta">
+            {(['yes', 'maybe', 'no'] as const).map((v) => (
+              <button key={v} type="button" role="radio" aria-checked={mine === v} className={`choice justify-center text-center px-2 min-h-[52px] ${mine === v ? cellClass(v) : ''}`} onClick={() => props.onAnswer(v)}>
+                <AnswerIcon v={v} size={16} /> {LABEL[v]}
+              </button>
+            ))}
+          </div>
+          {mine ? (
+            <button type="button" className="tiny underline muted mt-2 min-h-[36px]" onClick={() => props.onAnswer(null)}>
+              Dejarla pendiente
+            </button>
+          ) : (
+            <p className="tiny muted mt-2">Todavía no respondiste esta fecha.</p>
+          )}
+        </>
+      ) : null}
+
+      <div className="mt-4 grid gap-3">
+        {groups.map(([title, ids, cls]) => (
+          <div key={title}>
+            <p className={`small font-bold ${cls}`}>
+              {title} ({ids.length})
+            </p>
+            {ids.length ? (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {ids.map((id) => (
+                  <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-bg border border-line pl-0.5 pr-2 py-0.5 tiny">
+                    <MemberAvatar id={id} size={20} /> {members.aliasOf(id)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {canDecide ? (
+        <div className="mt-5 pt-4 border-t border-line flex gap-2 flex-wrap">
+          {confirmed ? (
+            <Pill tone="ok">Es la fecha confirmada</Pill>
+          ) : (
+            <Button variant="gold" onClick={() => setConfirmOpen(true)}>
+              Confirmar esta fecha
+            </Button>
+          )}
+          {isAdmin && !confirmed ? (
+            <Button variant="line" onClick={() => setRemoveOpen(true)}>
+              Quitar esta fecha
+            </Button>
           ) : null}
         </div>
       ) : null}
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Confirmar fecha definitiva"
+        text={`La comida anual queda el ${fmtDayLong(option.startsAt ?? null)}. Toda la banda lo va a ver como confirmado y cada uno marca si va.`}
+        confirmLabel="Confirmar"
+        onConfirm={async () => {
+          await props.onConfirm()
+          setConfirmOpen(false)
+        }}
+      />
+      <ConfirmDialog
+        open={removeOpen}
+        onClose={() => setRemoveOpen(false)}
+        title="Quitar fecha"
+        text="La fecha deja de aparecer en el calendario."
+        danger
+        confirmLabel="Quitar"
+        onConfirm={async () => {
+          await props.onRemove()
+          setRemoveOpen(false)
+        }}
+      />
+    </div>
+  )
+}
 
-      <details className="mt-4">
-        <summary className="small font-semibold cursor-pointer">Ver quién puede cuándo</summary>
-        <div className="overflow-x-auto mt-2">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left tiny muted">
-                <th className="py-1 pr-2 sticky left-0 bg-card">Persona</th>
-                {poll.options.map((o) => (
-                  <th key={o.id} className="py-1 pr-2 whitespace-nowrap">
-                    {o.startsAt ? fmtDayShort(o.startsAt) : o.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {electorate.map((id) => {
-                const r = responses.find((x) => x.id === id)
-                const payload = (r?.payload as Record<string, Availability>) ?? null
-                return (
-                  <tr key={id} className="border-t border-line">
-                    <td className="py-1.5 pr-2 whitespace-nowrap sticky left-0 bg-card">
-                      <span className="inline-flex items-center gap-2">
-                        <Avatar id={id} alias={aliasOf(id)} size={22} /> {aliasOf(id)}
-                      </span>
-                    </td>
-                    {poll.options.map((o) => (
-                      <td key={o.id} className="py-1.5 pr-2">
-                        {!payload ? <span className="tiny muted">sin responder</span> : payload[o.id] === 'yes' ? <span className="text-ok font-semibold">Puedo</span> : payload[o.id] === 'maybe' ? <span className="text-warn">Capaz</span> : <span className="muted">No puedo</span>}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </details>
+function AdminDates({ poll }: { poll: Poll }) {
+  const { db, slug, memberId } = useSession()
+  const toast = useToast()
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('21:00')
+  async function add() {
+    const ms = localToMs(date, time)
+    if (!ms) return toast.error('Elegí una fecha.')
+    const id = 'd-' + date
+    if (poll.options.some((o) => o.id === id)) return toast.error('Esa fecha ya está.')
+    const opt: PollOption = { id, label: fmtDayLong(ms), detail: 'A la noche', startsAt: ms, special: null }
+    const options = [...poll.options, opt].sort((a, b) => (a.startsAt ?? 0) - (b.startsAt ?? 0))
+    try {
+      await db.updateDoc(P.poll(slug, poll.id), { options, updatedAt: Date.now() })
+      await logAudit(db, slug, memberId!, 'fecha.agregar', id)
+      setDate('')
+      toast.ok('Fecha agregada')
+    } catch (e) {
+      toast.error(errorText(e))
+    }
+  }
+  return (
+    <Card>
+      <p className="h3 mb-1">Agregar una fecha (sólo vos)</p>
+      <div className="grid grid-cols-[1fr_110px] gap-2">
+        <Field label="Día" id="add-date">
+          <Input id="add-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </Field>
+        <Field label="Hora" id="add-time">
+          <Input id="add-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        </Field>
+      </div>
+      <Button variant="line" onClick={() => void add()} disabled={!date}>
+        Agregar
+      </Button>
     </Card>
   )
 }
@@ -309,76 +551,8 @@ function RsvpCard({ edition }: { edition: { planVersion: number; afterparty: unk
           Guardar detalles
         </Button>
       ) : null}
-      <p className="tiny muted mt-3">Confirmar la comida anual no te anota al amigo invisible: eso se hace aparte.</p>
+      <p className="tiny muted mt-3">Tu asistencia no cambia el amigo invisible: participás igual aunque no vengas.</p>
     </Card>
   )
 }
 
-function ProposeDate() {
-  const { db, slug, memberId } = useSession()
-  const toast = useToast()
-  const { rows } = useCollection<Proposal>(P.proposals(slug), [{ field: 'type', op: '==', value: 'date' }])
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('21:00')
-  const [detail, setDetail] = useState('')
-  const [busy, setBusy] = useState(false)
-  const mine = rows.filter((p) => p.authorId === memberId && p.state === 'PENDING')
-
-  async function submit() {
-    const ms = localToMs(date, time)
-    if (!ms || !memberId) {
-      toast.error('Elegí una fecha.')
-      return
-    }
-    setBusy(true)
-    try {
-      const id = db.newId()
-      const p: Proposal = { id, type: 'date', authorId: memberId, label: fmtDayLong(ms), detail: detail.trim(), startsAt: ms, state: 'PENDING', createdAt: Date.now(), updatedAt: Date.now() }
-      await db.setDoc(P.proposal(slug, id), p)
-      setDate('')
-      setDetail('')
-      toast.ok('Propuesta enviada. Agus la revisa.')
-    } catch (e) {
-      toast.error(errorText(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Card>
-      <p className="small muted mb-3">Si ninguna fecha te sirve, proponé otra. Queda pendiente hasta que Agus la apruebe.</p>
-      <div className="grid sm:grid-cols-[1fr_120px] gap-3">
-        <Field label="Fecha" id="prop-date">
-          <Input id="prop-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field label="Hora" id="prop-time">
-          <Input id="prop-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="Comentario (opcional)" id="prop-detail">
-        <Textarea id="prop-detail" value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={200} />
-      </Field>
-      <Button onClick={() => void submit()} loading={busy}>
-        Proponer fecha
-      </Button>
-      {mine.length ? (
-        <div className="mt-4">
-          {mine.map((p) => (
-            <div key={p.id} className="row">
-              <span className="small">
-                {p.label} {p.detail ? `· ${p.detail}` : ''}
-              </span>
-              <span className="flex items-center gap-2">
-                <Pill tone="warn">Pendiente</Pill>
-                <Button size="sm" variant="line" onClick={() => void db.updateDoc(P.proposal(slug, p.id), { state: 'WITHDRAWN', updatedAt: Date.now() })}>
-                  Retirar
-                </Button>
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </Card>
-  )
-}

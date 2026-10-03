@@ -4,27 +4,50 @@
 export type Role = 'owner' | 'member'
 export type MemberStatus = 'draft' | 'active' | 'suspended'
 
+// Perfil público de un miembro (lo puede leer cualquiera, incluso sin entrar).
+// status: 'draft' = todavía sin usuario · 'active' = tiene usuario y puede entrar · 'suspended' = acceso pausado.
 export interface Member {
   id: string
   alias: string
   name?: string
   status: MemberStatus
   role: Role
-  uid?: string | null
   participating: boolean // participa de la edición actual
   vao: boolean // fue al Viaje Anual Obligatorio
   avatarColor?: string
-  hasEmail: boolean
-  consentAt?: number | null
+  photo?: string | null // foto de perfil chica (data URL JPEG)
+  birthday?: { d: number; m: number } | null // día y mes, públicos (el año es privado)
+  giftPrefs?: string // gustos e ideas de regalo, públicos
+  profileDone?: boolean // ya completó el primer ingreso
+  hasLogin?: boolean
   createdAt: number
   updatedAt: number
   version: number
+  // Campos viejos (acceso por mail); ya no se usan.
+  uid?: string | null
+  hasEmail?: boolean
+  consentAt?: number | null
 }
 
+// Datos privados: sólo el propio miembro y el administrador.
 export interface MemberPrivate {
-  email: string // normalizado en minúsculas
-  invitedAt?: number | null
-  notes?: string
+  username?: string
+  authEmail?: string // mail interno del usuario (inventado, nunca se usa para mandar nada)
+  uid?: string // cuenta de acceso vigente
+  birthYear?: number | null
+  updatedAt?: number
+}
+
+// logins/{usuario}: para traducir el usuario al mail interno al iniciar sesión.
+export interface LoginDoc {
+  memberId: string
+  email: string
+}
+
+// config/roles: quién es el presidente (se cambia desde Administración, sin tocar código).
+export interface RolesConfig {
+  presidentId: string | null
+  updatedAt?: number
 }
 
 export type EditionState = 'DRAFT' | 'ORGANIZING' | 'CONFIRMED' | 'RUNNING' | 'CLOSED' | 'ARCHIVED'
@@ -97,6 +120,7 @@ export interface DecisionInfo {
   confirmedAt?: number | null
   reason?: string
   pollId?: string | null
+  proposalId?: string | null
 }
 
 export interface Edition {
@@ -180,6 +204,7 @@ export interface Proposal {
   id: string
   type: ProposalType
   authorId: string
+  seed?: boolean // opción inicial cargada por el administrador
   label: string
   detail?: string
   link?: string
@@ -303,6 +328,7 @@ export interface GiftCampaign {
   tolerancePct: number
   enrollCloseAt: number | null
   drawVersion: number
+  drawnAt?: number | null
   roster: string[] // congelado al cerrar inscripción
   budgetVersion: number
   stats: { participants: number; viewed: number; ready: number; delivered: number }

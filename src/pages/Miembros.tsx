@@ -4,13 +4,14 @@ import { useSession } from '../data/DataContext'
 import { useCollection, useEdition, useMembers } from '../data/hooks'
 import { P } from '../data/paths'
 import type { Rsvp } from '../data/types'
-import { Avatar, Card, Empty, Loading, PageHeader, Pill, Stat } from '../ui/components'
+import { Avatar, Card, Empty, Loading, LoginPrompt, PageHeader, Pill, Stat } from '../ui/components'
 
 export function Miembros() {
-  const { slug, isAdmin } = useSession()
+  const { slug, isAdmin, isMember } = useSession()
   const members = useMembers()
   const { data: edition } = useEdition()
   const { rows: rsvps } = useCollection<Rsvp>(P.rsvps(slug))
+  if (!isMember) return <LoginPrompt text="La lista de miembros es sólo para la banda." />
   if (members.loading) return <Loading />
   const planVersion = edition?.planVersion ?? 1
   const rsvpOf = (id: string) => rsvps.find((r) => r.id === id)
@@ -28,7 +29,7 @@ export function Miembros() {
         actions={
           isAdmin ? (
             <Link to="/admin/miembros" className="btn btn-gold">
-              Cargar mails y nombres
+              Usuarios y accesos
             </Link>
           ) : null
         }
@@ -39,7 +40,7 @@ export function Miembros() {
         <Stat label="Sin responder" value={pending} />
       </div>
       {active.length === 0 ? (
-        <Empty title="Todavía no hay miembros activos" text="Agus tiene que cargar los mails desde Administración." />
+        <Empty title="Todavía no hay miembros activos" text="Agus tiene que crear los usuarios desde Administración." />
       ) : (
         <Card>
           {active.map((m) => {
@@ -68,7 +69,7 @@ export function Miembros() {
       )}
       {drafts.length > 0 ? (
         <p className="tiny muted mt-4">
-          Hay {drafts.length} alias del grupo que todavía no tienen mail cargado: {drafts.map((d) => d.alias).join(', ')}.
+          Hay {drafts.length} de la banda que todavía no tienen usuario: {drafts.map((d) => d.alias).join(', ')}.
         </p>
       ) : null}
     </div>

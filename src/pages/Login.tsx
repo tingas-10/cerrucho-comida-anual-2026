@@ -1,144 +1,108 @@
-// Pantalla pública: sólo marca genérica y acceso por mail. Sin fotos ni datos del evento.
+// Entrar con usuario y contraseña. No pide mail. Se puede seguir mirando como visitante.
 import { useEffect, useState, type FormEvent } from 'react'
-import { GRUPO, TEXTOS } from '../content/config'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { GRUPO } from '../content/config'
 import { useSession } from '../data/DataContext'
-import { DEMO_ACTIVE_ALIASES, DEMO_OWNER_UID, demoEmailFor } from '../data/demoSeed'
-import { slugify } from '../data/seed'
+import { loginWithUsername } from '../data/accounts'
+import { errorText } from '../data/actions'
+import { demoAccounts } from '../data/demoSeed'
 import { Button, Field, Input, Notice } from '../ui/components'
-import { useTheme } from '../ui/theme'
 
-export function Login({ returnTo }: { returnTo: string }) {
-  const { auth, demo } = useSession()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+const LOGO = import.meta.env.BASE_URL + 'logo.webp'
+
+export function Login() {
+  const { db, auth, demo, status, member } = useSession()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cooldown, setCooldown] = useState(0)
-  const [needEmail, setNeedEmail] = useState(false)
-  useTheme()
 
-  // Si venimos del link del mail, completar el ingreso.
+  // Ya entró: volver a donde estaba.
   useEffect(() => {
-    if (!auth.isLinkSignIn()) return
-    const stored = auth.storedEmail()
-    if (!stored) {
-      setNeedEmail(true)
-      return
-    }
-    setBusy(true)
-    auth
-      .completeLink(stored)
-      .catch((e: Error) => setError(mapAuthError(e)))
-      .finally(() => setBusy(false))
-  }, [auth])
-
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
-    return () => clearTimeout(t)
-  }, [cooldown])
+    if (status === 'ready') navigate(from, { replace: true })
+  }, [status, from, navigate])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setError(null)
-    const value = email.trim().toLowerCase()
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-      setError('Revisá el mail.')
-      return
-    }
     setBusy(true)
     try {
-      if (needEmail) {
-        await auth.completeLink(value)
-        return
-      }
-      const base = window.location.href.split('#')[0]
-      await auth.sendLink(value, `${base}#${returnTo && returnTo !== '/' ? returnTo : '/entrar'}`)
-      setSent(true)
-      setCooldown(60)
+      await loginWithUsername(db, auth, username, password)
     } catch (err) {
-      setError(mapAuthError(err as Error))
+      setError(errorText(err))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center p-5 bg-bg">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src={import.meta.env.BASE_URL + 'logo.webp'} alt="" className="w-28 h-28 rounded-full object-cover mx-auto shadow-lg" />
+    <div className="min-h-[70dvh] flex items-center justify-center py-6">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <img src={LOGO} alt="" className="w-24 h-24 rounded-full object-cover mx-auto shadow-lg" />
           <h1 className="h1 mt-3">{GRUPO.nombre}</h1>
-          <p className="eyebrow mt-2">Comida anual</p>
         </div>
-        <div className="card p-6">
-          {demo ? (
-            <DemoLogin />
-          ) : sent ? (
-            <div>
-              <Notice tone="ok">{TEXTOS.loginRespuesta}</Notice>
-              <p className="small muted mt-4">
-                Abrí el mail en este mismo celular o computadora y tocá el link. Si no llega, revisá spam.
+        <div className="card p-5">
+          {status === 'no-access' || status === 'suspended' ? (
+            <Notice tone="warn">
+              {status === 'suspended' ? 'Tu acceso está pausado. Hablá con Agus.' : 'Esa cuenta ya no está activa. Pedile a Agus que te pase tu usuario de nuevo.'}
+            </Notice>
+          ) : null}
+          {status === 'ready' && member ? <Notice tone="ok">Ya entraste como {member.alias}.</Notice> : null}
+          <form onSubmit={submit} className="mt-1">
+            <Field label="Usuario" id="login-user">
+              <Input id="login-user" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ej. facu" required />
+            </Field>
+            <Field label="Contraseña" id="login-pass">
+              <Input id="login-pass" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </Field>
+            {error ? (
+              <p className="small text-danger mb-3" role="alert">
+                {error}
               </p>
-              <div className="flex gap-2 mt-4">
-                <Button variant="line" onClick={() => setSent(false)} disabled={cooldown > 0}>
-                  {cooldown > 0 ? `Reenviar en ${cooldown} s` : 'Reenviar o corregir el mail'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={submit}>
-              {needEmail ? <Notice>Confirmá tu mail para terminar de entrar.</Notice> : null}
-              <Field label="Tu mail" id="email" hint={TEXTOS.loginAyuda}>
-                <Input id="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@mail.com" required autoFocus />
-              </Field>
-              {error ? <p className="small text-danger mb-3">{error}</p> : null}
-              <Button type="submit" variant="gold" className="w-full" loading={busy}>
-                {needEmail ? 'Entrar' : 'Enviarme el link para entrar'}
-              </Button>
-              <p className="tiny muted mt-4">Sin contraseña: te mandamos un link que vence en poco tiempo.</p>
-            </form>
-          )}
+            ) : null}
+            <Button type="submit" variant="gold" className="w-full" loading={busy}>
+              Entrar
+            </Button>
+          </form>
+          <p className="tiny muted mt-4">¿No tenés usuario o te olvidaste la contraseña? Pedíselo a Agus por WhatsApp.</p>
+          {demo ? <DemoQuickLogin /> : null}
         </div>
+        <p className="text-center mt-4">
+          <Link to="/" className="small underline muted">
+            Seguir mirando sin entrar
+          </Link>
+        </p>
       </div>
     </div>
   )
 }
 
-function DemoLogin() {
+function DemoQuickLogin() {
   const { auth } = useSession()
-  const [who, setWho] = useState('owner')
-  const options: Array<{ id: string; label: string; email: string; uid: string }> = [
-    { id: 'owner', label: `${GRUPO.ownerAlias} (administrador)`, email: GRUPO.ownerEmail as string, uid: DEMO_OWNER_UID },
-    ...DEMO_ACTIVE_ALIASES.map((a) => ({ id: 'm-' + slugify(a), label: a, email: demoEmailFor(a), uid: 'demo-m-' + slugify(a) })),
-  ]
-  const chosen = options.find((o) => o.id === who)!
+  const accounts = demoAccounts()
+  const [who, setWho] = useState(accounts[0].id)
+  const chosen = accounts.find((a) => a.id === who)!
   return (
-    <div>
+    <div className="mt-5 pt-4 border-t border-line">
       <Notice tone="warn">
-        <b>Modo demostración.</b> Elegí con quién entrar. Nada se guarda en un servidor.
+        <b>Modo demostración.</b> Entrá rápido como alguien de ejemplo (contraseña de todos: demo123).
       </Notice>
-      <Field label="Entrar como" id="demo-user">
-        <select id="demo-user" className="input" value={who} onChange={(e) => setWho(e.target.value)}>
-          {options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
+      <div className="flex gap-2 mt-3">
+        <select className="input" aria-label="Entrar como" value={who} onChange={(e) => setWho(e.target.value)}>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.label}
             </option>
           ))}
         </select>
-      </Field>
-      <Button variant="gold" className="w-full" onClick={() => void auth.demoSignIn?.(chosen.uid, chosen.email)}>
-        Entrar
-      </Button>
+        <Button variant="line" onClick={() => void auth.demoSignIn?.(chosen.uid, chosen.email)}>
+          Entrar
+        </Button>
+      </div>
     </div>
   )
-}
-
-function mapAuthError(e: Error & { code?: string }): string {
-  const code = e.code ?? ''
-  if (code.includes('invalid-action-code') || code.includes('expired-action-code')) return 'El link venció o ya se usó. Pedí uno nuevo.'
-  if (code.includes('too-many-requests')) return 'Demasiados intentos. Esperá un rato y probá de nuevo.'
-  if (code.includes('invalid-email')) return 'Revisá el mail.'
-  if (code.includes('unauthorized-continue-uri') || code.includes('unauthorized-domain')) return 'Este dominio no está autorizado en Firebase. Avisale a Agus.'
-  return 'No se pudo completar. Probá de nuevo.'
 }

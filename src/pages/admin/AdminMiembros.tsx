@@ -1,84 +1,110 @@
-// Miembros: alta y edición en la misma tabla (alias, nombre, mail), participación, quiénes fueron al VAO, suspensión e importación.
-import { Copy } from 'lucide-react'
+// Miembros y accesos: usuario y contraseña de cada uno, presidente, participación y altas/bajas.
+// Las contraseñas no se guardan en ningún lado: se muestran una sola vez al crearlas para pasarlas por WhatsApp.
+import { Copy, KeyRound, Plus, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
+import { createMemberLogin, removeMemberLogin, resetMemberPassword } from '../../data/accounts'
 import { errorText, logAudit } from '../../data/actions'
-import type { DataAdapter } from '../../data/adapter'
-import { useCollection, useEdition, useMembers } from '../../data/hooks'
+import { useCollection, useDoc, useEdition, useMembers } from '../../data/hooks'
 import { P } from '../../data/paths'
 import { OWNER_ID, newMember, slugify } from '../../data/seed'
-import type { Member, MemberPrivate } from '../../data/types'
-import { Button, Card, ConfirmDialog, Loading, Modal, Notice, Pill, Textarea } from '../../ui/components'
+import type { LoginDoc, Member, MemberPrivate, RolesConfig } from '../../data/types'
+import { generatePassword, normalizeUsername } from '../../domain/accounts'
+import { Button, Card, ConfirmDialog, Field, Input, Loading, MemberAvatar, Modal, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+interface Credential {
+  alias: string
+  username: string
+  password: string
+}
 
-// Columnas de la tabla en escritorio (en celular cada miembro es una tarjeta de dos columnas).
-const COLS = VAO_ACTIVO
-  ? 'md:grid-cols-[minmax(90px,1fr)_minmax(120px,1.2fr)_minmax(180px,1.8fr)_120px_70px_80px_170px]'
-  : 'md:grid-cols-[minmax(90px,1fr)_minmax(120px,1.2fr)_minmax(180px,1.8fr)_120px_70px_170px]'
-
-/** Guarda alias, nombre y mail de un miembro existente. Devuelve un mensaje de error o null. */
-async function saveMember(db: DataAdapter, slug: string, actorId: string, m: Member, prevEmail: string, alias: string, name: string, email: string, taken: (e: string) => boolean): Promise<string | null> {
-  const a = alias.trim()
-  const e = email.trim().toLowerCase()
-  if (a.length < 2) return 'El alias es muy corto.'
-  if (e && !EMAIL_RE.test(e)) return 'Ese mail no parece válido.'
-  if (e && e !== prevEmail && taken(e)) return 'Ese mail ya está cargado en otro miembro.'
-  const now = Date.now()
-  const emailChanged = e !== prevEmail
-  const patch: Record<string, unknown> = { alias: a, name: name.trim(), hasEmail: !!e, updatedAt: now, version: (m.version ?? 1) + 1 }
-  if (m.status === 'draft' && e) patch.status = 'active'
-  if (m.status === 'active' && !e && m.id !== OWNER_ID) patch.status = 'draft'
-  if (emailChanged && m.id !== OWNER_ID) patch.uid = null // obliga a verificar el mail nuevo
-  await db.updateDoc(P.member(m.id), patch)
-  if (e) await db.setDoc<MemberPrivate>(P.memberPrivate(m.id), { email: e, invitedAt: now }, { merge: true })
-  else if (prevEmail) await db.deleteDoc(P.memberPrivate(m.id))
-  if (emailChanged) await logAudit(db, slug, actorId, 'member.email', m.id)
-  return null
+function credentialsText(list: Credential[]): string {
+  const url = window.location.href.split('#')[0]
+  return list.map((c) => `${c.alias}: usuario *${c.username}* · contraseña *${c.password}*`).join('\n') + `\n\nEntrás en ${url}#/entrar (después podés cambiar la contraseña).`
 }
 
 export function AdminMiembros() {
-  const { db, slug, memberId } = useSession()
+  const { db, auth, slug, memberId } = useSession()
   const toast = useToast()
   const members = useMembers()
   const { data: edition } = useEdition()
   const { rows: privates } = useCollection<MemberPrivate>(P.memberPrivates)
-  const emailOf = useMemo(() => Object.fromEntries(privates.map((p) => [p.id, p.email])), [privates])
-  const [busy, setBusy] = useState(false)
-  const [importOpen, setImportOpen] = useState(false)
-  const [csv, setCsv] = useState('')
+  const { data: roles } = useDoc<RolesConfig>(P.roles)
+  const privById = useMemo(() => Object.fromEntries(privates.map((p) => [p.id, p])), [privates])
   const [filter, setFilter] = useState('')
   const [newAlias, setNewAlias] = useState('')
   const [newName, setNewName] = useState('')
-  const [newEmail, setNewEmail] = useState('')
-  const [removeTarget, setRemoveTarget] = useState<Member | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [loginFor, setLoginFor] = useState<{ m: Member; mode: 'create' | 'reset' } | null>(null)
+  const [shown, setShown] = useState<Credential[] | null>(null)
+  const [bulkProgress, setBulkProgress] = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<{ m: Member; action: 'remove-login' | 'delete' } | null>(null)
 
   if (members.loading) return <Loading />
-  const taken = (e: string) => privates.some((p) => p.email === e)
+  const usernameOf = (id: string) => privById[id]?.username || ''
+  const withoutLogin = members.list.filter((m) => m.status !== 'suspended' && !usernameOf(m.id) && m.id !== OWNER_ID)
+  const f = filter.trim().toLowerCase()
+  const list = members.list.filter((m) => !f || m.alias.toLowerCase().includes(f) || (m.name ?? '').toLowerCase().includes(f) || usernameOf(m.id).includes(f))
 
-  async function add() {
+  async function addMember() {
     const a = newAlias.trim()
-    const e = newEmail.trim().toLowerCase()
     if (a.length < 2) return toast.error('Poné un alias.')
-    if (e && !EMAIL_RE.test(e)) return toast.error('Ese mail no parece válido.')
-    if (e && taken(e)) return toast.error('Ese mail ya está cargado en otro miembro.')
-    setBusy(true)
+    setBusy('add')
     try {
-      const now = Date.now()
       const id = 'm-' + slugify(a) + '-' + db.newId().slice(0, 4).toLowerCase()
-      await db.setDoc(P.member(id), newMember(id, a, now, { name: newName.trim(), status: e ? 'active' : 'draft', hasEmail: !!e }))
-      if (e) await db.setDoc<MemberPrivate>(P.memberPrivate(id), { email: e, invitedAt: now })
+      await db.setDoc(P.member(id), newMember(id, a, Date.now(), { name: newName.trim() }))
       await logAudit(db, slug, memberId!, 'member.create', id)
       setNewAlias('')
       setNewName('')
-      setNewEmail('')
-      toast.ok(`${a} agregado`)
-    } catch (err) {
-      toast.error(errorText(err))
+      toast.ok(`${a} agregado. Ahora creale el usuario.`)
+    } catch (e) {
+      toast.error(errorText(e))
     } finally {
-      setBusy(false)
+      setBusy(null)
+    }
+  }
+
+  /** Usuario libre a partir del alias (si "facu" está tomado, prueba "facu2", "facu3"…). */
+  async function freeUsername(alias: string): Promise<string> {
+    const base = normalizeUsername(alias) || 'miembro'
+    for (let i = 0; i < 50; i++) {
+      const u = i === 0 ? base : `${base}${i + 1}`
+      const taken = await db.getDoc<LoginDoc>(P.login(u))
+      if (!taken) return u
+    }
+    return base + db.newId().slice(0, 4).toLowerCase()
+  }
+
+  async function bulkCreate() {
+    const out: Credential[] = []
+    try {
+      for (let i = 0; i < withoutLogin.length; i++) {
+        const m = withoutLogin[i]
+        setBulkProgress(`Creando ${i + 1} de ${withoutLogin.length}: ${m.alias}…`)
+        const username = await freeUsername(m.alias)
+        const password = generatePassword()
+        await createMemberLogin(db, auth, m.id, username, password)
+        out.push({ alias: m.alias, username, password })
+      }
+      await logAudit(db, slug, memberId!, 'login.create.bulk', `${out.length} usuarios`)
+      toast.ok(`${out.length} usuarios creados`)
+    } catch (e) {
+      toast.error(`Se cortó en el ${out.length + 1}: ${errorText(e)}`)
+    } finally {
+      setBulkProgress(null)
+      if (out.length) setShown(out)
+    }
+  }
+
+  async function setPresident(id: string) {
+    try {
+      await db.setDoc<RolesConfig>(P.roles, { presidentId: id || null, updatedAt: Date.now() })
+      await logAudit(db, slug, memberId!, 'rol.presidente', id || 'ninguno')
+      toast.ok(id ? `${members.aliasOf(id)} es el presidente` : 'Sin presidente')
+    } catch (e) {
+      toast.error(errorText(e))
     }
   }
 
@@ -91,7 +117,7 @@ export function AdminMiembros() {
   }
 
   async function setStatus(m: Member, status: Member['status']) {
-    if (m.id === OWNER_ID) return toast.error('El propietario no se puede suspender.')
+    if (m.id === OWNER_ID) return toast.error('No te podés suspender a vos mismo.')
     try {
       await db.updateDoc(P.member(m.id), { status, updatedAt: Date.now() })
       await logAudit(db, slug, memberId!, status === 'suspended' ? 'member.suspend' : 'member.reactivate', m.id)
@@ -100,142 +126,153 @@ export function AdminMiembros() {
     }
   }
 
-  async function importCsv() {
-    const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-    const errors: string[] = []
-    const ok: Array<{ alias: string; email: string; name: string }> = []
-    const seen = new Set<string>()
-    lines.forEach((l, i) => {
-      const [a, e, n] = l.split(/[,;\t]/).map((x) => x.trim())
-      if (!a || !e) return errors.push(`Línea ${i + 1}: falta alias o mail`)
-      const em = e.toLowerCase()
-      if (!EMAIL_RE.test(em)) return errors.push(`Línea ${i + 1}: mail inválido`)
-      const existing = members.list.find((m) => m.alias.toLowerCase() === a.toLowerCase())
-      if (seen.has(em) || privates.some((p) => p.email === em && p.id !== existing?.id)) return errors.push(`Línea ${i + 1}: mail repetido (${em})`)
-      seen.add(em)
-      ok.push({ alias: a, email: em, name: n ?? '' })
-    })
-    if (errors.length) return toast.error(errors.slice(0, 3).join(' · '))
-    setBusy(true)
-    try {
-      const now = Date.now()
-      for (const r of ok) {
-        const existing = members.list.find((m) => m.alias.toLowerCase() === r.alias.toLowerCase())
-        const id = existing?.id ?? 'm-' + slugify(r.alias) + '-' + db.newId().slice(0, 4).toLowerCase()
-        if (existing) await db.updateDoc(P.member(id), { status: existing.status === 'suspended' ? 'suspended' : 'active', hasEmail: true, ...(r.name ? { name: r.name } : {}), updatedAt: now })
-        else await db.setDoc(P.member(id), newMember(id, r.alias, now, { name: r.name, status: 'active', hasEmail: true }))
-        await db.setDoc<MemberPrivate>(P.memberPrivate(id), { email: r.email, invitedAt: now })
-      }
-      await logAudit(db, slug, memberId!, 'member.import', `${ok.length} filas`)
-      setImportOpen(false)
-      setCsv('')
-      toast.ok(`${ok.length} miembros cargados`)
-    } catch (e) {
-      toast.error(errorText(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function copyInvite() {
-    const url = window.location.href.split('#')[0]
-    const text = `Hola banda 👋 Ya está la web de la comida anual: ${url}\nEntrás con tu mail (te llega un link, sin contraseña). Primera misión: votar la fecha.`
-    navigator.clipboard?.writeText(text).then(
-      () => toast.ok('Mensaje de invitación copiado'),
-      () => toast.error('No se pudo copiar'),
-    )
-  }
-
-  const f = filter.toLowerCase()
-  const list = members.list.filter((m) => !f || m.alias.toLowerCase().includes(f) || (m.name ?? '').toLowerCase().includes(f) || (emailOf[m.id] ?? '').includes(f))
-  const vaoCount = members.list.filter((m) => m.vao).length
-  const withEmail = members.list.filter((m) => emailOf[m.id]).length
-
   return (
     <div className="grid gap-4">
+      {!usernameOf(OWNER_ID) ? (
+        <Notice tone="warn">
+          <b>Primero creá tu propio usuario</b> (tarjeta "{members.aliasOf(OWNER_ID)}" → Crear usuario), así elegís el nombre que quieras antes de crear los de todos.
+        </Notice>
+      ) : null}
       <Notice>
-        Escribí el <b>mail</b> de cada uno en su fila y tocá <b>Guardar</b>: con mail cargado pasa a Activo y ya puede entrar a la web. Sin mail queda como borrador y no puede entrar. No se mandan mails automáticos: compartí el link por el grupo.
+        Cada uno entra con <b>usuario y contraseña</b> (sin mail). Creale el usuario, pasale la contraseña por WhatsApp y en el primer ingreso la puede cambiar. Si se la olvida, la reseteás acá: nunca vas a ver la que eligió.
       </Notice>
-      <div className="flex gap-2 flex-wrap items-center">
-        <Button variant="line" onClick={() => setImportOpen(true)}>
-          Pegar una lista
-        </Button>
-        <Button variant="line" onClick={copyInvite}>
-          <Copy size={16} /> Copiar invitación para WhatsApp
-        </Button>
-        <input className="input sm:max-w-xs ml-auto" placeholder="Buscar" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Buscar miembro" />
-      </div>
 
       <Card>
-        <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-          <p className="small muted">
-            {members.list.length} en total · {withEmail} con mail{VAO_ACTIVO ? ` · ${vaoCount} fueron al VAO` : ''}
-          </p>
-          {VAO_ACTIVO ? (
-          <Button size="sm" variant={edition?.vaoRosterConfirmed ? 'line' : 'solid'} onClick={() => void db.updateDoc(P.edition(slug), { vaoRosterConfirmed: !edition?.vaoRosterConfirmed, updatedAt: Date.now() })}>
-            {edition?.vaoRosterConfirmed ? 'Lista del VAO confirmada ✓ (reabrir)' : 'Confirmar quiénes fueron al VAO'}
-          </Button>
-          ) : null}
-        </div>
-        <p className="tiny muted mb-3" hidden={!VAO_ACTIVO}>
-          VAO es el Viaje Anual Obligatorio. Tildá "Fue al VAO" en los que viajaron y confirmá la lista: los premios Revelación, MVP y Rey de la noche VAO sólo se pueden abrir con esa lista confirmada, y sólo ellos pueden ganarlos.
-        </p>
-        {/* En celular cada miembro es una tarjeta; en escritorio, una fila. */}
-        <div className={`hidden md:grid ${COLS} gap-2 tiny muted pb-1`}>
-          <span>Alias</span>
-          <span>Nombre</span>
-          <span>Mail</span>
-          <span>Estado</span>
-          <span className="text-center">Participa</span>
-          {VAO_ACTIVO ? <span className="text-center">Fue al VAO</span> : null}
-          <span />
-        </div>
-        <div className={`grid grid-cols-2 ${COLS} gap-2 items-center rounded-xl bg-soft/50 p-3 md:px-0 md:py-2 md:rounded-none md:bg-transparent md:border-t md:border-line`}>
-          <p className="col-span-2 md:hidden small font-semibold">Sumar a alguien que no está en la lista</p>
-          <input className="input" placeholder="Nuevo alias" value={newAlias} onChange={(e) => setNewAlias(e.target.value)} aria-label="Alias del nuevo miembro" />
-          <input className="input" placeholder="Nombre" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Nombre del nuevo miembro" />
-          <input className="input col-span-2 md:col-span-1" type="email" inputMode="email" autoCapitalize="none" placeholder="mail@ejemplo.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} aria-label="Mail del nuevo miembro" />
-          <span className={`hidden md:block tiny muted ${VAO_ACTIVO ? 'md:col-span-3' : 'md:col-span-2'}`}>Para sumar a alguien que no está en la lista.</span>
-          <div className="col-span-2 md:col-span-1">
-            <Button size="sm" variant="gold" className="w-full md:w-auto" onClick={() => void add()} loading={busy} disabled={newAlias.trim().length < 2}>
-              Agregar
-            </Button>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <p className="h3 mb-1">Presidente</p>
+            <p className="tiny muted mb-2">Puede confirmar la fecha, el lugar y la comida definitivos. Vos también podés.</p>
+            <select className="input" aria-label="Presidente" value={roles?.presidentId ?? ''} onChange={(e) => void setPresident(e.target.value)}>
+              <option value="">Nadie</option>
+              {members.list
+                .filter((m) => m.status !== 'suspended')
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.alias}
+                    {m.name && m.name !== m.alias ? ` (${m.name})` : ''}
+                  </option>
+                ))}
+            </select>
           </div>
-        </div>
-        <div className="grid gap-3 mt-3 md:gap-0 md:mt-0">
-          {list.map((m) => (
-            <MemberRow key={m.id} m={m} email={emailOf[m.id] ?? ''} taken={taken} onToggle={toggle} onStatus={setStatus} onRemove={setRemoveTarget} />
-          ))}
+          <div>
+            <p className="h3 mb-1">Usuarios que faltan</p>
+            <p className="tiny muted mb-2">
+              {withoutLogin.length === 0 ? 'Todos tienen usuario.' : `${withoutLogin.length} todavía no tienen usuario. Se crean con su alias y una contraseña tipo "fernet-4827".`}
+            </p>
+            {withoutLogin.length ? (
+              <Button variant="gold" onClick={() => void bulkCreate()} loading={!!bulkProgress}>
+                <UserPlus size={16} /> Crear los {withoutLogin.length} usuarios
+              </Button>
+            ) : null}
+            {bulkProgress ? <p className="tiny muted mt-2">{bulkProgress}</p> : null}
+          </div>
         </div>
       </Card>
 
-      <Modal open={importOpen} onClose={() => setImportOpen(false)} title="Pegar una lista">
-        <p className="small muted mb-2">
-          Una persona por línea: <code>alias, mail</code> (y si querés, <code>, nombre</code>). Si el alias ya existe, le completa el mail.
-        </p>
-        <Textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={8} placeholder={'Choclo, choclo@mail.com\nFacu, facu@mail.com, Facu Caputo'} aria-label="Lista de miembros" />
-        <Button className="mt-3" variant="gold" onClick={() => void importCsv()} loading={busy}>
-          Cargar
+      <Card>
+        <p className="h3 mb-2">Sumar a alguien</p>
+        <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+          <Field label="Alias" id="nm-alias">
+            <Input id="nm-alias" value={newAlias} onChange={(e) => setNewAlias(e.target.value)} placeholder="ej. Choclo" />
+          </Field>
+          <Field label="Nombre" id="nm-name">
+            <Input id="nm-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="ej. Juan Pérez" />
+          </Field>
+          <div className="mb-4">
+            <Button onClick={() => void addMember()} loading={busy === 'add'} disabled={newAlias.trim().length < 2}>
+              <Plus size={16} /> Agregar
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <input className="input" placeholder="Buscar por alias, nombre o usuario" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Buscar miembro" />
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {list.map((m) => (
+          <MemberCard
+            key={m.id}
+            m={m}
+            username={usernameOf(m.id)}
+            isPresident={roles?.presidentId === m.id}
+            onToggle={toggle}
+            onStatus={setStatus}
+            onLogin={(mode) => setLoginFor({ m, mode })}
+            onConfirm={(action) => setConfirm({ m, action })}
+          />
+        ))}
+      </div>
+      {VAO_ACTIVO ? (
+        <Button size="sm" variant="line" onClick={() => void db.updateDoc(P.edition(slug), { vaoRosterConfirmed: !edition?.vaoRosterConfirmed, updatedAt: Date.now() })}>
+          {edition?.vaoRosterConfirmed ? 'Lista del VAO confirmada ✓ (reabrir)' : 'Confirmar quiénes fueron al VAO'}
+        </Button>
+      ) : null}
+
+      <LoginModal
+        target={loginFor}
+        onClose={() => setLoginFor(null)}
+        suggest={loginFor ? (usernameOf(loginFor.m.id) || normalizeUsername(loginFor.m.alias)) : ''}
+        onDone={(cred) => {
+          setLoginFor(null)
+          setShown([cred])
+        }}
+      />
+
+      <Modal open={!!shown} onClose={() => setShown(null)} title="Pasáselo por WhatsApp" wide>
+        <Notice tone="warn">Copialo ahora: las contraseñas no se guardan y no las vas a poder ver de nuevo (si hace falta, se resetean).</Notice>
+        <div className="mt-3 max-h-[50dvh] overflow-y-auto">
+          {(shown ?? []).map((c) => (
+            <div key={c.username} className="row small">
+              <span className="font-semibold">{c.alias}</span>
+              <span className="text-right">
+                <span className="muted">usuario</span> <b>{c.username}</b>
+                <br />
+                <span className="muted">contraseña</span> <b className="font-mono">{c.password}</b>
+              </span>
+            </div>
+          ))}
+        </div>
+        <Button
+          variant="gold"
+          className="w-full mt-3"
+          onClick={() =>
+            navigator.clipboard?.writeText(credentialsText(shown ?? [])).then(
+              () => toast.ok('Copiado'),
+              () => toast.error('No se pudo copiar'),
+            )
+          }
+        >
+          <Copy size={16} /> Copiar {shown && shown.length > 1 ? 'todo' : ''}
         </Button>
       </Modal>
 
       <ConfirmDialog
-        open={!!removeTarget}
-        onClose={() => setRemoveTarget(null)}
-        title={`Eliminar a ${removeTarget?.alias}`}
-        text="Se borra de la lista. Sólo se puede eliminar a quien todavía no tiene mail cargado; a los demás se los suspende."
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        title={confirm?.action === 'delete' ? `Eliminar a ${confirm?.m.alias}` : `Quitarle el acceso a ${confirm?.m.alias}`}
+        text={
+          confirm?.action === 'delete'
+            ? 'Se borra de la banda. Sus votos y partidos viejos quedan, pero sin nombre.'
+            : 'Sigue en la banda (cumpleaños, FMO, amigo invisible) pero ya no puede entrar. Le podés crear un usuario nuevo cuando quieras.'
+        }
         danger
-        confirmLabel="Eliminar"
+        confirmLabel={confirm?.action === 'delete' ? 'Eliminar' : 'Quitar acceso'}
         onConfirm={async () => {
-          if (!removeTarget) return
+          const c = confirm!
           try {
-            await db.deleteDoc(P.member(removeTarget.id))
-            await logAudit(db, slug, memberId!, 'member.delete', removeTarget.id)
-            toast.ok('Eliminado')
+            if (c.action === 'delete') {
+              if (usernameOf(c.m.id)) await removeMemberLogin(db, c.m.id)
+              await db.deleteDoc(P.member(c.m.id))
+              await logAudit(db, slug, memberId!, 'member.delete', c.m.id)
+            } else {
+              await removeMemberLogin(db, c.m.id)
+              await logAudit(db, slug, memberId!, 'login.remove', c.m.id)
+            }
+            toast.ok('Listo')
           } catch (e) {
             toast.error(errorText(e))
           } finally {
-            setRemoveTarget(null)
+            setConfirm(null)
           }
         }}
       />
@@ -243,25 +280,32 @@ export function AdminMiembros() {
   )
 }
 
-function MemberRow({ m, email, taken, onToggle, onStatus, onRemove }: { m: Member; email: string; taken: (e: string) => boolean; onToggle: (m: Member, f: 'participating' | 'vao') => void; onStatus: (m: Member, s: Member['status']) => void; onRemove: (m: Member) => void }) {
-  const { db, slug, memberId } = useSession()
+function MemberCard(props: {
+  m: Member
+  username: string
+  isPresident: boolean
+  onToggle: (m: Member, f: 'participating' | 'vao') => void
+  onStatus: (m: Member, s: Member['status']) => void
+  onLogin: (mode: 'create' | 'reset') => void
+  onConfirm: (action: 'remove-login' | 'delete') => void
+}) {
+  const { m, username, isPresident } = props
+  const { db } = useSession()
   const toast = useToast()
   const [alias, setAlias] = useState(m.alias)
   const [name, setName] = useState(m.name ?? '')
-  const [mail, setMail] = useState(email)
   const [busy, setBusy] = useState(false)
   useEffect(() => setAlias(m.alias), [m.alias])
   useEffect(() => setName(m.name ?? ''), [m.name])
-  useEffect(() => setMail(email), [email])
-  const dirty = alias !== m.alias || name !== (m.name ?? '') || mail.trim().toLowerCase() !== email
+  const dirty = alias.trim() !== m.alias || name.trim() !== (m.name ?? '')
   const isOwner = m.id === OWNER_ID
 
   async function save() {
+    if (alias.trim().length < 2) return toast.error('El alias es muy corto.')
     setBusy(true)
     try {
-      const err = await saveMember(db, slug, memberId!, m, email, alias, name, isOwner ? email : mail, taken)
-      if (err) toast.error(err)
-      else toast.ok(`${alias.trim()} guardado`)
+      await db.updateDoc(P.member(m.id), { alias: alias.trim(), name: name.trim(), updatedAt: Date.now() })
+      toast.ok('Guardado')
     } catch (e) {
       toast.error(errorText(e))
     } finally {
@@ -270,45 +314,135 @@ function MemberRow({ m, email, taken, onToggle, onStatus, onRemove }: { m: Membe
   }
 
   return (
-    <div className={`grid grid-cols-2 ${COLS} gap-2 items-center rounded-xl border border-line p-3 md:px-0 md:py-2 md:rounded-none md:border-0 md:border-t`}>
-      <input className="input font-semibold" value={alias} onChange={(e) => setAlias(e.target.value)} aria-label={`Alias de ${m.alias}`} />
-      <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" aria-label={`Nombre de ${m.alias}`} />
-      <input className="input col-span-2 md:col-span-1" type="email" inputMode="email" autoCapitalize="none" value={mail} disabled={isOwner} onChange={(e) => setMail(e.target.value)} placeholder="sin mail" aria-label={`Mail de ${m.alias}`} onKeyDown={(e) => e.key === 'Enter' && dirty && void save()} />
-      <span className="whitespace-nowrap">
-        {isOwner ? <Pill>Dueño</Pill> : m.status === 'active' ? <Pill tone="ok">Activo{m.uid ? '' : ' · no entró'}</Pill> : m.status === 'draft' ? <Pill tone="muted">Borrador</Pill> : <Pill tone="danger">Suspendido</Pill>}
-      </span>
-      <label className="flex items-center justify-end md:justify-center gap-2 small min-h-[40px]">
-        <span className="md:hidden">Participa</span>
-        <input type="checkbox" className="w-5 h-5" aria-label={`Participa ${m.alias}`} checked={m.participating} onChange={() => onToggle(m, 'participating')} />
-      </label>
-      {VAO_ACTIVO ? (
-        <label className="col-span-2 md:col-span-1 flex items-center justify-end md:justify-center gap-2 small min-h-[40px]">
-          <span className="md:hidden">Fue al VAO</span>
-          <input type="checkbox" className="w-5 h-5" aria-label={`Fue al VAO ${m.alias}`} checked={m.vao} onChange={() => onToggle(m, 'vao')} />
+    <div className="card p-3">
+      <div className="flex items-center gap-3">
+        <MemberAvatar id={m.id} size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap gap-1">
+            {isOwner ? <Pill>Administrador</Pill> : null}
+            {isPresident ? <Pill>Presidente</Pill> : null}
+            {m.status === 'suspended' ? <Pill tone="danger">Suspendido</Pill> : username ? <Pill tone="ok">Usuario: {username}</Pill> : <Pill tone="muted">Sin usuario</Pill>}
+            {m.status === 'active' && m.profileDone ? null : m.status === 'active' ? <Pill tone="warn">No entró todavía</Pill> : null}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <input className="input font-semibold" value={alias} onChange={(e) => setAlias(e.target.value)} aria-label={`Alias de ${m.alias}`} />
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" aria-label={`Nombre de ${m.alias}`} />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+        <label className="flex items-center gap-2 small min-h-[40px]">
+          <input type="checkbox" className="w-5 h-5" checked={m.participating} onChange={() => props.onToggle(m, 'participating')} />
+          Participa este año
         </label>
-      ) : null}
-      <span className="col-span-2 md:col-span-1 flex gap-1 flex-wrap md:justify-end empty:hidden">
+        {VAO_ACTIVO ? (
+          <label className="flex items-center gap-2 small min-h-[40px]">
+            <input type="checkbox" className="w-5 h-5" checked={m.vao} onChange={() => props.onToggle(m, 'vao')} />
+            Fue al VAO
+          </label>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mt-2">
         {dirty ? (
-          <Button size="sm" variant="gold" className="flex-1 md:flex-none" onClick={() => void save()} loading={busy}>
+          <Button size="sm" variant="gold" onClick={() => void save()} loading={busy}>
             Guardar
           </Button>
         ) : null}
+        {!username && m.status !== 'suspended' ? (
+          <Button size="sm" variant={dirty ? 'line' : 'gold'} onClick={() => props.onLogin('create')}>
+            <UserPlus size={14} /> Crear usuario
+          </Button>
+        ) : null}
+        {username ? (
+          <Button size="sm" variant="line" onClick={() => props.onLogin('reset')}>
+            <KeyRound size={14} /> Resetear contraseña
+          </Button>
+        ) : null}
+        {username && !isOwner ? (
+          <Button size="sm" variant="line" onClick={() => props.onConfirm('remove-login')}>
+            Quitar acceso
+          </Button>
+        ) : null}
         {m.status === 'active' && !isOwner ? (
-          <Button size="sm" variant="line" onClick={() => onStatus(m, 'suspended')}>
+          <Button size="sm" variant="line" onClick={() => props.onStatus(m, 'suspended')}>
             Suspender
           </Button>
         ) : null}
         {m.status === 'suspended' ? (
-          <Button size="sm" variant="line" onClick={() => onStatus(m, 'active')}>
+          <Button size="sm" variant="line" onClick={() => props.onStatus(m, username ? 'active' : 'draft')}>
             Reactivar
           </Button>
         ) : null}
-        {m.status === 'draft' && !isOwner && !dirty ? (
-          <Button size="sm" variant="line" onClick={() => onRemove(m)}>
+        {!isOwner && !username ? (
+          <Button size="sm" variant="line" onClick={() => props.onConfirm('delete')}>
             Eliminar
           </Button>
         ) : null}
-      </span>
+      </div>
     </div>
+  )
+}
+
+function LoginModal({ target, onClose, suggest, onDone }: { target: { m: Member; mode: 'create' | 'reset' } | null; onClose: () => void; suggest: string; onDone: (c: Credential) => void }) {
+  const { db, auth, slug, memberId } = useSession()
+  const toast = useToast()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [seen, setSeen] = useState<string | null>(null)
+  const key = target ? target.m.id + target.mode : null
+  if (key && key !== seen) {
+    setSeen(key)
+    setUsername(suggest)
+    setPassword(generatePassword())
+  }
+  if (!target) return null
+  const { m, mode } = target
+
+  async function go() {
+    setBusy(true)
+    try {
+      if (mode === 'create') {
+        const u = await createMemberLogin(db, auth, m.id, username, password)
+        await logAudit(db, slug, memberId!, 'login.create', m.id)
+        onDone({ alias: m.alias, username: u, password })
+      } else {
+        await resetMemberPassword(db, auth, m.id, password)
+        await logAudit(db, slug, memberId!, 'login.reset', m.id)
+        onDone({ alias: m.alias, username: suggest, password })
+      }
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={mode === 'create' ? `Usuario para ${m.alias}` : `Nueva contraseña para ${m.alias}`}>
+      {mode === 'create' ? (
+        <Field label="Usuario" id="lm-user" hint="Sin espacios ni acentos. Es lo que escribe para entrar.">
+          <Input id="lm-user" autoCapitalize="none" autoCorrect="off" value={username} onChange={(e) => setUsername(e.target.value)} />
+        </Field>
+      ) : (
+        <p className="small mb-3">
+          Usuario: <b>{suggest}</b>. La contraseña anterior deja de servir.
+        </p>
+      )}
+      <Field label={mode === 'create' ? 'Contraseña inicial' : 'Contraseña nueva'} id="lm-pass" hint="Mínimo 6 caracteres. Después la puede cambiar.">
+        <div className="flex gap-2">
+          <Input id="lm-pass" value={password} onChange={(e) => setPassword(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+          <Button variant="line" onClick={() => setPassword(generatePassword())} aria-label="Generar otra">
+            Otra
+          </Button>
+        </div>
+      </Field>
+      {m.id === OWNER_ID && mode === 'create' ? (
+        <Notice tone="warn">Es tu propio usuario: después de crearlo, cerrá sesión y entrá con él. Anotá la contraseña antes.</Notice>
+      ) : null}
+      <Button variant="gold" className="w-full mt-2" onClick={() => void go()} loading={busy}>
+        {mode === 'create' ? 'Crear usuario' : 'Resetear contraseña'}
+      </Button>
+    </Modal>
   )
 }

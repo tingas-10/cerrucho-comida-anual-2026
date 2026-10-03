@@ -1,28 +1,40 @@
-// Premios: categorías, apertura y cierre de rondas, sellado sin mirar, ballotage, anulación y acceso reservado.
+// Premios (administración): categorías, período de votación (abre y cierra cuando Agus define),
+// conteo y resultados. Los resultados los ve SOLO Agus y nunca se publican en la web.
 import { useMemo, useState } from 'react'
 import { BALLOTAGE_HORAS } from '../../content/config'
 import { NOBODY, VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
 import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
 import { DataError } from '../../data/adapter'
-import { useCollection, useEdition, useMembers } from '../../data/hooks'
+import { useCollection, useDocs, useEdition, useMembers, useNow } from '../../data/hooks'
 import { P } from '../../data/paths'
-import type { Award, AwardResult, Ballot, SealedResult } from '../../data/types'
+import type { Award, Ballot, SealedResult } from '../../data/types'
 import { countBallots, resolveRound1, resolveRound2 } from '../../domain/awards'
-import { fmtDateTime, hoursFromNow, localToMs, timeLeft } from '../../domain/format'
+import { fmtDateTime, localToMs, msToLocalParts, timeLeft } from '../../domain/format'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, Modal, Notice, Pill, Textarea } from '../../ui/components'
 import { useToast } from '../../ui/toast'
-import { awardTitle } from '../Premios'
+import { awardPhase, awardTitle } from '../Premios'
+
+function nowParts(offsetMs = 0) {
+  return msToLocalParts(Date.now() + offsetMs)
+}
 
 export function AdminPremios() {
-  const { db, slug, memberId } = useSession()
+  const { db, slug, memberId, isAgus } = useSession()
   const toast = useToast()
+  const now = useNow()
   const { data: edition } = useEdition()
   const members = useMembers()
   const { rows: awards } = useCollection<Award>(P.awards(slug))
   const list = useMemo(() => awards.filter((a) => VAO_ACTIVO || a.eligibility !== 'VAO').sort((a, b) => a.order - b.order), [awards])
+  const counted = list.filter((a) => a.state === 'SEALED' || a.state === 'RUNOFF_READY' || a.state === 'ROUND1_CLOSED')
+  const { docs: sealedDocs } = useDocs<SealedResult & { manual?: boolean; reason?: string }>(isAgus ? counted.map((a) => P.sealed(slug, a.code)) : [])
   const [busy, setBusy] = useState<string | null>(null)
-  const [closeDate, setCloseDate] = useState('')
+  const start0 = nowParts()
+  const end0 = nowParts(BALLOTAGE_HORAS * 3600000)
+  const [openDate, setOpenDate] = useState(start0.date)
+  const [openTime, setOpenTime] = useState(start0.time)
+  const [closeDate, setCloseDate] = useState(end0.date)
   const [closeTime, setCloseTime] = useState('23:59')
   const [editing, setEditing] = useState<Award | null>(null)
   const [label, setLabel] = useState('')
@@ -30,9 +42,7 @@ export function AdminPremios() {
   const [voidTarget, setVoidTarget] = useState<Award | null>(null)
   const [manualTarget, setManualTarget] = useState<Award | null>(null)
   const [manualWinner, setManualWinner] = useState('')
-  const [reservedTarget, setReservedTarget] = useState<Award | null>(null)
-  const [revealTarget, setRevealTarget] = useState<Award | null>(null)
-  const [reserved, setReserved] = useState<Record<string, SealedResult>>({})
+  const [manualReason, setManualReason] = useState('')
   const [newLabel, setNewLabel] = useState('')
   const [ballotCounts, setBallotCounts] = useState<Record<string, number>>({})
 
@@ -41,7 +51,15 @@ export function AdminPremios() {
   const vao = participants.filter((m) => m.vao)
   const drafts = list.filter((a) => a.enabled && a.state === 'DRAFT')
   const openable = drafts.filter((a) => a.eligibility !== 'VAO' || (edition.vaoRosterConfirmed && vao.length > 0))
+  const openAtMs = localToMs(openDate, openTime)
   const closeAtMs = localToMs(closeDate, closeTime)
+  const voting = list.filter((a) => a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN')
+
+  function checkWindow() {
+    if (!openAtMs || !closeAtMs) throw new DataError('VALIDATION_ERROR', 'Completá cuándo abre y cuándo cierra.')
+    if (closeAtMs <= openAtMs) throw new DataError('VALIDATION_ERROR', 'El cierre tiene que ser después de la apertura.')
+    if (closeAtMs <= Date.now()) throw new DataError('VALIDATION_ERROR', 'El cierre tiene que ser en el futuro.')
+  }
 
   async function run(key: string, fn: () => Promise<void>, ok = 'Listo') {
     setBusy(key)
@@ -56,27 +74,37 @@ export function AdminPremios() {
   }
 
   async function openRound1() {
-    if (!closeAtMs || closeAtMs <= Date.now()) throw new DataError('VALIDATION_ERROR', 'Definí una fecha de cierre futura.')
+    checkWindow()
     const electorate = participants.map((m) => m.id)
-    if (electorate.length === 0) throw new DataError('VALIDATION_ERROR', 'No hay electores.')
+    if (electorate.length === 0) throw new DataError('VALIDATION_ERROR', 'No hay miembros activos para votar.')
     let opened = 0
     for (const a of openable) {
       const candidates = (a.eligibility === 'VAO' ? vao : participants).map((m) => m.id)
       if (candidates.length === 0) continue
-      await db.updateDoc(P.award(slug, a.code), { state: 'ROUND1_OPEN', candidates, electorate, round1: { openAt: Date.now(), closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
+      await db.updateDoc(P.award(slug, a.code), { state: 'ROUND1_OPEN', candidates, electorate, round1: { openAt: openAtMs, closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
       opened++
     }
     await setDecision(db, slug, 'premios', { status: 'VOTING' })
-    await pushNews(db, slug, `Abrió la votación de premios (${opened} categorías). Cierra ${fmtDateTime(closeAtMs)}.`)
+    await pushNews(db, slug, `Votación de premios: abre ${fmtDateTime(openAtMs)} y cierra ${fmtDateTime(closeAtMs)}.`)
     await logAudit(db, slug, memberId!, 'awards.open', `${opened} categorías`)
   }
 
-  /** Cierra una categoría: cuenta boletas (sin mostrarlas) y guarda el resultado sellado. */
+  /** Cambia el período de las categorías que están en votación (para extender o adelantar). */
+  async function changeWindow() {
+    checkWindow()
+    for (const a of voting) {
+      const field = a.state === 'ROUND2_OPEN' ? 'round2' : 'round1'
+      await db.updateDoc(P.award(slug, a.code), { [field]: { openAt: openAtMs, closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
+    }
+    await logAudit(db, slug, memberId!, 'awards.window', `${fmtDateTime(openAtMs)} → ${fmtDateTime(closeAtMs)}`)
+  }
+
+  /** Cuenta las boletas y guarda el resultado sellado (sólo Agus lo puede leer). */
   async function closeCategory(a: Award, round: 1 | 2) {
     const ballots = await db.getCollection<Ballot>(P.ballots(slug, a.code))
     const electorate = new Set(a.electorate)
     const valid = ballots.filter((b) => electorate.has(b.id))
-    const allowed = new Set(round === 1 ? [...a.candidates, NOBODY] : a.finalists ?? [])
+    const allowed = new Set(round === 1 ? [...a.candidates, NOBODY] : (a.finalists ?? []))
     const choices = valid.map((b) => (round === 1 ? b.r1 : b.r2))
     const counts = countBallots(choices, allowed)
     const participation = choices.filter((c) => c && allowed.has(c)).length
@@ -91,23 +119,22 @@ export function AdminPremios() {
     await db.runTransaction(async (tx) => {
       const cur = await tx.get<Award>(P.award(slug, a.code))
       if (!cur) throw new DataError('NOT_FOUND')
-      const expected = round === 1 ? 'ROUND1_OPEN' : 'ROUND2_OPEN'
-      if (cur.state !== expected) return
+      if (cur.state !== (round === 1 ? 'ROUND1_OPEN' : 'ROUND2_OPEN')) return
       tx.set(P.sealed(slug, a.code), sealed)
-      tx.update(P.award(slug, a.code), { state: sealed.outcome === 'RUNOFF_REQUIRED' ? 'RUNOFF_READY' : 'SEALED', completedCount: participation, updatedAt: Date.now(), version: cur.version + 1 })
+      tx.update(P.award(slug, a.code), { state: sealed.outcome === 'RUNOFF_REQUIRED' ? 'RUNOFF_READY' : 'SEALED', updatedAt: Date.now(), version: cur.version + 1 })
     })
-    await logAudit(db, slug, memberId!, round === 1 ? 'award.close1' : 'award.close2', a.code)
+    await logAudit(db, slug, memberId!, round === 1 ? 'award.count1' : 'award.count2', a.code)
   }
 
   async function openRunoffs() {
-    if (!closeAtMs || closeAtMs <= Date.now()) throw new DataError('VALIDATION_ERROR', 'Definí una fecha de cierre futura.')
+    checkWindow()
     const ready = list.filter((a) => a.state === 'RUNOFF_READY')
     for (const a of ready) {
       const sealed = await db.getDoc<SealedResult>(P.sealed(slug, a.code))
       if (!sealed?.finalists?.length) continue
-      await db.updateDoc(P.award(slug, a.code), { state: 'ROUND2_OPEN', finalists: sealed.finalists, round2: { openAt: Date.now(), closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
+      await db.updateDoc(P.award(slug, a.code), { state: 'ROUND2_OPEN', finalists: sealed.finalists, round2: { openAt: openAtMs, closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
     }
-    await pushNews(db, slug, `Ballotage abierto en ${ready.length} categorías. Cierra ${fmtDateTime(closeAtMs)}.`)
+    await pushNews(db, slug, `Ballotage de premios: abre ${fmtDateTime(openAtMs)} y cierra ${fmtDateTime(closeAtMs)}.`)
     await logAudit(db, slug, memberId!, 'awards.runoff', `${ready.length} categorías`)
   }
 
@@ -119,164 +146,171 @@ export function AdminPremios() {
   }
 
   async function manualResult(a: Award, winner: string, reason: string) {
-    const result: SealedResult = { round: a.state === 'ROUND2_OPEN' || a.round2 ? 2 : 1, counts: {}, outcome: winner === NOBODY ? 'DESERTED' : 'WINNER', winner: winner === NOBODY ? null : winner, participation: 0, electorateSize: a.electorate.length, computedAt: Date.now() }
+    const result: SealedResult = { round: a.round2 ? 2 : 1, counts: {}, outcome: winner === NOBODY ? 'DESERTED' : 'WINNER', winner: winner === NOBODY ? null : winner, participation: 0, electorateSize: a.electorate.length, computedAt: Date.now() }
     await db.setDoc(P.sealed(slug, a.code), { ...result, manual: true, reason } as SealedResult & { manual: boolean; reason: string })
     await db.updateDoc(P.award(slug, a.code), { state: 'SEALED', updatedAt: Date.now(), version: a.version + 1 })
     await logAudit(db, slug, memberId!, 'award.manual', a.code, reason)
   }
 
-  /** Publica el resultado sellado para toda la banda. Una vez revelado no se vuelve a ocultar. */
-  async function reveal(a: Award) {
-    const sealed = await db.getDoc<SealedResult>(P.sealed(slug, a.code))
-    if (!sealed || sealed.outcome === 'RUNOFF_REQUIRED') throw new DataError('STATE_CONFLICT', 'No hay resultado sellado.')
-    const result: AwardResult = {
-      outcome: sealed.outcome,
-      winner: sealed.winner ?? null,
-      tied: sealed.tied ?? [],
-      counts: sealed.counts,
-      round: sealed.round,
-      participation: sealed.participation,
-      electorateSize: sealed.electorateSize,
-      manual: (sealed as SealedResult & { manual?: boolean }).manual ?? false,
-    }
-    await db.runTransaction(async (tx) => {
-      const cur = await tx.get<Award>(P.award(slug, a.code))
-      if (!cur) throw new DataError('NOT_FOUND')
-      if (cur.state === 'REVEALED') return
-      if (cur.state !== 'SEALED') throw new DataError('STATE_CONFLICT', 'La categoría no está sellada.')
-      tx.update(P.award(slug, a.code), { state: 'REVEALED', result, revealedAt: Date.now(), updatedAt: Date.now(), version: cur.version + 1 })
-    })
-    await pushNews(db, slug, `Premio revelado: ${awardTitle(a, edition!.year)}.`)
-    await logAudit(db, slug, memberId!, 'award.reveal', a.code)
-  }
-
-  async function correctRevealed(a: Award, reason: string) {
-    const r: AwardResult = { ...a.result!, corrected: { reason, at: Date.now() } }
-    await db.updateDoc(P.award(slug, a.code), { result: r, updatedAt: Date.now(), version: a.version + 1 })
-    await logAudit(db, slug, memberId!, 'award.correct', a.code, reason)
-  }
-
   async function refreshCounts() {
     const out: Record<string, number> = {}
-    for (const a of list.filter((x) => x.state === 'ROUND1_OPEN' || x.state === 'ROUND2_OPEN')) {
+    for (const a of voting) {
       const ballots = await db.getCollection<Ballot>(P.ballots(slug, a.code))
       out[a.code] = ballots.filter((b) => (a.state === 'ROUND2_OPEN' ? b.r2 : b.r1)).length
     }
     setBallotCounts(out)
   }
 
-  const stateLabel: Record<Award['state'], string> = {
-    DRAFT: 'Borrador',
-    ROUND1_OPEN: 'Primera ronda abierta',
-    ROUND1_CLOSED: 'Primera ronda cerrada',
-    RUNOFF_READY: 'Ballotage listo',
-    ROUND2_OPEN: 'Ballotage abierto',
-    SEALED: 'Sellado',
-    REVEALED: 'Revelado',
-    VOID: 'Anulado',
+  const stateLabel = (a: Award): string => {
+    const ph = awardPhase(a, now)
+    switch (a.state) {
+      case 'DRAFT':
+        return 'Sin abrir'
+      case 'ROUND1_OPEN':
+      case 'ROUND2_OPEN':
+        return (a.state === 'ROUND2_OPEN' ? 'Ballotage · ' : '') + (ph.phase === 'scheduled' ? `abre ${fmtDateTime(ph.openAt)}` : ph.phase === 'open' ? timeLeft(ph.closeAt, now) : 'cerró, falta contar')
+      case 'RUNOFF_READY':
+        return 'Contada · necesita ballotage'
+      case 'SEALED':
+        return 'Contada'
+      case 'VOID':
+        return 'Anulada'
+      default:
+        return a.state
+    }
+  }
+
+  const resultText = (s: SealedResult | null | undefined): string => {
+    if (!s) return '…'
+    if (s.outcome === 'WINNER' && s.winner) return `Ganó ${members.aliasOf(s.winner)}`
+    if (s.outcome === 'TIE') return `Empate: ${(s.tied ?? []).map(members.aliasOf).join(' / ')}`
+    if (s.outcome === 'DESERTED') return 'Desierto (ganó "Nadie lo merece")'
+    if (s.outcome === 'NO_VOTES') return 'Sin votos'
+    if (s.outcome === 'RUNOFF_REQUIRED') return `Va a ballotage: ${(s.finalists ?? []).map(members.aliasOf).join(', ')}`
+    return s.outcome
   }
 
   return (
     <div className="grid gap-4">
-      {VAO_ACTIVO && !edition.vaoRosterConfirmed ? <Notice tone="warn">Las tres categorías VAO (Viaje Anual Obligatorio) quedan bloqueadas hasta que confirmes en Miembros quiénes fueron al viaje. Ahora hay {vao.length} marcados.</Notice> : null}
+      <Notice>
+        Los resultados <b>no se publican nunca</b>: los ves sólo vos (con tu usuario) y los anunciás en la comida. La banda ve únicamente si la votación está abierta y su propio voto.
+      </Notice>
+      {!isAgus ? <Notice tone="warn">Contar votos y ver resultados es sólo para Agus.</Notice> : null}
+
       <Card>
-        <p className="h3 mb-2">Abrir y cerrar</p>
-        <div className="grid grid-cols-2 gap-2 max-w-sm">
-          <Field label="Cierre de la ronda" id="aw-close">
-            <Input id="aw-close" type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} />
+        <p className="h3 mb-1">Período de votación</p>
+        <p className="tiny muted mb-3">Fuera de este período no se aceptan votos ni cambios.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Abre el" id="aw-od">
+            <Input id="aw-od" type="date" value={openDate} onChange={(e) => setOpenDate(e.target.value)} />
           </Field>
-          <Field label="Hora" id="aw-time">
-            <Input id="aw-time" type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+          <Field label="a las" id="aw-ot">
+            <Input id="aw-ot" type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+          </Field>
+          <Field label="Cierra el" id="aw-cd">
+            <Input id="aw-cd" type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} />
+          </Field>
+          <Field label="a las" id="aw-ct">
+            <Input id="aw-ct" type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
           </Field>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="gold" disabled={openable.length === 0} loading={busy === 'open'} onClick={() => void run('open', openRound1, 'Primera ronda abierta')}>
-            Abrir primera ronda ({openable.length} categorías)
+          <Button variant="gold" disabled={openable.length === 0} loading={busy === 'open'} onClick={() => void run('open', openRound1, 'Votación programada')}>
+            Programar votación ({openable.length} categorías)
           </Button>
-          <Button
-            disabled={!list.some((a) => a.state === 'ROUND1_OPEN')}
-            loading={busy === 'close1'}
-            onClick={() =>
-              void run('close1', async () => {
-                for (const a of list.filter((x) => x.state === 'ROUND1_OPEN')) await closeCategory(a, 1)
-              }, 'Primera ronda cerrada y sellada. No se mostró ningún resultado.')
-            }
-          >
-            Cerrar primera ronda
-          </Button>
-          <Button disabled={!list.some((a) => a.state === 'RUNOFF_READY')} loading={busy === 'runoff'} onClick={() => void run('runoff', openRunoffs, 'Ballotage abierto')}>
-            Abrir ballotage ({list.filter((a) => a.state === 'RUNOFF_READY').length}) · {BALLOTAGE_HORAS} h sugeridas
-          </Button>
-          <Button
-            disabled={!list.some((a) => a.state === 'ROUND2_OPEN')}
-            loading={busy === 'close2'}
-            onClick={() =>
-              void run('close2', async () => {
-                for (const a of list.filter((x) => x.state === 'ROUND2_OPEN')) await closeCategory(a, 2)
-              }, 'Ballotage cerrado y sellado.')
-            }
-          >
-            Cerrar ballotage
-          </Button>
-          <Button size="sm" variant="line" onClick={() => void refreshCounts()}>
-            Ver cuántos votaron
-          </Button>
-          <Button size="sm" variant="line" onClick={() => setCloseDate(new Date(hoursFromNow(BALLOTAGE_HORAS) - 3 * 3600000).toISOString().slice(0, 10))}>
-            Cierre en {BALLOTAGE_HORAS} h
-          </Button>
+          {voting.length ? (
+            <Button variant="line" loading={busy === 'window'} onClick={() => void run('window', changeWindow, 'Período actualizado')}>
+              Cambiar período de las abiertas ({voting.length})
+            </Button>
+          ) : null}
+          {isAgus && list.some((a) => a.state === 'RUNOFF_READY') ? (
+            <Button variant="line" loading={busy === 'runoff'} onClick={() => void run('runoff', openRunoffs, 'Ballotage programado')}>
+              Abrir ballotage ({list.filter((a) => a.state === 'RUNOFF_READY').length})
+            </Button>
+          ) : null}
         </div>
-        <p className="tiny muted mt-3">Al cerrar, el conteo corre en tu navegador y se guarda sellado sin mostrarse. Cuando quieras anunciarlo, tocá Revelar en cada categoría: ahí recién lo ve la banda en Premios. Para espiar antes, usá el acceso reservado.</p>
+        {list.some((a) => a.state === 'RUNOFF_READY') ? (
+          <p className="tiny text-warn mt-2">Ojo: al abrir el ballotage, la banda ve quiénes son los finalistas de esa categoría (no los votos). Si preferís no dar esa pista, podés cargar un resultado manual.</p>
+        ) : null}
       </Card>
+
+      {isAgus && voting.length ? (
+        <Card>
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+            <p className="h3">En votación</p>
+            <Button size="sm" variant="line" onClick={() => void refreshCounts()}>
+              Ver cuántos votaron
+            </Button>
+          </div>
+          {voting.map((a) => {
+            const ph = awardPhase(a, now)
+            return (
+              <div key={a.code} className="row">
+                <span className="small">
+                  <b>{awardTitle(a, edition.year)}</b>
+                  <span className="tiny muted block">
+                    {stateLabel(a)}
+                    {ballotCounts[a.code] !== undefined ? ` · votaron ${ballotCounts[a.code]} de ${a.electorate.length}` : ''}
+                  </span>
+                </span>
+                <Button size="sm" variant={ph.phase === 'closed' ? 'gold' : 'line'} loading={busy === a.code} onClick={() => void run(a.code, () => closeCategory(a, a.state === 'ROUND2_OPEN' ? 2 : 1), 'Votos contados')}>
+                  {ph.phase === 'closed' ? 'Contar votos' : 'Cerrar y contar'}
+                </Button>
+              </div>
+            )
+          })}
+        </Card>
+      ) : null}
+
+      {isAgus && counted.length ? (
+        <Card className="border-accent">
+          <p className="h3">Resultados</p>
+          <p className="tiny muted mb-2">Sólo vos ves esto.</p>
+          {counted.map((a) => {
+            const s = sealedDocs[P.sealed(slug, a.code)]
+            return (
+              <details key={a.code} className="py-2 border-b border-line last:border-0">
+                <summary className="cursor-pointer min-h-[40px]">
+                  <b>{awardTitle(a, edition.year)}</b>: {resultText(s)}
+                  {s?.manual ? <Pill tone="muted" className="ml-2">Manual</Pill> : null}
+                </summary>
+                {s ? (
+                  <div className="mt-2 small">
+                    <p className="tiny muted">
+                      Votaron {s.participation} de {s.electorateSize} · ronda {s.round}
+                      {s.manual && s.reason ? ` · ${s.reason}` : ''}
+                    </p>
+                    {Object.entries(s.counts)
+                      .sort((x, y) => y[1] - x[1])
+                      .map(([k, n]) => (
+                        <div key={k} className="flex justify-between py-1 border-t border-line">
+                          <span>{members.aliasOf(k)}</span>
+                          <b>{n}</b>
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+              </details>
+            )
+          })}
+        </Card>
+      ) : null}
 
       <Card>
         <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
           <p className="h3">Categorías</p>
-          <span className="flex gap-2">
-            <Input placeholder="Nueva categoría" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} aria-label="Nueva categoría" />
-            <Button
-              size="sm"
-              variant="line"
-              disabled={newLabel.trim().length < 2}
-              onClick={() =>
-                void run('new', async () => {
-                  const code = newLabel.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_')
-                  if (awards.some((a) => a.code === code)) throw new DataError('VALIDATION_ERROR', 'Ya existe.')
-                  const a: Award = { code, label: newLabel.trim(), description: '', eligibility: 'EDITION', order: list.length + 1, enabled: true, state: 'DRAFT', candidates: [], electorate: [], round1: null, round2: null, finalists: null, result: null, revealedAt: null, version: 1, completedCount: 0, createdAt: Date.now(), updatedAt: Date.now() }
-                  await db.setDoc(P.award(slug, code), a)
-                  setNewLabel('')
-                })
-              }
-            >
-              Agregar
-            </Button>
-          </span>
         </div>
         {list.map((a) => (
-          <div key={a.code} className="row items-start">
-            <div className="small">
-              <p className="font-semibold">
-                {awardTitle(a, edition.year)} {!a.enabled ? <Pill tone="muted" className="ml-1">Desactivada</Pill> : null} {a.eligibility === 'VAO' ? <Pill className="ml-1">VAO</Pill> : null}
-              </p>
-              <p className="tiny muted">
-                {stateLabel[a.state]}
-                {a.state === 'ROUND1_OPEN' && a.round1 ? ` · ${timeLeft(a.round1.closeAt)}` : ''}
-                {a.state === 'ROUND2_OPEN' && a.round2 ? ` · ${timeLeft(a.round2.closeAt)}` : ''}
-                {ballotCounts[a.code] !== undefined ? ` · votaron ${ballotCounts[a.code]} de ${a.electorate.length}` : ''}
-                {a.state === 'ROUND2_OPEN' && a.finalists ? ` · finalistas: ${a.finalists.map(members.aliasOf).join(', ')}` : ''}
-              </p>
-              {reserved[a.code] ? (
-                <p className="tiny text-warn mt-1">
-                  Reservado: {reserved[a.code].outcome}
-                  {reserved[a.code].winner ? ` · ${members.aliasOf(reserved[a.code].winner!)}` : ''}
-                  {reserved[a.code].tied?.length ? ` · ${reserved[a.code].tied!.map(members.aliasOf).join(' / ')}` : ''}
-                  {' · '}
-                  {Object.entries(reserved[a.code].counts)
-                    .map(([k, n]) => `${members.aliasOf(k)} ${n}`)
-                    .join(', ')}
+          <div key={a.code} className="py-2 border-b border-line last:border-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="small min-w-0">
+                <p className="font-semibold">
+                  {awardTitle(a, edition.year)} {!a.enabled ? <Pill tone="muted">Desactivada</Pill> : null}
                 </p>
-              ) : null}
+                <p className="tiny muted">{stateLabel(a)}</p>
+              </div>
             </div>
-            <span className="flex gap-1 flex-wrap justify-end">
+            <div className="flex gap-1.5 flex-wrap mt-1">
               {a.state === 'DRAFT' ? (
                 <>
                   <Button size="sm" variant="line" onClick={() => { setEditing(a); setLabel(a.label); setDescription(a.description) }}>
@@ -287,39 +321,39 @@ export function AdminPremios() {
                   </Button>
                 </>
               ) : null}
-              {a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN' ? (
+              {a.state !== 'VOID' && a.state !== 'DRAFT' ? (
                 <>
-                  <Button size="sm" variant="line" loading={busy === a.code} onClick={() => void run(a.code, () => closeCategory(a, a.state === 'ROUND2_OPEN' ? 2 : 1), 'Categoría cerrada y sellada')}>
-                    Cerrar sólo esta
-                  </Button>
+                  {isAgus ? (
+                    <Button size="sm" variant="line" onClick={() => { setManualTarget(a); setManualWinner(''); setManualReason('') }}>
+                      Resultado manual
+                    </Button>
+                  ) : null}
                   <Button size="sm" variant="line" onClick={() => setVoidTarget(a)}>
-                    Anular
+                    Anular y rehacer
                   </Button>
                 </>
               ) : null}
-              {a.state === 'SEALED' ? (
-                <Button size="sm" variant="gold" onClick={() => setRevealTarget(a)}>
-                  Revelar
-                </Button>
-              ) : null}
-              {a.state === 'SEALED' || a.state === 'RUNOFF_READY' || a.state === 'ROUND1_CLOSED' ? (
-                <Button size="sm" variant="line" onClick={() => setReservedTarget(a)}>
-                  Acceso reservado
-                </Button>
-              ) : null}
-              {a.state !== 'REVEALED' && a.state !== 'VOID' && a.state !== 'DRAFT' ? (
-                <Button size="sm" variant="line" onClick={() => { setManualTarget(a); setManualWinner('') }}>
-                  Resultado manual
-                </Button>
-              ) : null}
-              {a.state === 'REVEALED' ? (
-                <Button size="sm" variant="line" onClick={() => setVoidTarget(a)}>
-                  Registrar corrección
-                </Button>
-              ) : null}
-            </span>
+            </div>
           </div>
         ))}
+        <div className="flex gap-2 mt-3">
+          <Input placeholder="Nueva categoría" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} aria-label="Nueva categoría" />
+          <Button
+            variant="line"
+            disabled={newLabel.trim().length < 2}
+            onClick={() =>
+              void run('new', async () => {
+                const code = newLabel.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_')
+                if (awards.some((a) => a.code === code)) throw new DataError('VALIDATION_ERROR', 'Ya existe.')
+                const a: Award = { code, label: newLabel.trim(), description: '', eligibility: 'EDITION', order: list.length + 1, enabled: true, state: 'DRAFT', candidates: [], electorate: [], round1: null, round2: null, finalists: null, result: null, revealedAt: null, version: 1, completedCount: 0, createdAt: Date.now(), updatedAt: Date.now() }
+                await db.setDoc(P.award(slug, code), a)
+                setNewLabel('')
+              }, 'Categoría agregada')
+            }
+          >
+            Agregar
+          </Button>
+        </div>
       </Card>
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title="Editar categoría">
@@ -329,15 +363,7 @@ export function AdminPremios() {
         <Field label="Descripción" id="aw-desc">
           <Textarea id="aw-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>
-        <Button
-          variant="gold"
-          onClick={() =>
-            void run('edit', async () => {
-              await db.updateDoc(P.award(slug, editing!.code), { label: label.trim(), description: description.trim(), updatedAt: Date.now() })
-              setEditing(null)
-            }, 'Guardado')
-          }
-        >
+        <Button variant="gold" onClick={() => void run('edit', async () => { await db.updateDoc(P.award(slug, editing!.code), { label: label.trim(), description: description.trim(), updatedAt: Date.now() }); setEditing(null) }, 'Guardado')}>
           Guardar
         </Button>
       </Modal>
@@ -345,20 +371,20 @@ export function AdminPremios() {
       <ConfirmDialog
         open={!!voidTarget}
         onClose={() => setVoidTarget(null)}
-        title={voidTarget?.state === 'REVEALED' ? 'Registrar corrección' : 'Anular categoría'}
-        text={voidTarget?.state === 'REVEALED' ? 'El resultado ya se vio: no se oculta. Se muestra "Resultado corregido" con el motivo.' : 'Se anula esta versión (las boletas quedan archivadas) y se crea una nueva en borrador.'}
+        title="Anular y rehacer categoría"
+        text="Se anula esta votación (los votos quedan guardados aparte) y se crea la categoría de nuevo sin abrir."
         requireReason
         danger
-        confirmLabel={voidTarget?.state === 'REVEALED' ? 'Registrar' : 'Anular'}
+        confirmLabel="Anular"
         onConfirm={async (reason) => {
           const t = voidTarget!
-          await run('void', () => (t.state === 'REVEALED' ? correctRevealed(t, reason) : voidAward(t, reason)), 'Hecho')
+          await run('void', () => voidAward(t, reason), 'Anulada')
           setVoidTarget(null)
         }}
       />
 
-      <Modal open={!!manualTarget} onClose={() => setManualTarget(null)} title="Resolución del administrador">
-        <p className="small muted mb-3">Resultado extraordinario. Se muestra siempre con la marca "Resolución del administrador". Reemplaza el escrutinio de esta categoría.</p>
+      <Modal open={!!manualTarget} onClose={() => setManualTarget(null)} title="Resultado manual">
+        <p className="small muted mb-3">Reemplaza el conteo de esta categoría. Queda marcado como manual. Tampoco se publica.</p>
         <Field label="Ganador" id="man-w">
           <select id="man-w" className="input" value={manualWinner} onChange={(e) => setManualWinner(e.target.value)}>
             <option value="">Elegí</option>
@@ -371,55 +397,21 @@ export function AdminPremios() {
           </select>
         </Field>
         <Field label="Motivo" id="man-r">
-          <Textarea id="man-r" />
+          <Textarea id="man-r" value={manualReason} onChange={(e) => setManualReason(e.target.value)} />
         </Field>
         <Button
           variant="danger"
-          disabled={!manualWinner}
-          onClick={() => {
-            const reason = (document.getElementById('man-r') as HTMLTextAreaElement)?.value.trim()
-            if (!reason) {
-              toast.error('Indicá el motivo.')
-              return
-            }
+          disabled={!manualWinner || !manualReason.trim()}
+          onClick={() =>
             void run('manual', async () => {
-              await manualResult(manualTarget!, manualWinner, reason)
+              await manualResult(manualTarget!, manualWinner, manualReason.trim())
               setManualTarget(null)
-            }, 'Resultado manual sellado')
-          }}
+            }, 'Resultado manual guardado')
+          }
         >
-          Sellar resultado manual
+          Guardar resultado manual
         </Button>
       </Modal>
-
-      <ConfirmDialog
-        open={!!revealTarget}
-        onClose={() => setRevealTarget(null)}
-        title={`Revelar ${revealTarget ? awardTitle(revealTarget, edition.year) : ''}`}
-        text="El resultado se publica para toda la banda en Premios. No se puede volver a ocultar; si hubiera un error, se registra una corrección."
-        confirmLabel="Revelar ahora"
-        loading={busy === 'reveal'}
-        onConfirm={async () => {
-          const t = revealTarget!
-          await run('reveal', () => reveal(t), 'Revelado')
-          setRevealTarget(null)
-        }}
-      />
-      <ConfirmDialog
-        open={!!reservedTarget}
-        onClose={() => setReservedTarget(null)}
-        title="Acceso reservado"
-        text="Vas a ver el resultado sellado y el recuento antes de la ceremonia. Queda registrado con tu motivo."
-        requireReason
-        confirmLabel="Ver"
-        onConfirm={async (reason) => {
-          const t = reservedTarget!
-          const s = await db.getDoc<SealedResult>(P.sealed(slug, t.code))
-          await logAudit(db, slug, memberId!, 'reserved.read', `award:${t.code}`, reason)
-          if (s) setReserved((r) => ({ ...r, [t.code]: s }))
-          setReservedTarget(null)
-        }}
-      />
     </div>
   )
 }

@@ -8,12 +8,12 @@ import {
   RECETAS,
   RESERVA_COMPRA_PCT,
 } from '../content/bebidas'
-import { EDICION_ACTUAL, FECHAS_CANDIDATAS, GRUPO, MIEMBROS_INICIALES, QUORUM_LOGISTICO_PCT, REGALO_TOLERANCIA_PCT } from '../content/config'
+import { COMIDAS_INICIALES, EDICION_ACTUAL, FECHAS_CANDIDATAS, GRUPO, LUGARES_INICIALES, MIEMBROS_INICIALES, PRESIDENTE_INICIAL, QUORUM_LOGISTICO_PCT, REGALO_TOLERANCIA_PCT } from '../content/config'
 import { CATEGORIAS_INICIALES, VAO_ACTIVO } from '../content/premios'
 import { AGENDA_PLANTILLA, TAREAS_PLANTILLA } from '../content/tareas'
 import type { DataAdapter } from './adapter'
 import { P } from './paths'
-import type { Award, Edition, GiftCampaign, Member, MemberPrivate, Poll, PollOption, Task } from './types'
+import type { Award, Edition, GiftCampaign, Member, Poll, PollOption, Proposal, RolesConfig, Task } from './types'
 import { fmtDayLong } from '../domain/format'
 
 export const OWNER_ID = 'owner'
@@ -119,11 +119,13 @@ export function newMember(id: string, alias: string, now: number, over: Partial<
     alias,
     status: 'draft',
     role: 'member',
-    uid: null,
     participating: true,
     vao: false,
-    hasEmail: false,
-    consentAt: null,
+    photo: null,
+    birthday: null,
+    giftPrefs: '',
+    profileDone: false,
+    hasLogin: false,
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -135,7 +137,14 @@ export function newMember(id: string, alias: string, now: number, over: Partial<
 export async function ensureEdition(db: DataAdapter, slug: string = EDICION_ACTUAL.slug, year: number = EDICION_ACTUAL.anio, title: string = EDICION_ACTUAL.titulo) {
   const now = Date.now()
   const existing = await db.getDoc<Edition>(P.edition(slug))
-  if (!existing) await db.setDoc(P.edition(slug), newEdition(slug, year, title, now))
+  if (!existing) {
+    await db.setDoc(P.edition(slug), newEdition(slug, year, title, now))
+    await seedProposals(db, slug, now)
+  }
+  if (!(await db.getDoc<RolesConfig>(P.roles))) {
+    const pres = await db.getDoc<Member>(P.member(PRESIDENTE_INICIAL))
+    await db.setDoc<RolesConfig>(P.roles, { presidentId: pres ? PRESIDENTE_INICIAL : null, updatedAt: now })
+  }
   const awards = await db.getCollection<Award>(P.awards(slug))
   if (awards.length === 0) {
     for (const c of CATEGORIAS_INICIALES.filter((x) => VAO_ACTIVO || x.eligibility !== 'VAO')) await db.setDoc(P.award(slug, c.code), newAward(c, now))
@@ -213,17 +222,25 @@ export async function ensureDatesPoll(db: DataAdapter, slug: string) {
   await db.updateDoc(P.edition(slug), { 'decisions.fecha': { status: 'VOTING', pollId: id }, state: 'ORGANIZING', updatedAt: now })
 }
 
-/** Crea al propietario (si no existe) y los borradores de alias (una sola vez). */
-export async function ensureOwnerAndDrafts(db: DataAdapter, uid: string, email: string) {
+/** Opciones iniciales de lugar y comida, cargadas por el administrador (ids fijos: no se duplican). */
+export async function seedProposals(db: DataAdapter, slug: string, now = Date.now()) {
+  const items: Array<{ type: Proposal['type']; label: string }> = [
+    ...LUGARES_INICIALES.map((label) => ({ type: 'venue' as const, label })),
+    ...COMIDAS_INICIALES.map((label) => ({ type: 'food' as const, label })),
+  ]
+  for (const it of items) {
+    const id = `seed-${it.type}-${slugify(it.label)}`
+    if (await db.getDoc(P.proposal(slug, id))) continue
+    const p: Proposal = { id, type: it.type, authorId: OWNER_ID, label: it.label, detail: '', link: '', state: 'PENDING', votes: {}, seed: true, createdAt: now, updatedAt: now }
+    await db.setDoc(P.proposal(slug, id), p)
+  }
+}
+
+/** Sólo para el modo demo: crea al propietario y los miembros iniciales. */
+export async function ensureOwnerAndDrafts(db: DataAdapter) {
   const now = Date.now()
   const owner = await db.getDoc<Member>(P.member(OWNER_ID))
-  if (!owner) {
-    await db.setDoc(P.member(OWNER_ID), newMember(OWNER_ID, GRUPO.ownerAlias, now, { status: 'active', role: 'owner', uid, hasEmail: true }))
-    await db.setDoc<MemberPrivate>(P.memberPrivate(OWNER_ID), { email: email.toLowerCase(), invitedAt: now })
-  } else if (owner.uid !== uid) {
-    await db.updateDoc(P.member(OWNER_ID), { uid, updatedAt: now })
-  }
-  await db.setDoc(P.uid(uid), { memberId: OWNER_ID })
+  if (!owner) await db.setDoc(P.member(OWNER_ID), newMember(OWNER_ID, GRUPO.ownerAlias, now, { status: 'active', role: 'owner', hasLogin: true }))
   const members = await db.getCollection<Member>(P.members)
   if (members.filter((m) => m.id !== OWNER_ID).length === 0) {
     for (const m of MIEMBROS_INICIALES) {
