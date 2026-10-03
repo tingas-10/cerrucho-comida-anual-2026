@@ -45,7 +45,8 @@ service cloud.firestore {
 
     // ---------- Identidad ----------
     match /members/{memberId} {
-      allow read: if isActive() || isOwnerEmail();
+      // Un miembro recién invitado puede leer su propio doc antes de vincular su uid.
+      allow read: if isActive() || isOwnerEmail() || (signedIn() && privateEmail(memberId) == email());
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
         // Perfil propio

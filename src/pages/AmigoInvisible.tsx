@@ -87,7 +87,7 @@ export function AmigoInvisible() {
     if (!memberId || !assignment.data) return
     try {
       await db.updateDoc(P.giftAssignment(slug, memberId), { revealedAt: Date.now(), giverRevealedId: memberId })
-      await db.setDoc<GiftReceived>(P.giftReceived(slug, assignment.data.receiverId), { receivedAt: null, giverRevealedId: memberId }, { merge: true })
+      await db.setDoc<Partial<GiftReceived>>(P.giftReceived(slug, assignment.data.receiverId), { giverRevealedId: memberId }, { merge: true })
       toast.ok('Tu destinatario ya puede ver que fuiste vos.')
     } catch (e) {
       toast.error(errorText(e))
