@@ -99,7 +99,7 @@ export function Ceremonia() {
             ) : null}
 
             {stage === 'RESULT' && result ? (
-              <div className="mt-10 flex flex-col items-center">
+              <div className="mt-24 flex flex-col items-center">
                 <Envelope open reduced={prefersReduced} />
                 <ResultBlock result={result} aliasOf={members.aliasOf} colorOf={(k) => members.byId[k]?.avatarColor} reduced={prefersReduced} />
               </div>

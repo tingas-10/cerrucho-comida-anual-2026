@@ -38,8 +38,11 @@ export async function seedDemo(db: MemoryAdapter) {
   const activeIds = ['owner', ...DEMO_ACTIVE_ALIASES.map((a) => 'm-' + slugify(a))]
 
   // Encuesta de fechas abierta con algunas respuestas.
-  const day = (offsetDays: number, hour = 21) => {
-    const d = new Date(now + offsetDays * 86400000)
+  // Próximo día de la semana (0 = domingo … 6 = sábado) a N semanas, a las 21:00 de Buenos Aires.
+  const nextDow = (dow: number, weeksAhead: number, hour = 21) => {
+    const d = new Date(now)
+    const diff = (dow - d.getUTCDay() + 7) % 7 || 7
+    d.setUTCDate(d.getUTCDate() + diff + weeksAhead * 7)
     return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hour + 3, 0)
   }
   const poll: Poll = {
@@ -50,9 +53,9 @@ export async function seedDemo(db: MemoryAdapter) {
     method: 'AVAILABILITY',
     state: 'OPEN',
     options: [
-      { id: 'd1', label: 'Viernes', startsAt: day(23) },
-      { id: 'd2', label: 'Sábado', startsAt: day(24) },
-      { id: 'd3', label: 'Viernes siguiente', startsAt: day(30) },
+      { id: 'd1', label: 'Viernes', startsAt: nextDow(5, 2) },
+      { id: 'd2', label: 'Sábado', startsAt: nextDow(6, 2) },
+      { id: 'd3', label: 'Viernes siguiente', startsAt: nextDow(5, 3) },
     ],
     electorate: activeIds,
     audience: 'ALL',
@@ -117,6 +120,13 @@ export async function seedDemo(db: MemoryAdapter) {
   for (const [id, status] of rsvps) {
     const r: Rsvp = { status, planVersion: 1, afterparty: null, updatedAt: now, revision: 1 }
     await db.setDoc(P.rsvp(slug, id), r)
+  }
+
+  // Regalo: monto ya definido y dos anotados, para poder probar el sorteo.
+  await db.updateDoc(P.gift(slug), { amountCents: 10000000, updatedAt: now })
+  await db.updateDoc(P.edition(slug), { 'decisions.regalo': { status: 'CONFIRMED', label: '$ 100.000', confirmedBy: 'owner', confirmedAt: now } })
+  for (const id of ['m-choclo', 'm-pato']) {
+    await db.setDoc(P.giftParticipant(slug, id), { accepted: true, acceptedBudgetVersion: 1, attending: true, delegateId: null, wishes: id === 'm-pato' ? 'Algo para el asado' : '', avoid: '', updatedAt: now })
   }
 
   // Propuestas de comida pendientes.

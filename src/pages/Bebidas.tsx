@@ -184,7 +184,7 @@ export function Bebidas() {
               Sale de las respuestas de asistentes confirmados, recetas, reserva del {settings.reservePct}% y stock.
               {settings.pendingScenario > 0 ? ` Incluye un escenario de ${settings.pendingScenario} sin responder.` : ''}
             </p>
-            {!edition.date.startsAt ? <Notice tone="warn">Sin fecha confirmada todavía no hay asistentes: la lista se calcula cuando haya RSVP.</Notice> : null}
+            {!edition.date.startsAt ? <Notice tone="warn">Sin fecha confirmada, es una estimación con todas las respuestas. Con fecha y RSVP, usa sólo asistentes confirmados y suma agua e hielo.</Notice> : null}
             {purchases && purchases.lines.length > 0 ? (
               <div className="mt-2">
                 {purchases.lines.map((l) => (
