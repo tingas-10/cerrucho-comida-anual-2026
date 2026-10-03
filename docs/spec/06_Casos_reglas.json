@@ -1,0 +1,321 @@
+{
+  "schema_version": "1.0",
+  "award_cases": [
+    {
+      "id": "direct_margin_3",
+      "round": 1,
+      "counts": {
+        "A": 10,
+        "B": 7,
+        "C": 1
+      },
+      "expected": {
+        "outcome": "WINNER",
+        "winner": "A"
+      }
+    },
+    {
+      "id": "runoff_margin_2",
+      "round": 1,
+      "counts": {
+        "A": 10,
+        "B": 8,
+        "C": 1
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "runoff_margin_1",
+      "round": 1,
+      "counts": {
+        "A": 10,
+        "B": 9,
+        "C": 7
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "runoff_three",
+      "round": 1,
+      "counts": {
+        "A": 8,
+        "B": 7,
+        "C": 6,
+        "D": 3
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "id": "runoff_four",
+      "round": 1,
+      "counts": {
+        "A": 8,
+        "B": 7,
+        "C": 6,
+        "D": 6
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      }
+    },
+    {
+      "id": "nobody_runoff",
+      "round": 1,
+      "counts": {
+        "NOBODY": 8,
+        "A": 7,
+        "B": 3
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "NOBODY"
+        ]
+      }
+    },
+    {
+      "id": "nobody_direct",
+      "round": 1,
+      "counts": {
+        "NOBODY": 12,
+        "A": 5
+      },
+      "expected": {
+        "outcome": "DESERTED"
+      }
+    },
+    {
+      "id": "none_first",
+      "round": 1,
+      "counts": {
+        "A": 0,
+        "B": 0,
+        "NOBODY": 0
+      },
+      "expected": {
+        "outcome": "NO_VOTES"
+      }
+    },
+    {
+      "id": "one_positive",
+      "round": 1,
+      "counts": {
+        "A": 1,
+        "B": 0,
+        "NOBODY": 0
+      },
+      "expected": {
+        "outcome": "WINNER",
+        "winner": "A"
+      }
+    },
+    {
+      "id": "one_nobody",
+      "round": 1,
+      "counts": {
+        "A": 0,
+        "B": 0,
+        "NOBODY": 1
+      },
+      "expected": {
+        "outcome": "DESERTED"
+      }
+    },
+    {
+      "id": "all_voted_tied",
+      "round": 1,
+      "counts": {
+        "A": 2,
+        "B": 2,
+        "C": 2,
+        "D": 0
+      },
+      "expected": {
+        "outcome": "RUNOFF_REQUIRED",
+        "finalists": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "id": "winner_by_one",
+      "round": 2,
+      "counts": {
+        "A": 10,
+        "B": 9
+      },
+      "expected": {
+        "outcome": "WINNER",
+        "winner": "A"
+      }
+    },
+    {
+      "id": "tie_two",
+      "round": 2,
+      "counts": {
+        "A": 9,
+        "B": 9
+      },
+      "expected": {
+        "outcome": "TIE",
+        "tied": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "tie_three",
+      "round": 2,
+      "counts": {
+        "A": 6,
+        "B": 6,
+        "C": 6
+      },
+      "expected": {
+        "outcome": "TIE",
+        "tied": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "id": "tie_nobody",
+      "round": 2,
+      "counts": {
+        "NOBODY": 7,
+        "A": 7
+      },
+      "expected": {
+        "outcome": "TIE",
+        "tied": [
+          "A",
+          "NOBODY"
+        ]
+      }
+    },
+    {
+      "id": "nobody_second",
+      "round": 2,
+      "counts": {
+        "NOBODY": 8,
+        "A": 7
+      },
+      "expected": {
+        "outcome": "DESERTED"
+      }
+    },
+    {
+      "id": "none_second",
+      "round": 2,
+      "counts": {
+        "A": 0,
+        "B": 0
+      },
+      "expected": {
+        "outcome": "NO_VOTES"
+      }
+    },
+    {
+      "id": "runoff_no_margin_rule",
+      "round": 2,
+      "counts": {
+        "A": 4,
+        "B": 3,
+        "C": 2
+      },
+      "expected": {
+        "outcome": "WINNER",
+        "winner": "A"
+      }
+    }
+  ],
+  "beverage_cases": [
+    {
+      "id": "two_half_fernet_beer",
+      "profiles": [
+        {
+          "portions": 4,
+          "fernet_pct": 50,
+          "beer_pct": 50
+        },
+        {
+          "portions": 4,
+          "fernet_pct": 50,
+          "beer_pct": 50
+        }
+      ],
+      "reserve_pct": 10,
+      "stock_ml": {},
+      "expected_raw_ml": {
+        "fernet": 180,
+        "cola": 540,
+        "cerveza": 1892
+      },
+      "expected_purchase_units": {
+        "fernet_750ml_bottle": 1,
+        "cola_2250ml_bottle": 1,
+        "beer_473ml_can": 5
+      },
+      "expected_purchase_if_beer_pack_only": 1
+    }
+  ],
+  "expense_cases": [
+    {
+      "amount_cents": 100000,
+      "beneficiaries_sorted": [
+        "A",
+        "B",
+        "C"
+      ],
+      "expected_shares_cents": [
+        33334,
+        33333,
+        33333
+      ]
+    },
+    {
+      "amount_cents": -100000,
+      "beneficiaries_sorted": [
+        "A",
+        "B",
+        "C"
+      ],
+      "expected_shares_cents": [
+        -33334,
+        -33333,
+        -33333
+      ]
+    }
+  ]
+}

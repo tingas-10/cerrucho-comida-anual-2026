@@ -1,0 +1,558 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Specification seed for idempotent import; not a live database dump",
+  "group": {
+    "name": "La Banda del cerrucho",
+    "locale": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires"
+  },
+  "owner": {
+    "email": "agustin@abndigital.com.ar",
+    "display_name": "Agustín",
+    "role": "OWNER",
+    "must_verify_email": true,
+    "auth_user_id": null
+  },
+  "edition": {
+    "slug": "2026",
+    "year": 2026,
+    "title": "Cena de fin de año 2026",
+    "state": "DRAFT",
+    "currency": "ARS",
+    "date": null,
+    "venue": null,
+    "menu": null,
+    "afterparty": null,
+    "vao_roster_confirmed": false
+  },
+  "member_drafts": [
+    {
+      "import_key": "whatsapp-alias-01",
+      "alias": "Agus",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-02",
+      "alias": "Choclo",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-03",
+      "alias": "Facu",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-04",
+      "alias": "Felix",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-05",
+      "alias": "Francisco",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-06",
+      "alias": "Marcos",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-07",
+      "alias": "Mateo",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-08",
+      "alias": "Mene",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-09",
+      "alias": "Nacho",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-10",
+      "alias": "Pato",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-11",
+      "alias": "pay",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-12",
+      "alias": "Pipe",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-13",
+      "alias": "rodri",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-14",
+      "alias": "Saimon",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-15",
+      "alias": "Santi",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-16",
+      "alias": "Thomas",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-17",
+      "alias": "Tita",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-18",
+      "alias": "tobi",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-19",
+      "alias": "Tomas",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-20",
+      "alias": "Tomi",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-21",
+      "alias": "Topo",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-22",
+      "alias": "Torta",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    },
+    {
+      "import_key": "whatsapp-alias-23",
+      "alias": "Ucky",
+      "email": null,
+      "status": "DRAFT",
+      "linked_member_id": null,
+      "vao_participant": false
+    }
+  ],
+  "source_notes": {
+    "whatsapp_self_label": "You",
+    "create_self_label_as_member": false,
+    "auto_merge_owner_with_agus_alias": false,
+    "aliases_are_not_verified_identities": true
+  },
+  "award_rules": {
+    "version": "1.0",
+    "round1_margin_exclusive": 3,
+    "include_nobody": true,
+    "include_zero_vote_options_in_runoff": false,
+    "max_finalists": null,
+    "self_vote": true,
+    "quorum_required": false,
+    "single_voted_option_wins_directly": true,
+    "no_votes_outcome": "NO_VOTES",
+    "runoff_tie_outcome": "TIE",
+    "third_round": false,
+    "allow_member_results_before_reveal": false,
+    "admin_reserved_read_requires_reauth": true
+  },
+  "awards": [
+    {
+      "code": "revelacion_vao",
+      "label": "Revelación VAO",
+      "description": "La sorpresa del Viaje Anual Obligatorio",
+      "eligibility": "VAO",
+      "state": "DRAFT",
+      "order": 1,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "mvp_vao",
+      "label": "MVP VAO",
+      "description": "El más valioso del Viaje Anual Obligatorio",
+      "eligibility": "VAO",
+      "state": "DRAFT",
+      "order": 2,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "rey_noche_vao",
+      "label": "Rey de la noche VAO",
+      "description": "El protagonista de las noches del VAO",
+      "eligibility": "VAO",
+      "state": "DRAFT",
+      "order": 3,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "the_rat",
+      "label": "The Rat",
+      "description": "El que más cuidó el bolsillo este año",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 4,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "pollera",
+      "label": "Pollera",
+      "description": "El que más se ganó este título durante el año",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 5,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "cerrucho",
+      "label": "Cerrucho",
+      "description": "El que más hizo honor al nombre del grupo",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 6,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "promesa",
+      "label": "Promesa del año siguiente",
+      "description": "El que promete sorprendernos el año que viene",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 7,
+      "nobody_option": true,
+      "target_year": 2027
+    },
+    {
+      "code": "amigo_oro",
+      "label": "Amigo de Oro",
+      "description": "El que siempre estuvo cuando hizo falta",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 8,
+      "nobody_option": true,
+      "target_year": null
+    },
+    {
+      "code": "presidente",
+      "label": "Presidente del año siguiente",
+      "description": "El elegido para representar y movilizar a la banda",
+      "eligibility": "EDITION",
+      "state": "DRAFT",
+      "order": 9,
+      "nobody_option": true,
+      "target_year": 2027
+    }
+  ],
+  "poll_defaults": {
+    "logistic_quorum_percentage": 70,
+    "method_by_kind": {
+      "dates": "AVAILABILITY",
+      "food": "APPROVAL",
+      "venue": "APPROVAL",
+      "afterparty": "APPROVAL",
+      "gift_amount": "SINGLE"
+    },
+    "logistic_tie_runoff_hours": 48,
+    "auto_confirm_decision": false,
+    "open_at": null,
+    "close_at": null
+  },
+  "gift": {
+    "state": "DRAFT",
+    "amount_cents": null,
+    "budget_poll_draft_options_cents": [
+      5000000,
+      7500000,
+      10000000,
+      15000000
+    ],
+    "tolerance_percentage": 10,
+    "min_participants": 3,
+    "allow_reciprocal_pairs": true,
+    "exclude_last_year_pairs": false,
+    "draw_version": null,
+    "assignments": []
+  },
+  "food_proposals": [
+    {
+      "label": "Asado",
+      "state": "DRAFT",
+      "price_cents": null
+    },
+    {
+      "label": "Pizzas",
+      "state": "DRAFT",
+      "price_cents": null
+    },
+    {
+      "label": "Catering",
+      "state": "DRAFT",
+      "price_cents": null
+    },
+    {
+      "label": "Restaurante",
+      "state": "DRAFT",
+      "price_cents": null
+    }
+  ],
+  "beverages": {
+    "keys": [
+      "fernet",
+      "cerveza",
+      "gin",
+      "vodka",
+      "vino",
+      "aperol"
+    ],
+    "suggested_portions_ui_only": 4,
+    "portions_min": 1,
+    "portions_max": 20,
+    "reserve_percentage": 10,
+    "recipes_ml_per_serving": {
+      "fernet": {
+        "fernet": 45,
+        "cola": 135
+      },
+      "cerveza": {
+        "cerveza": 473
+      },
+      "gin": {
+        "gin": 45,
+        "tonica": 135
+      },
+      "vodka": {
+        "vodka": 45,
+        "jugo": 135
+      },
+      "vino": {
+        "vino": 150
+      },
+      "aperol": {
+        "aperol": 60,
+        "espumante": 90,
+        "soda": 30
+      }
+    },
+    "water_ml_per_attendee": 1000,
+    "ice_g_per_attendee": 500,
+    "package_ml": {
+      "fernet": 750,
+      "cola": 2250,
+      "cerveza": 473,
+      "gin": 750,
+      "tonica": 1500,
+      "vodka": 750,
+      "jugo": 1000,
+      "vino": 750,
+      "aperol": 750,
+      "espumante": 750,
+      "soda": 1500
+    },
+    "beer_pack_units": 6,
+    "stock": {},
+    "prices_cents": {}
+  },
+  "task_drafts": [
+    {
+      "label": "Confirmar lugar",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Comprar comida",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Comprar bebidas",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Comprar hielo",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Llevar vasos",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Llevar parlante",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Preparar premios",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Proyectar ceremonia",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Coordinar salida",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    },
+    {
+      "label": "Limpieza",
+      "state": "DRAFT",
+      "assignee_id": null,
+      "due_at": null
+    }
+  ],
+  "agenda_drafts": [
+    {
+      "label": "Llegada",
+      "starts_at": null,
+      "suggested_offset_minutes": 0,
+      "published": false
+    },
+    {
+      "label": "Regalos",
+      "starts_at": null,
+      "suggested_offset_minutes": 45,
+      "published": false
+    },
+    {
+      "label": "Comida",
+      "starts_at": null,
+      "suggested_offset_minutes": 75,
+      "published": false
+    },
+    {
+      "label": "Premios",
+      "starts_at": null,
+      "suggested_offset_minutes": 150,
+      "published": false
+    },
+    {
+      "label": "Salida",
+      "starts_at": null,
+      "suggested_offset_minutes": 240,
+      "published": false
+    }
+  ],
+  "auth": {
+    "method": "EMAIL_OTP",
+    "otp_digits": 6,
+    "otp_expiration_seconds": 600,
+    "resend_interval_seconds": 60,
+    "open_signup": false
+  },
+  "media": {
+    "max_batch_count": 20,
+    "image_max_bytes": 20971520,
+    "video_max_bytes": 209715200,
+    "video_max_duration_seconds": 300,
+    "edition_quota_bytes": 5368709120,
+    "read_url_ttl_seconds": 300,
+    "upload_url_ttl_seconds": 600,
+    "soft_delete_days": 30,
+    "album": "Recuerdos",
+    "cover_path": "assets/10_grupo_portada.jpeg",
+    "import_manifest": "assets_manifest.json",
+    "public_bucket": false
+  },
+  "import_side_effects": {
+    "send_invitations": false,
+    "open_polls": false,
+    "perform_draw": false,
+    "confirm_date": false,
+    "reveal_awards": false
+  }
+}

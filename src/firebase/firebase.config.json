@@ -1,0 +1,9 @@
+{
+  "_ayuda": "Pegar acá la configuración web del proyecto de Firebase (Consola > Configuración del proyecto > Tus apps > SDK de Firebase > Config). Mientras apiKey empiece con PEGAR_, la web corre en modo demo sin guardar nada.",
+  "apiKey": "PEGAR_API_KEY",
+  "authDomain": "PEGAR_PROYECTO.firebaseapp.com",
+  "projectId": "PEGAR_PROYECTO",
+  "storageBucket": "",
+  "messagingSenderId": "",
+  "appId": "PEGAR_APP_ID"
+}

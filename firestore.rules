@@ -1,0 +1,259 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore para La Banda del cerrucho.
+// La UI no es una barrera de permisos: estas reglas son las que protegen los datos.
+// Publicarlas con: npx firebase deploy --only firestore:rules  (ver README).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function email() {
+      return request.auth.token.email.lower();
+    }
+    // Propietario y único administrador inicial. Cambiar acá si cambia el dueño.
+    function isOwnerEmail() {
+      return signedIn() && email() == 'agustin@abndigital.com.ar';
+    }
+    function hasLink() {
+      return exists(/databases/$(database)/documents/uids/$(request.auth.uid));
+    }
+    function myId() {
+      return get(/databases/$(database)/documents/uids/$(request.auth.uid)).data.memberId;
+    }
+    function myMember() {
+      return get(/databases/$(database)/documents/members/$(myId())).data;
+    }
+    function isActive() {
+      return signedIn() && hasLink() && myMember().status == 'active';
+    }
+    function isAdmin() {
+      return isOwnerEmail() || (isActive() && myMember().role == 'owner');
+    }
+    function now() {
+      return request.time.toMillis();
+    }
+    function onlyKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function privateEmail(memberId) {
+      return get(/databases/$(database)/documents/memberPrivate/$(memberId)).data.email;
+    }
+
+    // ---------- Identidad ----------
+    match /members/{memberId} {
+      allow read: if isActive() || isOwnerEmail();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        // Perfil propio
+        || (isActive() && memberId == myId() && onlyKeys(['alias', 'avatarColor', 'consentAt', 'updatedAt']))
+        // Primer ingreso: vincular el uid de Auth al miembro cuyo mail coincide
+        || (signedIn() && resource.data.status == 'active' && privateEmail(memberId) == email()
+            && request.resource.data.uid == request.auth.uid && onlyKeys(['uid', 'updatedAt']));
+    }
+
+    match /memberPrivate/{memberId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.email == email());
+      allow write: if isAdmin();
+    }
+
+    match /uids/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+            && privateEmail(request.resource.data.memberId) == email()
+            && get(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.status == 'active');
+      allow delete: if isAdmin();
+    }
+
+    match /reactions/{reactionId} {
+      allow read: if isActive();
+      allow create, update: if isActive() && request.resource.data.memberId == myId()
+        && reactionId == request.resource.data.photoId + '_' + myId();
+      allow delete: if isActive() && resource.data.memberId == myId();
+    }
+
+    match /archive/{slug} {
+      allow read: if isActive();
+      allow write: if isAdmin();
+    }
+
+    // ---------- Edición ----------
+    match /editions/{slug} {
+      allow read: if isActive();
+      allow write: if isAdmin();
+
+      function edition() {
+        return get(/databases/$(database)/documents/editions/$(slug)).data;
+      }
+
+      match /polls/{pollId} {
+        allow read: if isActive();
+        allow write: if isAdmin();
+
+        function poll() {
+          return get(/databases/$(database)/documents/editions/$(slug)/polls/$(pollId)).data;
+        }
+
+        match /responses/{memberId} {
+          // Las consultas logísticas muestran recuento y, en fechas, la matriz identificada.
+          allow read: if isActive();
+          allow create, update: if isActive() && memberId == myId()
+            && poll().state == 'OPEN'
+            && (poll().closeAt == null || now() < poll().closeAt)
+            && myId() in poll().electorate;
+          allow delete: if false;
+        }
+      }
+
+      match /proposals/{proposalId} {
+        allow read: if isActive();
+        allow create: if isActive() && request.resource.data.authorId == myId() && request.resource.data.state == 'PENDING';
+        allow update: if isAdmin()
+          || (isActive() && resource.data.authorId == myId() && resource.data.state == 'PENDING'
+              && request.resource.data.authorId == myId()
+              && (request.resource.data.state == 'PENDING' || request.resource.data.state == 'WITHDRAWN'));
+        allow delete: if isAdmin();
+      }
+
+      match /rsvps/{memberId} {
+        allow read: if isActive();
+        allow write: if isActive() && memberId == myId();
+      }
+
+      match /dietary/{memberId} {
+        allow read: if isAdmin() || (isActive() && memberId == myId());
+        allow write: if isActive() && memberId == myId();
+      }
+
+      match /beverages/{memberId} {
+        allow read: if isActive();
+        allow write: if isActive() && memberId == myId() && edition().beverage.state == 'OPEN';
+      }
+
+      match /checklists/{memberId} {
+        allow read, write: if isActive() && memberId == myId();
+      }
+
+      // ---------- Premios ----------
+      match /awards/{code} {
+        allow read: if isActive();
+        allow write: if isAdmin();
+
+        function award() {
+          return get(/databases/$(database)/documents/editions/$(slug)/awards/$(code)).data;
+        }
+        function validR1() {
+          return request.resource.data.r1 == 'NOBODY' || request.resource.data.r1 in award().candidates;
+        }
+        function validR2() {
+          return request.resource.data.r2 in award().finalists;
+        }
+        function r1Unchanged() {
+          return resource == null ? request.resource.data.r1 == null : request.resource.data.r1 == resource.data.r1;
+        }
+        function r2Unchanged() {
+          return resource == null ? request.resource.data.r2 == null : request.resource.data.r2 == resource.data.r2;
+        }
+
+        match /ballots/{memberId} {
+          // Cada uno ve sólo su boleta. El administrador la lee para el escrutinio.
+          allow read: if isAdmin() || (isActive() && memberId == myId());
+          allow create, update: if isActive() && memberId == myId() && myId() in award().electorate
+            && (
+              (award().state == 'ROUND1_OPEN' && now() < award().round1.closeAt && validR1() && r2Unchanged())
+              || (award().state == 'ROUND2_OPEN' && now() < award().round2.closeAt && validR2() && r1Unchanged())
+            );
+          allow delete: if false;
+        }
+
+        match /private/{doc} {
+          allow read, write: if isAdmin();
+        }
+      }
+
+      match /ceremony/{doc} {
+        allow read: if isActive();
+        allow write: if isAdmin();
+      }
+
+      // ---------- Amigo invisible ----------
+      match /gift/{doc} {
+        allow read: if isActive();
+        allow write: if isAdmin();
+      }
+
+      function campaign() {
+        return get(/databases/$(database)/documents/editions/$(slug)/gift/campaign).data;
+      }
+      function myAssignment() {
+        return get(/databases/$(database)/documents/editions/$(slug)/giftAssignments/$(myId())).data;
+      }
+      function iGiveTo(memberId) {
+        return exists(/databases/$(database)/documents/editions/$(slug)/giftAssignments/$(myId()))
+          && myAssignment().receiverId == memberId;
+      }
+
+      match /giftParticipants/{memberId} {
+        allow read: if isAdmin() || (isActive() && (memberId == myId() || iGiveTo(memberId)));
+        allow create: if isActive() && memberId == myId() && campaign().state == 'ENROLLMENT_OPEN';
+        allow update: if isActive() && memberId == myId()
+          && (campaign().state == 'ENROLLMENT_OPEN' || onlyKeys(['wishes', 'avoid', 'updatedAt']));
+        allow delete: if isAdmin();
+      }
+
+      match /giftAssignments/{giverId} {
+        allow read: if isAdmin() || (isActive() && giverId == myId());
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || (isActive() && giverId == myId() && onlyKeys(['viewedAt', 'readyAt', 'deliveredAt', 'revealedAt', 'giverRevealedId']));
+      }
+
+      match /giftReceived/{receiverId} {
+        allow read: if isAdmin() || (isActive() && receiverId == myId());
+        allow create, update: if isAdmin()
+          || (isActive() && receiverId == myId())
+          || (isActive() && iGiveTo(receiverId) && request.resource.data.giverRevealedId == myId()
+              && (resource == null || request.resource.data.receivedAt == resource.data.receivedAt));
+      }
+
+      // ---------- Tareas, gastos, transporte ----------
+      match /tasks/{taskId} {
+        allow read: if isActive();
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || (isActive() && resource.data.status == 'OPEN'
+              && onlyKeys(['volunteers', 'updatedAt'])
+              && request.resource.data.volunteers.diff(resource.data.volunteers).affectedKeys().hasOnly([myId()])
+              && request.resource.data.volunteers.size() <= resource.data.capacity);
+      }
+
+      match /expenses/{expenseId} {
+        allow read: if isActive();
+        allow create: if isActive() && request.resource.data.payerId == myId() && request.resource.data.state == 'PROPOSED';
+        allow update, delete: if isAdmin();
+      }
+
+      match /settlements/{settlementId} {
+        allow read: if isActive();
+        allow create: if isActive() && request.resource.data.fromId == myId() && request.resource.data.state == 'PROPOSED';
+        allow update: if isAdmin() || (isActive() && resource.data.toId == myId() && onlyKeys(['state']));
+        allow delete: if isAdmin();
+      }
+
+      match /transport/{entryId} {
+        allow read: if isActive();
+        allow create: if isActive() && request.resource.data.memberId == myId();
+        allow update, delete: if isAdmin() || (isActive() && resource.data.memberId == myId());
+      }
+
+      match /audit/{entryId} {
+        allow read, create: if isAdmin();
+        allow update, delete: if false;
+      }
+    }
+  }
+}
