@@ -26,3 +26,6 @@ dist-ssr
 # Firebase CLI
 firebase-debug.log
 .firebase/
+
+# Material del video tutorial (local, no se publica)
+video-tutorial/
