@@ -46,7 +46,7 @@ export function BandaHome() {
             <br />
             del cerrucho.
           </h1>
-          <p className="text-[#f2e7c8] mt-3">{isMember && member ? `Hola, ${member.alias}.` : 'Comida anual, fútbol y cumpleaños de la banda.'}</p>
+          <p className="text-[#f2e7c8] mt-3">{isMember && member ? `Hola, ${member.alias}.` : 'Comida anual, fútbol, pádel y cumpleaños de la banda.'}</p>
         </div>
       </div>
 
