@@ -189,8 +189,8 @@ async function drawStory(canvas: HTMLCanvasElement, m: FmoMatch, players: FmoPla
   ctx.fillStyle = '#191409'
   fitText(ctx, `“${FMO_HISTORIA.frase}`, textW, 52)
   ctx.fillText(`“${FMO_HISTORIA.frase}`, textX, by + 95)
-  fitText(ctx, `${name}”`, textW, 92)
-  ctx.fillText(`${name}”`, textX, by + 200)
+  fitText(ctx, `${name}!!!”`, textW, 92)
+  ctx.fillText(`${name}!!!”`, textX, by + 200)
   if (chosen) {
     const cx = bx + bw - 110
     const cy = by + bh / 2
