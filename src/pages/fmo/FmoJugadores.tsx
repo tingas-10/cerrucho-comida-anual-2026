@@ -9,6 +9,7 @@ import { computeStats, emptyStats, formatPoints, resultFor, scoreOf, yearOf, yea
 import { fmtDayShort } from '../../domain/format'
 import { Button, Card, Loading, PageHeader, Pill, Section, Stat } from '../../ui/components'
 import { useToast } from '../../ui/toast'
+import { usePadelMatches } from '../padel/padelShared'
 import { FmoTabs, YearSelect, useFmoMatches, useFmoPlayers } from './fmoShared'
 
 export function FmoJugadores() {
@@ -32,7 +33,8 @@ export function FmoJugadores() {
     [rows, who, y],
   )
   const guests = players.list.filter((p) => p.guest)
-  const guestHasMatches = (id: string) => rows.some((m) => m.players[id])
+  const padel = usePadelMatches()
+  const guestHasMatches = (id: string) => rows.some((m) => m.players[id]) || padel.rows.some((m) => m.pairA.includes(id) || m.pairB.includes(id))
 
   async function addGuest() {
     const name = guestName.trim()
@@ -109,7 +111,7 @@ export function FmoJugadores() {
       {isMember ? (
       <Section title="Invitados">
         <Card>
-          <p className="small muted mb-3">Gente que juega con nosotros pero no es de la banda. Tienen estadísticas, no entran a la web.</p>
+          <p className="small muted mb-3">Gente que juega con nosotros pero no es de la banda (en FMO y en Pádel). Tienen estadísticas, no entran a la web.</p>
           {guests.length === 0 ? <p className="small muted">Todavía no hay invitados.</p> : null}
           {guests.map((g) => (
             <GuestRow key={g.id} id={g.id} name={g.name} canDelete={!guestHasMatches(g.id)} onRename={renameGuest} onDelete={async () => {

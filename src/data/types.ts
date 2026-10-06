@@ -100,6 +100,7 @@ export interface BeverageSettings {
   stock: Record<string, number> // unidades (envases) en stock por ingrediente
   prices: Record<string, number> // centavos por envase, sólo si se cargó
   pendingScenario: number // asistentes sin respuesta a imputar (default 0)
+  extras?: Record<string, number> // envases fijos que se compran igual (gin y vermouth para los finos)
   responsible: Record<string, string | null>
   bought: Record<string, boolean>
   state: 'OPEN' | 'CLOSED'
@@ -473,6 +474,28 @@ export interface FmoMatch {
   players: Record<string, FmoMatchPlayer> // id de miembro o de invitado
   otherA: number // goles en contra o sin dueño a favor de A
   otherB: number
+  status: 'DRAFT' | 'PLAYED'
+  notes?: string
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt: number
+  revision: number
+}
+
+export interface PadelSet {
+  a: number // games de la pareja de arriba
+  b: number // games de la pareja de abajo
+}
+
+export interface PadelMatch {
+  id: string
+  playedAt: number
+  bestOf: 1 | 3 | 5
+  // Parejas: [drive, revés]. '' = lugar vacío. Ids de miembro o de invitado (fmoGuests).
+  pairA: [string, string]
+  pairB: [string, string]
+  sets: PadelSet[]
   status: 'DRAFT' | 'PLAYED'
   notes?: string
   createdBy: string

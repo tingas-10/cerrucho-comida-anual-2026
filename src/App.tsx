@@ -14,6 +14,11 @@ import { FmoPartido } from './pages/fmo/FmoPartido'
 import { FmoPartidos } from './pages/fmo/FmoPartidos'
 import { FmoRanking } from './pages/fmo/FmoRanking'
 import { FmoVersus } from './pages/fmo/FmoVersus'
+import { PadelJugadores } from './pages/padel/PadelJugadores'
+import { PadelPartido } from './pages/padel/PadelPartido'
+import { PadelPartidos } from './pages/padel/PadelPartidos'
+import { PadelRanking } from './pages/padel/PadelRanking'
+import { PadelVersus } from './pages/padel/PadelVersus'
 import { Galeria } from './pages/Galeria'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
@@ -60,6 +65,12 @@ export default function App() {
           <Route path="/fmo/ranking" element={<FmoRanking />} />
           <Route path="/fmo/jugadores" element={<FmoJugadores />} />
           <Route path="/fmo/versus" element={<FmoVersus />} />
+          <Route path="/padel" element={<PadelPartidos />} />
+          <Route path="/padel/partido/:id" element={<PadelPartido />} />
+          <Route path="/padel/ranking" element={<PadelRanking />} />
+          <Route path="/padel/parejas" element={<PadelRanking pairs />} />
+          <Route path="/padel/jugadores" element={<PadelJugadores />} />
+          <Route path="/padel/versus" element={<PadelVersus />} />
           <Route path="/miembros" element={<Miembros />} />
           <Route path="/galeria" element={<Galeria />} />
           <Route path="/archivo" element={<Archivo />} />

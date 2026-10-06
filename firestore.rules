@@ -102,6 +102,16 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isActive();
     }
+    // ---------- Pádel: igual que FMO (los invitados son los mismos de fmoGuests) ----------
+    match /padelMatches/{matchId} {
+      allow read: if true;
+      allow delete: if isActive();
+      allow create, update: if isActive()
+        && request.resource.data.bestOf in [1, 3, 5]
+        && request.resource.data.status in ['DRAFT', 'PLAYED']
+        && request.resource.data.pairA.size() == 2
+        && request.resource.data.pairB.size() == 2;
+    }
 
     // ---------- Edición anual ----------
     match /editions/{slug} {

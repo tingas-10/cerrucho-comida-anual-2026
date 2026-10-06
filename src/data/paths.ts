@@ -52,6 +52,8 @@ export const P = {
   fmoMatch: (id: string) => `fmoMatches/${id}`,
   fmoGuests: 'fmoGuests',
   fmoGuest: (id: string) => `fmoGuests/${id}`,
+  padelMatches: 'padelMatches',
+  padelMatch: (id: string) => `padelMatches/${id}`,
   archive: 'archive',
   archiveEntry: (slug: string) => `archive/${slug}`,
 }

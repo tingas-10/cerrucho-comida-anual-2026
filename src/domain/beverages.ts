@@ -8,7 +8,14 @@ export interface ProfileInput {
 }
 
 export function emptyPct(): Record<BebidaKey, number> {
-  return { fernet: 0, cerveza: 0, gin: 0, vodka: 0, vino: 0, aperol: 0 }
+  return { fernet: 0, cerveza: 0, vino: 0 }
+}
+
+/** Sólo las bebidas vigentes (respuestas viejas pueden traer gin, vodka o aperol en 0). */
+export function cleanPct(pct: Record<string, number> | undefined): Record<BebidaKey, number> {
+  const out = emptyPct()
+  for (const k of BEBIDAS) out[k] = Number(pct?.[k]) || 0
+  return out
 }
 
 export function pctTotal(pct: Record<string, number>): number {
@@ -132,6 +139,12 @@ export function computePurchases(
     add('agua', attendees * settings.waterMlPerAttendee)
     add('hielo', attendees * settings.iceGPerAttendee)
   }
+  // Extras fijos (gin y vermouth para los finos): una cantidad de envases, sin reserva.
+  const extras = settings.extras ?? {}
+  for (const [id, n] of Object.entries(extras)) {
+    const ing = settings.ingredients.find((i) => i.id === id)
+    if (ing && n > 0) add(id, n * ing.envaseMl)
+  }
   const lines: PurchaseLine[] = []
   let totalCents = 0
   let pricesMissing = false
@@ -139,7 +152,8 @@ export function computePurchases(
     const raw = amounts[ing.id] ?? 0
     if (raw <= 0 && !(settings.stock[ing.id] > 0)) continue
     const isAssumption = ing.id === 'agua' || ing.id === 'hielo'
-    const protectedAmount = isAssumption ? raw : raw * reserve
+    const isExtra = (extras[ing.id] ?? 0) > 0
+    const protectedAmount = isAssumption || isExtra ? raw : raw * reserve
     const stockUnits = settings.stock[ing.id] ?? 0
     const stockAmount = stockUnits * ing.envaseMl
     const pendingAmount = Math.max(0, protectedAmount - stockAmount)
@@ -168,7 +182,7 @@ export function computePurchases(
       totalCents: lineTotal,
       bought: settings.bought?.[ing.id] ?? false,
       responsibleId: settings.responsible?.[ing.id] ?? null,
-      assumption: isAssumption ? 'Supuesto de compra por asistente' : undefined,
+      assumption: isAssumption ? 'Supuesto de compra por asistente' : isExtra ? 'Cantidad fija para los finos' : undefined,
     })
   }
   return { lines, attendees, responses: profiles.length, totalCents, pricesMissing }

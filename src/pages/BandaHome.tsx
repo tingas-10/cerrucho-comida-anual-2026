@@ -1,4 +1,4 @@
-// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO y cumpleaños.
+// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel y cumpleaños.
 import { Cake, CalendarDays, Goal, LogIn } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -9,8 +9,11 @@ import { useEdition, useMembers, useNow } from '../data/hooks'
 import { formatBirthday, upcoming } from '../domain/birthdays'
 import { computeStats, formatPoints, ranking, scoreOf, yearOf } from '../domain/fmo'
 import { fmtDayLong, fmtTime } from '../domain/format'
+import { computePadelStats, padelRanking, tally } from '../domain/padel'
+import { PadelIcon } from '../ui/Shell'
 import { Card, MemberAvatar } from '../ui/components'
 import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
+import { pairName, usePadelMatches } from './padel/padelShared'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -25,6 +28,9 @@ export function BandaHome() {
   const played = useMemo(() => matches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt), [matches])
   const leader = useMemo(() => ranking(computeStats(matches, yearOf(now)))[0], [matches, now])
   const last = played[0]
+  const { rows: padelMatches } = usePadelMatches()
+  const lastPadel = useMemo(() => padelMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [padelMatches])
+  const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
   const e = `/e/${EDICION_ACTUAL.slug}`
   const hero = BASE + (edition?.heroPhoto ?? FOTOS[0].src)
 
@@ -53,7 +59,7 @@ export function BandaHome() {
         </div>
       ) : null}
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+      <div className="grid sm:grid-cols-2 gap-3 mt-4">
         <Card className="flex flex-col">
           <p className="eyebrow flex items-center gap-2">
             <CalendarDays size={14} /> {edition?.title ?? EDICION_ACTUAL.titulo}
@@ -94,6 +100,35 @@ export function BandaHome() {
           </div>
           <Link to="/fmo" className="btn mt-3">
             Ir a FMO
+          </Link>
+        </Card>
+
+        <Card className="flex flex-col">
+          <p className="eyebrow flex items-center gap-2">
+            <PadelIcon size={14} /> Pádel
+          </p>
+          <div className="mt-2 flex-1 small">
+            {lastPadel ? (
+              <p>
+                <span className="muted">Último partido · {fmtDayLong(lastPadel.playedAt)}</span>
+                <br />
+                <b>
+                  {pairName(lastPadel, 'A', players)} {tally(lastPadel).a} – {tally(lastPadel).b} {pairName(lastPadel, 'B', players)}
+                </b>
+              </p>
+            ) : (
+              <p className="muted">Todavía no hay partidos cargados.</p>
+            )}
+            {padelLeader ? (
+              <p className="mt-2 flex items-center gap-2">
+                <span className="muted">Puntero {yearOf(now)}:</span>
+                <b>{players.nameOf(padelLeader.id)}</b>
+                <span className="muted">({formatPoints(padelLeader.points)} pts)</span>
+              </p>
+            ) : null}
+          </div>
+          <Link to="/padel" className="btn mt-3">
+            Ir a Pádel
           </Link>
         </Card>
 

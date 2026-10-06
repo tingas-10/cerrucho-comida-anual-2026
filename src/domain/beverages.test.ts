@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import cases from '../../docs/spec/06_Casos_reglas.json'
-import { AGUA_ML_POR_ASISTENTE, HIELO_G_POR_ASISTENTE, INGREDIENTES, PORCIONES_AL_100, RECETAS, RESERVA_COMPRA_PCT, fraseNivel } from '../content/bebidas'
+import { AGUA_ML_POR_ASISTENTE, EXTRAS_FINOS, HIELO_G_POR_ASISTENTE, INGREDIENTES, RECETAS, RESERVA_COMPRA_PCT, fraseNivel } from '../content/bebidas'
 import type { BeverageProfile, BeverageSettings } from '../data/types'
-import { computePurchases, portionsOf, summarize, validateProfile } from './beverages'
+import { cleanPct, computePurchases, portionsOf, summarize, validateProfile } from './beverages'
 
 function settings(over: Partial<BeverageSettings> = {}): BeverageSettings {
   return {
@@ -21,7 +20,7 @@ function settings(over: Partial<BeverageSettings> = {}): BeverageSettings {
   }
 }
 
-const full = (pct: Record<string, number>) => ({ fernet: 0, cerveza: 0, gin: 0, vodka: 0, vino: 0, aperol: 0, ...pct })
+const full = (pct: Record<string, number>) => ({ fernet: 0, cerveza: 0, vino: 0, ...pct })
 
 function profile(level: number, pct: Record<string, number>): BeverageProfile {
   return { level, portions: portionsOf(level), noAlcohol: level === 0, pct: full(pct), revision: 1, updatedAt: 0 }
@@ -51,20 +50,36 @@ describe('bebidas · validación', () => {
 })
 
 describe('bebidas · compras', () => {
-  const c = cases.beverage_cases[0]
-  it(c.id + ' (4 porciones = nivel 40)', () => {
-    // El caso de la especificación usa 4 porciones por persona; con 100% = 10 porciones, eso es nivel 40.
-    const level = (4 / PORCIONES_AL_100) * 100
-    const profiles = c.profiles.map((p) => profile(level, { fernet: p.fernet_pct, cerveza: p.beer_pct }))
-    const r = computePurchases(settings(), profiles, 2)
+  // Pedido de Agus (6/10/2026): alguien en 50% que reparte 50% fernet y 50% cerveza toma medio fernet
+  // de 750 ml, 1,5 L de coca y 3 cervezas de ½ L. Con 50% vino, 0,5 L de vino.
+  it('50% de nivel, mitad fernet y mitad cerveza', () => {
+    const r = computePurchases(settings({ reservePct: 0 }), [profile(50, { fernet: 50, cerveza: 50 })], 0)
     const by = Object.fromEntries(r.lines.map((l) => [l.ingredientId, l]))
-    expect(by.fernet.rawAmount).toBeCloseTo(c.expected_raw_ml.fernet)
-    expect(by.cola.rawAmount).toBeCloseTo(c.expected_raw_ml.cola)
-    expect(by.cerveza.rawAmount).toBeCloseTo(c.expected_raw_ml.cerveza)
-    expect(by.fernet.units).toBe(c.expected_purchase_units.fernet_750ml_bottle)
-    expect(by.cola.units).toBe(c.expected_purchase_units.cola_2250ml_bottle)
-    expect(by.cerveza.units).toBe(c.expected_purchase_units.beer_473ml_can)
-    expect(by.cerveza.packs).toBe(c.expected_purchase_if_beer_pack_only)
+    expect(by.fernet.rawAmount).toBeCloseTo(375)
+    expect(by.cola.rawAmount).toBeCloseTo(1500)
+    expect(by.cerveza.rawAmount).toBeCloseTo(1500)
+    expect(by.cerveza.units).toBe(3)
+  })
+  it('50% de nivel, mitad vino', () => {
+    const r = computePurchases(settings({ reservePct: 0 }), [profile(50, { vino: 50, fernet: 50 })], 0)
+    expect(r.lines.find((l) => l.ingredientId === 'vino')!.rawAmount).toBeCloseTo(500)
+  })
+  it('la reserva se suma antes de redondear', () => {
+    const r = computePurchases(settings(), [profile(50, { fernet: 50, cerveza: 50 })], 0)
+    const fernet = r.lines.find((l) => l.ingredientId === 'fernet')!
+    expect(fernet.protectedAmount).toBeCloseTo(412.5)
+    expect(fernet.units).toBe(1)
+  })
+  it('gin y vermouth para los finos: fijos, sin reserva', () => {
+    const r = computePurchases(settings({ extras: EXTRAS_FINOS }), [profile(50, { fernet: 100 })], 0)
+    const by = Object.fromEntries(r.lines.map((l) => [l.ingredientId, l]))
+    expect(by.gin.units).toBe(1)
+    expect(by.vermut.units).toBe(1)
+    expect(by.gin.assumption).toMatch(/finos/)
+  })
+  it('respuestas viejas con gin o aperol en 0 se limpian', () => {
+    expect(cleanPct({ fernet: 50, cerveza: 50, gin: 0, aperol: 0 })).toEqual({ fernet: 50, cerveza: 50, vino: 0 })
+    expect(validateProfile({ level: 50, pct: cleanPct({ fernet: 50, cerveza: 50, gin: 0 }) })).toBeNull()
   })
   it('ponderado por nivel: 10% vs 100%', () => {
     const s = summarize([profile(10, { fernet: 100 }), profile(100, { cerveza: 100 })])

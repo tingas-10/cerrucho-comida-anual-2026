@@ -11,6 +11,7 @@ export interface FmoPlayer {
   name: string
   guest: boolean
   color: string
+  photo: string | null
 }
 
 export interface FmoPlayers {
@@ -26,8 +27,8 @@ export function useFmoPlayers(): FmoPlayers {
   const guests = useCollection<FmoGuest>(P.fmoGuests)
   return useMemo(() => {
     const list: FmoPlayer[] = [
-      ...members.list.filter((m) => m.status !== 'suspended').map((m) => ({ id: m.id, name: m.alias, guest: false, color: m.avatarColor ?? colorFor(m.id) })),
-      ...guests.rows.map((g) => ({ id: g.id, name: g.name, guest: true, color: colorFor(g.id) })),
+      ...members.list.filter((m) => m.status !== 'suspended').map((m) => ({ id: m.id, name: m.alias, guest: false, color: m.avatarColor ?? colorFor(m.id), photo: m.photo ?? null })),
+      ...guests.rows.map((g) => ({ id: g.id, name: g.name, guest: true, color: colorFor(g.id), photo: null })),
     ].sort((a, b) => a.name.localeCompare(b.name, 'es'))
     const byId: Record<string, FmoPlayer> = {}
     for (const p of list) byId[p.id] = p

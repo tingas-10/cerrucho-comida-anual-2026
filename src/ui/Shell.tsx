@@ -38,6 +38,17 @@ import { useTheme } from './theme'
 
 const LOGO = import.meta.env.BASE_URL + 'logo.webp'
 
+/** Paleta de pádel (lucide no trae una). */
+export function PadelIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <ellipse cx="13.5" cy="9" rx="6.5" ry="7" />
+      <path d="M9.2 14.2 4 20.5" />
+      <path d="M11 8h.01M14 6h.01M16 9h.01M13 11h.01" />
+    </svg>
+  )
+}
+
 interface NavItem {
   to: string
   label: string
@@ -64,6 +75,13 @@ function useNav() {
     { to: '/fmo/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
     { to: '/fmo/versus', label: '1 vs 1', icon: <Swords size={18} /> },
   ]
+  const padel: NavItem[] = [
+    { to: '/padel', label: 'Partidos', icon: <PadelIcon />, end: true },
+    { to: '/padel/ranking', label: 'Ranking', icon: <Medal size={18} /> },
+    { to: '/padel/parejas', label: 'Parejas', icon: <Users size={18} /> },
+    { to: '/padel/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
+    { to: '/padel/versus', label: '1 vs 1', icon: <Swords size={18} /> },
+  ]
   const banda: NavItem[] = [
     { to: '/cumples', label: 'Cumpleaños', icon: <Cake size={18} /> },
     ...(isMember ? [{ to: '/miembros', label: 'Miembros', icon: <Users size={18} /> }] : []),
@@ -74,7 +92,7 @@ function useNav() {
     ...(isMember ? [{ to: '/perfil', label: 'Mi perfil', icon: <UserRound size={18} /> }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Administración', icon: <Settings size={18} /> }] : []),
   ]
-  return { comida, fmo, banda, mas, e }
+  return { comida, fmo, padel, banda, mas, e }
 }
 
 function Item({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
@@ -201,6 +219,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
           <Group title={comidaTitle} items={nav.comida} collapsed={collapsed} open={isOpen('edicion')} onToggle={() => toggleGroup('edicion')} />
           <Group title="FMO" items={nav.fmo} collapsed={collapsed} open={isOpen('fmo')} onToggle={() => toggleGroup('fmo')} />
+          <Group title="Pádel" items={nav.padel} collapsed={collapsed} open={isOpen('padel')} onToggle={() => toggleGroup('padel')} />
           <Group title="La banda" items={nav.banda} collapsed={collapsed} open={isOpen('banda')} onToggle={() => toggleGroup('banda')} />
           <Group title="Más" items={nav.mas} collapsed={collapsed} open={isOpen('mas')} onToggle={() => toggleGroup('mas')} />
         </nav>
@@ -253,6 +272,10 @@ export function Shell({ children }: { children: ReactNode }) {
         <NavLink to="/fmo" className={({ isActive }) => tab(isActive)}>
           <Goal size={20} />
           FMO
+        </NavLink>
+        <NavLink to="/padel" className={({ isActive }) => tab(isActive)}>
+          <PadelIcon size={20} />
+          Pádel
         </NavLink>
         <NavLink to="/cumples" className={({ isActive }) => tab(isActive)}>
           <Cake size={20} />

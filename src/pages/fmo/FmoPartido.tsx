@@ -362,6 +362,7 @@ function Pitch({ match, players, selected, onSelect, onMove, readOnly }: { match
 
       {Object.entries(match.players).map(([id, p]) => {
         const name = players.nameOf(id)
+        const photo = players.byId[id]?.photo
         const isSel = selected === id
         return (
           <button
@@ -383,10 +384,11 @@ function Pitch({ match, players, selected, onSelect, onMove, readOnly }: { match
                 height: 42,
                 background: p.team === 'A' ? '#ffffff' : '#0e1119',
                 color: p.team === 'A' ? '#0e1119' : '#ffffff',
-                outline: isSel ? '3px solid #d9b45f' : '2px solid rgba(0,0,0,.25)',
+                border: `3px solid ${p.team === 'A' ? '#ffffff' : '#0e1119'}`,
+                outline: isSel ? '3px solid #d9b45f' : '1px solid rgba(0,0,0,.35)',
               }}
             >
-              {initials(name)}
+              {photo ? <img src={photo} alt="" className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} /> : initials(name)}
               {p.goals > 0 ? (
                 <span className="absolute -top-1.5 -right-2 rounded-full bg-[#d9b45f] text-[#191409] text-[10px] font-extrabold px-1.5 py-0.5 leading-none">{p.goals}</span>
               ) : null}

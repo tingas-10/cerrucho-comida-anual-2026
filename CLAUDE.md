@@ -16,6 +16,7 @@ Que los cambios chicos salgan rápido por chat: editar el archivo correspondient
 | Bebidas, frases del nivel de consumo (barra 0-100), recetas, envases, reserva, agua/hielo | `src/content/bebidas.ts` |
 | Plantillas de tareas, lista personal y agenda | `src/content/tareas.ts` |
 | FMO (fútbol): puntos del ranking, tamaños de equipo, nombres por defecto | `src/content/fmo.ts` |
+| Pádel: formatos (1, 3 o 5 sets), puntos por formato, cupo de invitados | `src/content/padel.ts` |
 | Colores, tipografía, radios, estilos globales | `src/index.css` |
 | Config de Firebase (pública por diseño; excepción autorizada por Agus) | `src/firebase/firebase.config.json` |
 | Reglas de seguridad (al cambiarlas: probar con `scripts/test-rules.mjs` y publicarlas, ver abajo) | `firestore.rules` |
@@ -29,6 +30,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - `src/domain/` reglas puras con tests (`npm test`): `awards.ts` (conteo y ballotage), `beverages.ts` (validación y compras), `expenses.ts` (reparto en centavos, saldos), `gift.ts` (sorteo cripto), `polls.ts`, `format.ts` (fechas Buenos Aires).
 - `src/ui/` carcasa (`Shell.tsx`), componentes base (`components.tsx`), `PollCard.tsx`, toast, tema.
 - `src/pages/` una pantalla por archivo; `src/pages/admin/` una pestaña del panel por archivo.
+- `src/pages/padel/` sección Pádel: partidos de 4 (al menos 3 de la banda, hasta 1 invitado) en una cancha azul, sets, ranking individual y de parejas, jugadores y 1 vs 1. Reglas puras en `src/domain/padel.ts`; colección `padelMatches`. Los invitados son los mismos de FMO (`fmoGuests`).
 - `src/pages/fmo/` sección FMO (fútbol): partidos con cancha arrastrable, ranking, jugadores/invitados y 1 vs 1. Reglas puras en `src/domain/fmo.ts`. Colecciones `fmoMatches` y `fmoGuests`: todos los miembros activos leen y escriben.
 - `docs/spec/` la especificación original del paquete (autoridad de producto).
 
@@ -49,7 +51,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - Amigo invisible: entra **toda la banda** (no suspendidos y que participan), sin inscripción. Agus toca Sortear; `crypto.getRandomValues`, sin autoasignación, mínimo 3. Cada miembro sólo lee `giftAssignments/{suId}` y ve los gustos de su destinatario.
 - Propuestas de lugar y comida: van directo a votación (👍/👎). "Más votado" se muestra aparte de "Confirmado por el presidente".
 - Fechas: calendario mensual con Puedo / No puedo / Capaz; "marcar pendientes como" sólo toca las sin responder. Las fechas candidatas las agrega sólo el admin.
-- Bebidas: nivel 0–100 en pasos de 10 (0 = no toma; 100 = `PORCIONES_AL_100` porciones para compras); seis claves fijas; porcentajes enteros que suman 100 cuando el nivel es > 0. Compras: sumar ingredientes, reserva 10 %, restar stock una vez, redondear por envase; nunca sumar reserva después de redondear.
+- Bebidas: sólo fernet, cerveza y vino (más gin y vermouth fijos "para los finos", `EXTRAS_FINOS`). Nivel 0–100 en pasos de 10 (100 = `PORCIONES_AL_100` porciones). Regla de Agus: alguien en 50% con mitad fernet y mitad cerveza = medio fernet de 750 ml + 1,5 L de coca + 3 cervezas de ½ L; 50% vino = 0,5 L. Compras: sumar ingredientes, reserva 10 %, restar stock una vez, redondear por envase; nunca sumar reserva después de redondear. Las recetas de una edición creada viven en Firestore (`editions/{slug}.beverage`).
 - Fechas en ms UTC, mostradas en `America/Argentina/Buenos_Aires` (UTC-3 fijo).
 
 ## Celular primero

@@ -105,6 +105,14 @@ const cases = [
   }),
   tc('suspendido NO carga FMO', 'susp', 'create', '/fmoMatches/x', 'DENY', { data: { a: 1 } }),
 
+  // Pádel: cualquiera mira, los miembros cargan
+  tc('visitante lee pádel', null, 'get', '/padelMatches/x', 'ALLOW', { existing: {} }),
+  tc('visitante NO carga pádel', null, 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 3, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),
+  tc('miembro carga pádel', 'ana', 'create', '/padelMatches/x', 'ALLOW', { data: { bestOf: 3, status: 'DRAFT', pairA: ['m-ana', ''], pairB: ['', ''] } }),
+  tc('miembro NO carga pádel a 2 sets', 'ana', 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 2, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),
+  tc('miembro borra un partido de pádel', 'ana', 'delete', '/padelMatches/x', 'ALLOW', { existing: { bestOf: 3 } }),
+  tc('suspendido NO carga pádel', 'susp', 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 3, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),
+
   // Presidente: confirma fecha, lugar y comida; nada más
   tc('presidente confirma la fecha', 'facu', 'update', '/editions/2026', 'ALLOW', { existing: { title: 'x', date: { startsAt: null }, decisions: {} }, data: { title: 'x', date: { startsAt: 1 }, decisions: { fecha: { status: 'CONFIRMED' } } } }),
   tc('presidente NO cambia el título de la edición', 'facu', 'update', '/editions/2026', 'DENY', { existing: { title: 'x' }, data: { title: 'y' } }),

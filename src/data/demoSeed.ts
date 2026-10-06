@@ -92,9 +92,9 @@ export async function seedDemo(db: MemoryAdapter) {
 
   // Algunas bebidas y RSVP de ejemplo.
   const bev: Array<[string, BeverageProfile]> = [
-    ['m-choclo', { level: 40, portions: 4, noAlcohol: false, pct: { fernet: 50, cerveza: 50, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
-    ['m-pato', { level: 70, portions: 7, noAlcohol: false, pct: { fernet: 70, cerveza: 0, gin: 30, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
-    ['m-felix', { level: 0, portions: 0, noAlcohol: true, pct: { fernet: 0, cerveza: 0, gin: 0, vodka: 0, vino: 0, aperol: 0 }, revision: 1, updatedAt: now }],
+    ['m-choclo', { level: 40, portions: 4, noAlcohol: false, pct: { fernet: 50, cerveza: 50, vino: 0 }, revision: 1, updatedAt: now }],
+    ['m-pato', { level: 70, portions: 7, noAlcohol: false, pct: { fernet: 70, cerveza: 0, vino: 30 }, revision: 1, updatedAt: now }],
+    ['m-felix', { level: 0, portions: 0, noAlcohol: true, pct: { fernet: 0, cerveza: 0, vino: 0 }, revision: 1, updatedAt: now }],
   ]
   for (const [id, p] of bev) await db.setDoc(P.beverage(slug, id), p)
   const rsvps: Array<[string, Rsvp['status']]> = [
@@ -123,6 +123,11 @@ export async function seedDemo(db: MemoryAdapter) {
   const fmoBase = { size: 5, nameA: 'Claros', nameB: 'Oscuros', otherA: 0, otherB: 0, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
   await db.setDoc(P.fmoMatch('demo-1'), { ...fmoBase, id: 'demo-1', playedAt: now - 9 * 86400000, status: 'PLAYED', players: fmoPlayers([['owner', 2], ['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-pipe', 1]], [['m-felix', 1], ['m-marcos', 0], ['m-nacho', 2], ['m-topo', 0], ['g-demo-primo', 0]]) })
   await db.setDoc(P.fmoMatch('demo-2'), { ...fmoBase, id: 'demo-2', playedAt: now - 2 * 86400000, status: 'PLAYED', otherB: 1, players: fmoPlayers([['owner', 0], ['m-felix', 2], ['m-nacho', 0], ['m-santi', 0], ['m-tomi', 0]], [['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-topo', 0], ['m-ucky', 0]]) })
+
+  // Pádel: dos partidos de ejemplo.
+  const padelBase = { status: 'PLAYED' as const, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
+  await db.setDoc(P.padelMatch('demo-p1'), { ...padelBase, id: 'demo-p1', playedAt: now - 5 * 86400000, bestOf: 3, pairA: ['owner', 'm-pato'], pairB: ['m-facu', 'g-demo-primo'], sets: [{ a: 6, b: 4 }, { a: 3, b: 6 }, { a: 7, b: 5 }] })
+  await db.setDoc(P.padelMatch('demo-p2'), { ...padelBase, id: 'demo-p2', playedAt: now - 86400000, bestOf: 1, pairA: ['m-choclo', 'm-felix'], pairB: ['owner', 'm-pato'], sets: [{ a: 4, b: 6 }] })
 
   // Propuestas de comida pendientes.
   await db.setDoc(P.proposal(slug, 'prop-1'), {

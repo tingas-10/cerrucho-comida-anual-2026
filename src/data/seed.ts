@@ -3,6 +3,7 @@
 // propietario en su primera entrada (y el modo demo al iniciar).
 import {
   AGUA_ML_POR_ASISTENTE,
+  EXTRAS_FINOS,
   HIELO_G_POR_ASISTENTE,
   INGREDIENTES,
   RECETAS,
@@ -50,6 +51,7 @@ export function newEdition(slug: string, year: number, title: string, now: numbe
       stock: {},
       prices: {},
       pendingScenario: 0,
+      extras: EXTRAS_FINOS,
       responsible: {},
       bought: {},
       state: 'OPEN',

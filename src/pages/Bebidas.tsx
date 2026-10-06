@@ -1,13 +1,13 @@
 // Bebidas: nivel de consumo (barra 0-100), reparto entre bebidas (barras que suman 100), reparto del grupo y compras.
 import { useEffect, useMemo, useState } from 'react'
-import { BEBIDAS, BEBIDA_LABEL, NIVEL_PASO, fraseNivel } from '../content/bebidas'
+import { BEBIDAS, BEBIDA_LABEL, FINOS_TEXTO, NIVEL_PASO, fraseNivel } from '../content/bebidas'
 import { useSession } from '../data/DataContext'
 import { errorText } from '../data/actions'
 import { DataError } from '../data/adapter'
 import { useCollection, useDoc, useEdition, useMembers, useNow } from '../data/hooks'
 import { P } from '../data/paths'
 import type { BeverageProfile, Rsvp } from '../data/types'
-import { computePurchases, emptyPct, formatAmount, pctTotal, portionsOf, summarize, validateProfile } from '../domain/beverages'
+import { cleanPct, computePurchases, emptyPct, formatAmount, pctTotal, portionsOf, summarize, validateProfile } from '../domain/beverages'
 import { formatArs } from '../domain/expenses'
 import { timeLeft } from '../domain/format'
 import { Button, Card, Loading, LoginPrompt, Notice, PageHeader, Pill } from '../ui/components'
@@ -30,7 +30,7 @@ export function Bebidas() {
   useEffect(() => {
     if (dirty || !mine.data) return
     setLevel(mine.data.level ?? (mine.data.noAlcohol ? 0 : 50))
-    setPct({ ...emptyPct(), ...mine.data.pct })
+    setPct(cleanPct(mine.data.pct))
   }, [mine.data, dirty])
 
   const settings = edition?.beverage
@@ -88,7 +88,7 @@ export function Bebidas() {
           level,
           portions: portionsOf(level),
           noAlcohol: level === 0,
-          pct: level === 0 ? emptyPct() : { ...emptyPct(), ...pct },
+          pct: level === 0 ? emptyPct() : cleanPct(pct),
           revision: (cur?.revision ?? 0) + 1,
           updatedAt: Date.now(),
         }
@@ -153,7 +153,7 @@ export function Bebidas() {
                 <p className="h3">¿Y qué tomás?</p>
                 <Pill tone={total === 100 ? 'ok' : 'warn'}>{total}% {total === 100 ? '' : total < 100 ? `· te faltan ${100 - total}` : `· te pasaste por ${total - 100}`}</Pill>
               </div>
-              <p className="tiny muted mb-3">Repartí el 100% entre las seis. Movés una barra y el resto lo ajustás vos.</p>
+              <p className="tiny muted mb-3">Repartí el 100% entre las tres. Movés una barra y el resto lo ajustás vos.</p>
               <div className="flex gap-2 flex-wrap mb-3">
                 <Button size="sm" variant="line" disabled={!open} onClick={() => preset('fernet')}>
                   100% fernet
@@ -161,8 +161,11 @@ export function Bebidas() {
                 <Button size="sm" variant="line" disabled={!open} onClick={() => preset('cerveza')}>
                   100% cerveza
                 </Button>
+                <Button size="sm" variant="line" disabled={!open} onClick={() => preset('vino')}>
+                  100% vino
+                </Button>
                 <Button size="sm" variant="line" disabled={!open} onClick={() => preset('fernet', 'cerveza')}>
-                  Mitad y mitad
+                  Mitad fernet, mitad birra
                 </Button>
               </div>
               {BEBIDAS.map((k) => (
@@ -191,6 +194,7 @@ export function Bebidas() {
           ) : (
             <p className="small muted mt-4">Con 0% no hace falta repartir nada. Igual contás para agua e hielo.</p>
           )}
+          <p className="small mt-4 rounded-xl bg-soft/60 px-3 py-2">{FINOS_TEXTO}</p>
 
           {open ? (
             <div className="flex items-center justify-between gap-3 mt-5 flex-wrap">

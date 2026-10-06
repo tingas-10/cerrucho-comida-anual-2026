@@ -61,11 +61,11 @@ export function FmoVersus() {
       <Card>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 pb-3 border-b border-line">
           <span className="flex items-center gap-2 font-bold justify-end text-right">
-            {players.nameOf(a)} <Avatar id={a} alias={players.nameOf(a)} color={players.byId[a]?.color} />
+            {players.nameOf(a)} <Avatar id={a} alias={players.nameOf(a)} color={players.byId[a]?.color} photo={players.byId[a]?.photo} />
           </span>
           <span className="tiny muted">vs</span>
           <span className="flex items-center gap-2 font-bold">
-            <Avatar id={b} alias={players.nameOf(b)} color={players.byId[b]?.color} /> {players.nameOf(b)}
+            <Avatar id={b} alias={players.nameOf(b)} color={players.byId[b]?.color} photo={players.byId[b]?.photo} /> {players.nameOf(b)}
           </span>
         </div>
         {lines.map(([label, va, vb, na, nb]) => (

@@ -44,7 +44,7 @@ export function FmoRanking() {
                     <td className="py-2 pr-2 max-w-[120px] sm:max-w-none">
                       <span className="flex items-center gap-2 min-w-0">
                         <span className="hidden sm:inline-flex">
-                          <Avatar id={s.playerId} alias={players.nameOf(s.playerId)} size={24} color={players.byId[s.playerId]?.color} />
+                          <Avatar id={s.playerId} alias={players.nameOf(s.playerId)} size={24} color={players.byId[s.playerId]?.color} photo={players.byId[s.playerId]?.photo} />
                         </span>
                         <span className="truncate">{players.nameOf(s.playerId)}</span>
                         {players.byId[s.playerId]?.guest ? <Pill tone="muted">Inv.</Pill> : null}
