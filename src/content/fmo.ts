@@ -27,6 +27,5 @@ export const FMO_HISTORIA = {
     { src: 'fmo-historia/azzaro-1.png', foco: 0.38 },
     { src: 'fmo-historia/azzaro-2.png', foco: 0.4 },
   ],
-  web: 'tingas-10.github.io/cerrucho-comida-anual-2026',
 }
 

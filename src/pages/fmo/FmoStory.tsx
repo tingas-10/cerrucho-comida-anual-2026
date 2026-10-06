@@ -215,11 +215,6 @@ async function drawStory(canvas: HTMLCanvasElement, m: FmoMatch, players: FmoPla
     ctx.stroke()
   }
 
-  // Pie
-  ctx.textAlign = 'center'
-  ctx.fillStyle = 'rgba(255,255,255,.55)'
-  ctx.font = `500 28px ${FONT}`
-  ctx.fillText(FMO_HISTORIA.web, W / 2, 1840)
 }
 
 /** Pelotita dibujada (el emoji ⚽ cambia según el celular). */
