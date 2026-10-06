@@ -1,5 +1,5 @@
 // FMO · Un partido: cancha con fichas arrastrables, banco, invitados, goles y guardado.
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Plus, Share2, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FMO } from '../../content/fmo'
@@ -12,6 +12,7 @@ import { defaultPosition, scoreOf, teamOf, type Team } from '../../domain/fmo'
 import { fmtDayLong, initials, localToMs, msToLocalParts } from '../../domain/format'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
+import { FmoStoryModal } from './FmoStory'
 import { useFmoPlayers, type FmoPlayers } from './fmoShared'
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
@@ -30,6 +31,7 @@ export function FmoPartido() {
   const [filter, setFilter] = useState('')
   const [guestName, setGuestName] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [storyOpen, setStoryOpen] = useState(false)
 
   useEffect(() => {
     if (remote.data && !dirty) setM(remote.data)
@@ -99,6 +101,7 @@ export function FmoPartido() {
       setM(next)
       setDirty(false)
       toast.ok(status === 'PLAYED' ? 'Partido guardado. Ya cuenta para el ranking.' : 'Armado guardado')
+      if (status === 'PLAYED') setStoryOpen(true)
     } catch (e) {
       toast.error(errorText(e))
     } finally {
@@ -118,6 +121,11 @@ export function FmoPartido() {
           {m.nameA} <span className="tabular-nums">{score.a} – {score.b}</span> {m.nameB}
         </h1>
         <p className="small muted mb-4">{m.status === 'PLAYED' ? fmtDayLong(m.playedAt) : 'Todavía no se jugó'}</p>
+        {m.status === 'PLAYED' ? (
+          <Button variant="gold" className="mb-4" onClick={() => setStoryOpen(true)}>
+            <Share2 size={16} /> Historia para Instagram
+          </Button>
+        ) : null}
         <div className="grid lg:grid-cols-[minmax(0,520px)_1fr] gap-4 items-start">
           <Pitch match={m} players={players} selected={null} onSelect={() => undefined} onMove={() => undefined} readOnly />
           <Card>
@@ -139,6 +147,7 @@ export function FmoPartido() {
         <div className="mt-4">
           <LoginPrompt text="Entrá para armar o editar partidos." />
         </div>
+        <FmoStoryModal open={storyOpen} onClose={() => setStoryOpen(false)} match={m} players={players} />
       </div>
     )
   }
@@ -157,6 +166,11 @@ export function FmoPartido() {
         <span className="flex items-center gap-2">
           {m.status === 'PLAYED' ? <Pill tone="ok">Jugado</Pill> : <Pill tone="warn">Sin jugar</Pill>}
           {dirty ? <Pill tone="danger">Cambios sin guardar</Pill> : null}
+          {m.status === 'PLAYED' && !dirty ? (
+            <Button size="sm" variant="gold" onClick={() => setStoryOpen(true)}>
+              <Share2 size={14} /> Historia
+            </Button>
+          ) : null}
         </span>
       </div>
 
@@ -286,6 +300,8 @@ export function FmoPartido() {
           <p className="tiny muted">"Guardar partido" lo deja en el historial y cuenta para estadísticas y ranking. Se puede editar después.</p>
         </div>
       </div>
+
+      <FmoStoryModal open={storyOpen} onClose={() => setStoryOpen(false)} match={m} players={players} />
 
       <ConfirmDialog
         open={deleteOpen}

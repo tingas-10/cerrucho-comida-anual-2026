@@ -15,7 +15,7 @@ Que los cambios chicos salgan rápido por chat: editar el archivo correspondient
 | Categorías iniciales de premios y regla "Nadie" | `src/content/premios.ts` |
 | Bebidas, frases del nivel de consumo (barra 0-100), recetas, envases, reserva, agua/hielo | `src/content/bebidas.ts` |
 | Plantillas de tareas, lista personal y agenda | `src/content/tareas.ts` |
-| FMO (fútbol): puntos del ranking, tamaños de equipo, nombres por defecto | `src/content/fmo.ts` |
+| FMO (fútbol): puntos del ranking, tamaños de equipo, nombres por defecto, frase e imágenes de la historia de Instagram (`FMO_HISTORIA`, fotos en `public/fmo-historia/`) | `src/content/fmo.ts` |
 | Pádel: formatos (1, 3 o 5 sets), puntos por formato, cupo de invitados | `src/content/padel.ts` |
 | Colores, tipografía, radios, estilos globales | `src/index.css` |
 | Config de Firebase (pública por diseño; excepción autorizada por Agus) | `src/firebase/firebase.config.json` |
@@ -31,6 +31,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - `src/ui/` carcasa (`Shell.tsx`), componentes base (`components.tsx`), `PollCard.tsx`, toast, tema.
 - `src/pages/` una pantalla por archivo; `src/pages/admin/` una pestaña del panel por archivo.
 - `src/pages/padel/` sección Pádel: partidos de 4 (al menos 3 de la banda, hasta 1 invitado) en una cancha azul, sets, ranking individual y de parejas, jugadores y 1 vs 1. Reglas puras en `src/domain/padel.ts`; colección `padelMatches`. Los invitados son los mismos de FMO (`fmoGuests`).
+- `src/pages/fmo/FmoStory.tsx`: historia de Instagram (1080 × 1920) dibujada con canvas al guardar un partido; la descarga o comparte cualquiera, también visitantes. El "bailado" sale al azar del equipo ganador, fijo por partido (`src/domain/fmoStory.ts`).
 - `src/pages/fmo/` sección FMO (fútbol): partidos con cancha arrastrable, ranking, jugadores/invitados y 1 vs 1. Reglas puras en `src/domain/fmo.ts`. Colecciones `fmoMatches` y `fmoGuests`: todos los miembros activos leen y escriben.
 - `docs/spec/` la especificación original del paquete (autoridad de producto).
 

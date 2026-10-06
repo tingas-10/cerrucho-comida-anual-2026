@@ -91,7 +91,7 @@ export function FmoPartidos() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <p className="tiny muted">{fmtDayLong(m.playedAt)}</p>
                     <Link to={`/fmo/partido/${m.id}`} className="tiny underline text-accent">
-                      {isMember ? 'Ver o editar' : 'Ver'}
+                      {isMember ? 'Ver, editar o bajar la historia' : 'Ver o bajar la historia'}
                     </Link>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-2">
