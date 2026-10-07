@@ -463,6 +463,7 @@ export interface FmoMatchPlayer {
   x: number // posición en la cancha, 0..100
   y: number // 0..100; menos de 50 es el equipo A (arriba)
   goals: number
+  sub?: boolean // suplente: no ocupa lugar en la cancha (ilimitados); juega y suma igual
 }
 
 export interface FmoMatch {
@@ -474,7 +475,7 @@ export interface FmoMatch {
   players: Record<string, FmoMatchPlayer> // id de miembro o de invitado
   otherA: number // goles en contra o sin dueño a favor de A
   otherB: number
-  status: 'DRAFT' | 'PLAYED'
+  status: 'DRAFT' | 'PLAYED' // DRAFT = por jugarse (armado, sin resultado)
   notes?: string
   createdBy: string
   updatedBy: string

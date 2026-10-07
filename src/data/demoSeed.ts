@@ -115,7 +115,7 @@ export async function seedDemo(db: MemoryAdapter) {
   // FMO: un invitado y dos partidos de ejemplo.
   await db.setDoc(P.fmoGuest('g-demo-primo'), { id: 'g-demo-primo', name: 'Primo de Topo', createdBy: 'm-topo', createdAt: now, updatedAt: now })
   const fmoPlayers = (a: Array<[string, number]>, b: Array<[string, number]>) => {
-    const out: Record<string, { team: 'A' | 'B'; x: number; y: number; goals: number }> = {}
+    const out: Record<string, { team: 'A' | 'B'; x: number; y: number; goals: number; sub?: boolean }> = {}
     a.forEach(([id, goals], i) => (out[id] = { team: 'A', ...defaultPosition('A', i), goals }))
     b.forEach(([id, goals], i) => (out[id] = { team: 'B', ...defaultPosition('B', i), goals }))
     return out
@@ -123,6 +123,11 @@ export async function seedDemo(db: MemoryAdapter) {
   const fmoBase = { size: 5, nameA: 'Claros', nameB: 'Oscuros', otherA: 0, otherB: 0, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
   await db.setDoc(P.fmoMatch('demo-1'), { ...fmoBase, id: 'demo-1', playedAt: now - 9 * 86400000, status: 'PLAYED', players: fmoPlayers([['owner', 2], ['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-pipe', 1]], [['m-felix', 1], ['m-marcos', 0], ['m-nacho', 2], ['m-topo', 0], ['g-demo-primo', 0]]) })
   await db.setDoc(P.fmoMatch('demo-2'), { ...fmoBase, id: 'demo-2', playedAt: now - 2 * 86400000, status: 'PLAYED', otherB: 1, players: fmoPlayers([['owner', 0], ['m-felix', 2], ['m-nacho', 0], ['m-santi', 0], ['m-tomi', 0]], [['m-choclo', 1], ['m-facu', 0], ['m-pato', 0], ['m-topo', 0], ['m-ucky', 0]]) })
+
+  // Uno por jugarse, con suplentes.
+  const upcoming = fmoPlayers([['m-pato', 0], ['m-choclo', 0], ['m-facu', 0], ['m-topo', 0], ['m-pipe', 0]], [['owner', 0], ['m-felix', 0], ['m-nacho', 0], ['m-santi', 0], ['m-tomi', 0]])
+  for (const [id, team] of [['m-ucky', 'A'], ['m-marcos', 'B'], ['g-demo-primo', 'B']] as const) upcoming[id] = { team, x: 50, y: 50, goals: 0, sub: true }
+  await db.setDoc(P.fmoMatch('demo-3'), { ...fmoBase, id: 'demo-3', playedAt: now + 3 * 86400000, status: 'DRAFT', players: upcoming })
 
   // Pádel: dos partidos de ejemplo.
   const padelBase = { status: 'PLAYED' as const, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }

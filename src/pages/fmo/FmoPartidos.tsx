@@ -1,4 +1,4 @@
-// FMO · Partidos: historial y armado de un partido nuevo.
+// FMO · Partidos: próximos (por jugarse), historial y armado de un partido nuevo.
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FMO } from '../../content/fmo'
@@ -6,8 +6,8 @@ import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
 import { P } from '../../data/paths'
 import type { FmoMatch } from '../../data/types'
-import { scoreOf, teamOf } from '../../domain/fmo'
-import { fmtDayLong } from '../../domain/format'
+import { scoreOf, startersOf, subsOf, teamOf, upcomingMatches } from '../../domain/fmo'
+import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
 import { Button, Card, Empty, Loading, PageHeader, Pill, Section } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { FmoTabs, useFmoMatches, useFmoPlayers } from './fmoShared'
@@ -26,7 +26,7 @@ export function FmoPartidos() {
     try {
       const id = db.newId()
       const now = Date.now()
-      const m: FmoMatch = { id, playedAt: now, size: FMO.tamanioDefault, nameA: FMO.equipoA, nameB: FMO.equipoB, players: {}, otherA: 0, otherB: 0, status: 'DRAFT', notes: '', createdBy: memberId, updatedBy: memberId, createdAt: now, updatedAt: now, revision: 1 }
+      const m: FmoMatch = { id, playedAt: localToMs(msToLocalParts(now).date, '21:00') ?? now, size: FMO.tamanioDefault, nameA: FMO.equipoA, nameB: FMO.equipoB, players: {}, otherA: 0, otherB: 0, status: 'DRAFT', notes: '', createdBy: memberId, updatedBy: memberId, createdAt: now, updatedAt: now, revision: 1 }
       await db.setDoc(P.fmoMatch(id), m)
       navigate(`/fmo/partido/${id}`)
     } catch (e) {
@@ -37,7 +37,7 @@ export function FmoPartidos() {
   }
 
   if (loading) return <Loading />
-  const drafts = rows.filter((m) => m.status === 'DRAFT').sort((a, b) => b.updatedAt - a.updatedAt)
+  const drafts = upcomingMatches(rows)
   const played = rows.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)
 
   return (
@@ -45,7 +45,7 @@ export function FmoPartidos() {
       <PageHeader
         eyebrow="FMO"
         title="Partidos"
-        intro="Armá los equipos en la canchita, cargá los goles al terminar y guardá el partido. Cualquiera de la banda puede crear y editar."
+        intro="Armá los equipos en la canchita (con los suplentes que quieran) y guardalo por jugarse. Cuando se juegue, cargá los goles y guardá el resultado. Cualquiera de la banda puede crear y editar."
         actions={
           isMember ? (
             <Button variant="gold" onClick={() => void create()} loading={busy}>
@@ -56,22 +56,37 @@ export function FmoPartidos() {
       />
       <FmoTabs />
 
-      {isMember && drafts.length ? (
-        <Section title="Armados, sin jugar" className="mt-0">
+      {drafts.length ? (
+        <Section title="Por jugarse" className="mt-0">
           <div className="grid sm:grid-cols-2 gap-3">
             {drafts.map((m) => (
               <Card key={m.id}>
-                <div className="flex justify-between items-center gap-2">
-                  <p className="h3">
-                    {m.nameA} vs {m.nameB}
-                  </p>
-                  <Pill tone="warn">Sin jugar</Pill>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <p className="h3 truncate">
+                      {m.nameA} vs {m.nameB}
+                    </p>
+                    <p className="small text-accent font-semibold">
+                      {fmtDayLong(m.playedAt)} · {fmtTime(m.playedAt)} h
+                    </p>
+                  </div>
+                  <Pill tone="warn">Por jugarse</Pill>
                 </div>
-                <p className="small muted mt-1">
-                  {teamOf(m, 'A').length} vs {teamOf(m, 'B').length} · {m.size} por equipo
+                <div className="grid grid-cols-2 gap-3 mt-2 tiny">
+                  {(['A', 'B'] as const).map((t) => (
+                    <p key={t} className="muted">
+                      <b className="text-[var(--text)]">{t === 'A' ? m.nameA : m.nameB}</b>
+                      <br />
+                      {startersOf(m, t).map(players.nameOf).join(', ') || 'Sin titulares'}
+                      {subsOf(m, t).length ? <span className="block">Sup.: {subsOf(m, t).map(players.nameOf).join(', ')}</span> : null}
+                    </p>
+                  ))}
+                </div>
+                <p className="tiny muted mt-1">
+                  {startersOf(m, 'A').length} vs {startersOf(m, 'B').length} · {m.size} por equipo
                 </p>
                 <Link to={`/fmo/partido/${m.id}`} className="btn btn-sm mt-3">
-                  Seguir armando
+                  {isMember ? 'Ver o seguir armando' : 'Ver'}
                 </Link>
               </Card>
             ))}
@@ -105,7 +120,7 @@ export function FmoPartidos() {
                     {(['A', 'B'] as const).map((t) => (
                       <p key={t} className={t === 'A' ? 'text-right muted' : 'muted'}>
                         {teamOf(m, t)
-                          .map((id) => `${players.nameOf(id)}${m.players[id].goals ? ` ⚽${m.players[id].goals > 1 ? m.players[id].goals : ''}` : ''}`)
+                          .map((id) => `${players.nameOf(id)}${m.players[id].sub ? ' (s)' : ''}${m.players[id].goals ? ` ⚽${m.players[id].goals > 1 ? m.players[id].goals : ''}` : ''}`)
                           .join(' · ')}
                       </p>
                     ))}

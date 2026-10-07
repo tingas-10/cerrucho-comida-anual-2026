@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FmoMatch } from '../data/types'
-import { computeStats, defaultPosition, formatPoints, headToHead, ranking, resultFor, scoreOf, yearOf } from './fmo'
+import { computeStats, defaultPosition, formatPoints, headToHead, ranking, resultFor, scoreOf, startersOf, subsOf, upcomingMatches, yearOf } from './fmo'
 
 function match(id: string, playedAt: number, a: Record<string, number>, b: Record<string, number>, over: Partial<FmoMatch> = {}): FmoMatch {
   const players: FmoMatch['players'] = {}
@@ -72,3 +72,31 @@ describe('FMO · utilidades', () => {
     expect(formatPoints(4.5)).toBe('4,5')
   })
 })
+
+describe('FMO · suplentes y partidos por jugarse', () => {
+  const base = { size: 5, nameA: 'A', nameB: 'B', otherA: 0, otherB: 0, createdBy: 'x', updatedBy: 'x', createdAt: 0, updatedAt: 0, revision: 1 }
+  const played: FmoMatch = {
+    ...base,
+    id: 's1',
+    playedAt: Date.UTC(2026, 9, 1),
+    status: 'PLAYED',
+    players: { a: { team: 'A', x: 50, y: 20, goals: 1 }, s: { team: 'A', x: 50, y: 20, goals: 1, sub: true }, b: { team: 'B', x: 50, y: 80, goals: 1 } },
+  }
+  it('titulares y suplentes por separado', () => {
+    expect(startersOf(played, 'A')).toEqual(['a'])
+    expect(subsOf(played, 'A')).toEqual(['s'])
+  })
+  it('el gol del suplente cuenta y el suplente suma como jugado', () => {
+    expect(scoreOf(played)).toEqual({ a: 2, b: 1 })
+    const st = computeStats([played])
+    expect(st.s.played).toBe(1)
+    expect(st.s.won).toBe(1)
+  })
+  it('los por jugarse no cuentan y se ordenan por fecha', () => {
+    const later: FmoMatch = { ...played, id: 'd2', status: 'DRAFT', playedAt: Date.UTC(2026, 9, 20) }
+    const sooner: FmoMatch = { ...played, id: 'd1', status: 'DRAFT', playedAt: Date.UTC(2026, 9, 10) }
+    expect(upcomingMatches([later, played, sooner]).map((m) => m.id)).toEqual(['d1', 'd2'])
+    expect(computeStats([later]).a).toBeUndefined()
+  })
+})
+

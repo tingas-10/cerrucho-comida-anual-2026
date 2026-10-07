@@ -20,6 +20,20 @@ export function teamOf(m: FmoMatch, team: Team): string[] {
     .map(([id]) => id)
 }
 
+/** Titulares (en la cancha) y suplentes de un equipo. Los suplentes no tienen límite. */
+export function startersOf(m: FmoMatch, team: Team): string[] {
+  return teamOf(m, team).filter((id) => !m.players[id].sub)
+}
+
+export function subsOf(m: FmoMatch, team: Team): string[] {
+  return teamOf(m, team).filter((id) => m.players[id].sub)
+}
+
+/** Próximos partidos (por jugarse), del más cercano al más lejano. */
+export function upcomingMatches(matches: FmoMatch[]): FmoMatch[] {
+  return matches.filter((m) => m.status === 'DRAFT').sort((a, b) => a.playedAt - b.playedAt)
+}
+
 /** Resultado del partido para un jugador: G, E, P o null si no jugó. */
 export function resultFor(m: FmoMatch, playerId: string): 'W' | 'D' | 'L' | null {
   const p = m.players[playerId]

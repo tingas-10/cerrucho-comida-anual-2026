@@ -7,7 +7,7 @@ import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
 import { useEdition, useMembers, useNow } from '../data/hooks'
 import { formatBirthday, upcoming } from '../domain/birthdays'
-import { computeStats, formatPoints, ranking, scoreOf, yearOf } from '../domain/fmo'
+import { computeStats, formatPoints, ranking, scoreOf, upcomingMatches, yearOf } from '../domain/fmo'
 import { fmtDayLong, fmtTime } from '../domain/format'
 import { computePadelStats, padelRanking, tally } from '../domain/padel'
 import { PadelIcon } from '../ui/Shell'
@@ -28,6 +28,7 @@ export function BandaHome() {
   const played = useMemo(() => matches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt), [matches])
   const leader = useMemo(() => ranking(computeStats(matches, yearOf(now)))[0], [matches, now])
   const last = played[0]
+  const next = useMemo(() => upcomingMatches(matches)[0], [matches])
   const { rows: padelMatches } = usePadelMatches()
   const lastPadel = useMemo(() => padelMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [padelMatches])
   const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
@@ -90,6 +91,15 @@ export function BandaHome() {
             ) : (
               <p className="muted">Todavía no hay partidos cargados.</p>
             )}
+            {next ? (
+              <p className="mt-2">
+                <span className="muted">Próximo · {fmtDayLong(next.playedAt)} · {fmtTime(next.playedAt)} h</span>
+                <br />
+                <b>
+                  {next.nameA} vs {next.nameB}
+                </b>
+              </p>
+            ) : null}
             {leader ? (
               <p className="mt-2 flex items-center gap-2">
                 <span className="muted">Puntero {yearOf(now)}:</span>

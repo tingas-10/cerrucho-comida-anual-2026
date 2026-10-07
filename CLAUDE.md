@@ -32,6 +32,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - `src/pages/` una pantalla por archivo; `src/pages/admin/` una pestaña del panel por archivo.
 - `src/pages/padel/` sección Pádel: partidos de 4 (al menos 3 de la banda, hasta 1 invitado) en una cancha azul, sets, ranking individual y de parejas, jugadores y 1 vs 1. Reglas puras en `src/domain/padel.ts`; colección `padelMatches`. Los invitados son los mismos de FMO (`fmoGuests`).
 - `src/pages/fmo/FmoStory.tsx`: historia de Instagram (1080 × 1920) dibujada con canvas al guardar un partido; la descarga o comparte cualquiera, también visitantes. El "bailado" sale al azar del equipo ganador, fijo por partido (`src/domain/fmoStory.ts`).
+- FMO: cada equipo tiene titulares (los de la cancha, hasta el tamaño elegido) y suplentes ilimitados (`sub: true`, juegan y suman en estadísticas). Un partido se guarda "por jugarse" (`status: 'DRAFT'`, con día y hora, lo ve todo el mundo en Partidos y en la portada) o jugado (`PLAYED`, cuenta para el ranking y abre la historia).
 - `src/pages/fmo/` sección FMO (fútbol): partidos con cancha arrastrable, ranking, jugadores/invitados y 1 vs 1. Reglas puras en `src/domain/fmo.ts`. Colecciones `fmoMatches` y `fmoGuests`: todos los miembros activos leen y escriben.
 - `docs/spec/` la especificación original del paquete (autoridad de producto).
 
