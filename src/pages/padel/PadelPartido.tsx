@@ -108,7 +108,7 @@ export function PadelPartido() {
   if (!isMember) {
     return (
       <div>
-        <Link to="/padel" className="tiny underline muted">
+        <Link to="/padel" className="back-link">
           ← Partidos
         </Link>
         <h1 className="h2 mt-1 mb-1">{title}</h1>
@@ -133,7 +133,7 @@ export function PadelPartido() {
     <div>
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div className="min-w-0">
-          <Link to="/padel" className="tiny underline muted">
+          <Link to="/padel" className="back-link">
             ← Partidos
           </Link>
           <h1 className="h2 mt-1">{title}</h1>

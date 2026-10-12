@@ -63,7 +63,7 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 
 ## Celular primero
 
-La banda usa la web desde el celular. Reglas: nada de scroll horizontal de página a 330 px de ancho; campos con `font-size` de 16 px o más (si no, el iPhone hace zoom); botones y controles de 40 px de alto o más; tablas anchas se convierten en tarjetas debajo de `md`; las acciones de guardar largas van en una barra `sticky` arriba de la barra inferior. Los estilos propios de `src/index.css` viven dentro de `@layer base/components` para que las clases de Tailwind los puedan pisar: no escribir CSS fuera de capa.
+La banda usa la web desde el celular. Reglas: encabezados de página centrados en el celular con los botones principales a lo ancho; `.small` 14,5 px y `.tiny` 13 px en el celular (vuelven a 13/12 en escritorio); volver con `.back-link` y links de texto con `.text-link` (40 px de alto); nada de scroll horizontal de página a 330 px de ancho; campos con `font-size` de 16 px o más (si no, el iPhone hace zoom); botones y controles de 40 px de alto o más; tablas anchas se convierten en tarjetas debajo de `md`; las acciones de guardar largas van en una barra `sticky` arriba de la barra inferior. Los estilos propios de `src/index.css` viven dentro de `@layer base/components` para que las clases de Tailwind los puedan pisar: no escribir CSS fuera de capa.
 
 ## Modo demo
 

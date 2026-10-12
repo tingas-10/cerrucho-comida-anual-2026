@@ -98,7 +98,7 @@ export function GolfComision() {
         </Notice>
       ) : null}
 
-      <p className="italic small muted mb-4 leading-relaxed">
+      <p className="italic small muted mb-4 leading-relaxed text-center sm:text-left">
         La comisión de golf cuida que el juego y el ranking sean parejos para todos. Define cómo se suman los puntos, carga las canchas con el par y la dificultad de cada hoyo, corrige o anula partidos cuando ya pasaron las 48 horas para corregirlos y ajusta hándicaps si hace falta. Nadie decide solo: cada cambio se aplica recién cuando lo aprueban al menos 2 comisionados.
       </p>
 

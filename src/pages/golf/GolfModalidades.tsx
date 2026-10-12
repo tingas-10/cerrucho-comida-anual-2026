@@ -46,13 +46,13 @@ export function GolfModalidades() {
           ]}
         />
       </div>
-      <p className="italic small muted mb-4">{GOLF_MODOS[tab].desc}</p>
+      <p className="italic small muted mb-4 text-center sm:text-left">{GOLF_MODOS[tab].desc}</p>
 
       <div className="grid lg:grid-cols-2 gap-4 items-start">
         <Card>
           <div className="flex items-center justify-between gap-2 mb-2">
             <p className="h3">Ranking {GOLF_MODOS[tab].corto} {year}</p>
-            <Link to={`/golf/ranking?m=${tab}`} className="tiny underline text-accent">
+            <Link to={`/golf/ranking?m=${tab}`} className="text-link">
               Ver completo
             </Link>
           </div>

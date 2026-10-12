@@ -208,7 +208,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const sideWidth = collapsed ? 64 : 248
   const inComida = location.pathname.startsWith(nav.e)
   const inDeportes = ['/fmo', '/padel', '/golf'].some((x) => location.pathname.startsWith(x))
-  const tab = (active: boolean) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] ${active ? 'text-accent font-bold bg-soft' : 'muted'}`
+  const tab = (active: boolean) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[12px] ${active ? 'text-accent font-bold bg-soft' : 'muted'}`
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -321,7 +321,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   ] as const
                 ).map(([title, items]) => (
                   <div key={title}>
-                    <p className="eyebrow text-[10px] px-1 mb-1">{title}</p>
+                    <p className="eyebrow px-1 mb-1">{title}</p>
                     <div className="grid grid-cols-2 gap-1">
                       {items.map((i) => (
                         <Item key={i.to} item={i} onClick={() => setSheet(null)} />

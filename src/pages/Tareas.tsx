@@ -147,7 +147,7 @@ function PersonalChecklist({ tasks }: { tasks: Task[] }) {
       {list.map((i) => (
         <label key={i.key} className="row cursor-pointer">
           <span className={items[i.key] ? 'line-through muted' : ''}>{i.label}</span>
-          <input type="checkbox" className="w-5 h-5" checked={!!items[i.key]} onChange={() => void toggle(i.key)} />
+          <input type="checkbox" className="w-6 h-6 shrink-0" checked={!!items[i.key]} onChange={() => void toggle(i.key)} />
         </label>
       ))}
     </Card>

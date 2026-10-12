@@ -170,7 +170,7 @@ function PlayedList({ rounds, players }: { rounds: GolfRound[]; players: FmoPlay
               <span className="flex items-center gap-2">
                 {r.challengeId ? <Pill tone="accent">Desafío</Pill> : null}
                 {r.voided ? <Pill tone="danger">Anulado</Pill> : null}
-                <Link to={`/golf/partido/${r.id}`} className="tiny underline text-accent">
+                <Link to={`/golf/partido/${r.id}`} className="text-link">
                   Ver
                 </Link>
               </span>

@@ -143,7 +143,7 @@ export function FmoPartido() {
   if (!isMember) {
     return (
       <div>
-        <Link to="/fmo" className="tiny underline muted">
+        <Link to="/fmo" className="back-link">
           ← Partidos
         </Link>
         <h1 className="h1 mt-1 mb-1">{title}</h1>
@@ -188,7 +188,7 @@ export function FmoPartido() {
     <div>
       <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
         <div>
-          <Link to="/fmo" className="tiny underline muted">
+          <Link to="/fmo" className="back-link">
             ← Partidos
           </Link>
           <h1 className="h1 mt-1">{title}</h1>

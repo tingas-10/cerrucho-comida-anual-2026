@@ -105,7 +105,7 @@ export function FmoPartidos() {
                 <Card key={m.id}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <p className="tiny muted">{fmtDayLong(m.playedAt)}</p>
-                    <Link to={`/fmo/partido/${m.id}`} className="tiny underline text-accent">
+                    <Link to={`/fmo/partido/${m.id}`} className="text-link">
                       {isMember ? 'Ver, editar o bajar la historia' : 'Ver o bajar la historia'}
                     </Link>
                   </div>

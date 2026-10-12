@@ -219,7 +219,7 @@ export function GolfPartido() {
   const header = (
     <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
       <div className="min-w-0">
-        <Link to="/golf" className="tiny underline muted">
+        <Link to="/golf" className="back-link">
           ← Partidos
         </Link>
         <h1 className="h1 mt-1">{m.course.name}</h1>

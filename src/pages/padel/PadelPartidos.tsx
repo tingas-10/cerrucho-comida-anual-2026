@@ -95,7 +95,7 @@ export function PadelPartidos() {
                     <p className="tiny muted">
                       {fmtDayLong(m.playedAt)} · {formatoLabel(m.bestOf)}
                     </p>
-                    <Link to={`/padel/partido/${m.id}`} className="tiny underline text-accent">
+                    <Link to={`/padel/partido/${m.id}`} className="text-link">
                       {isMember ? 'Ver o editar' : 'Ver'}
                     </Link>
                   </div>

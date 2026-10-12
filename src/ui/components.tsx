@@ -43,7 +43,7 @@ export function Avatar({ id, alias, size = 32, color, photo }: { id: string; ali
   return (
     <span
       className="inline-flex items-center justify-center rounded-full font-extrabold shrink-0"
-      style={{ width: size, height: size, background: bg, color: '#191409', fontSize: Math.max(10, size * 0.36) }}
+      style={{ width: size, height: size, background: bg, color: '#191409', fontSize: Math.max(11, size * 0.4) }}
       aria-hidden
     >
       {initials(alias)}
@@ -106,13 +106,13 @@ export function Notice({ children, tone = 'accent' }: { children: ReactNode; ton
 
 export function PageHeader({ eyebrow, title, intro, actions }: { eyebrow?: string; title: string; intro?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5 text-center sm:text-left">
       <div>
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1 className="h1 mt-1">{title}</h1>
-        {intro ? <p className="muted mt-2 max-w-2xl">{intro}</p> : null}
+        {intro ? <p className="muted mt-2 max-w-2xl mx-auto sm:mx-0 text-[15px] sm:text-base leading-relaxed">{intro}</p> : null}
       </div>
-      {actions ? <div className="flex gap-2 flex-wrap">{actions}</div> : null}
+      {actions ? <div className="flex gap-2 flex-wrap justify-center sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none">{actions}</div> : null}
     </div>
   )
 }
@@ -249,8 +249,8 @@ export function ConfirmDialog({
 
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <div className="card p-4">
-      <p className="tiny muted">{label}</p>
+    <div className="card p-4 text-center sm:text-left">
+      <p className="tiny muted leading-tight">{label}</p>
       <p className="text-3xl font-extrabold tracking-tight mt-1">{value}</p>
       {hint ? <p className="tiny muted mt-1">{hint}</p> : null}
     </div>

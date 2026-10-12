@@ -46,7 +46,7 @@ export function GolfCancha() {
         }
       />
       <GolfTabs />
-      <Link to="/golf/canchas" className="tiny underline muted">
+      <Link to="/golf/canchas" className="back-link">
         ← Canchas
       </Link>
 

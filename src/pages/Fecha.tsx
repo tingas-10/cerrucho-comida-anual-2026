@@ -223,7 +223,7 @@ function DateCalendar({ poll, edition }: { poll: Poll; edition: Edition }) {
                     >
                       <span className="font-bold text-[14px]">{c.day}</span>
                       <span className="h-[14px] flex items-center">{v ? <AnswerIcon v={v} size={13} /> : <span className="tiny muted">·</span>}</span>
-                      {sum?.yes.length ? <span className="absolute top-0.5 right-1 text-[9px] font-bold text-ok">{sum.yes.length}</span> : null}
+                      {sum?.yes.length ? <span className="absolute top-0.5 right-1 text-[10px] font-bold text-ok">{sum.yes.length}</span> : null}
                       {isConfirmed ? <Star size={10} className="absolute top-0.5 left-0.5 text-accent" fill="currentColor" aria-hidden /> : null}
                     </button>
                   )
@@ -374,7 +374,7 @@ function DateSheet(props: {
             ))}
           </div>
           {mine ? (
-            <button type="button" className="tiny underline muted mt-2 min-h-[36px]" onClick={() => props.onAnswer(null)}>
+            <button type="button" className="text-link !text-[var(--muted)] mt-2" onClick={() => props.onAnswer(null)}>
               Dejarla pendiente
             </button>
           ) : (
