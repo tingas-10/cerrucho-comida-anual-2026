@@ -105,13 +105,18 @@ export function GolfCancha() {
           {history.map((r, i) => (
             <div key={r.playerId} className="row">
               <span className="flex items-center gap-2 min-w-0">
-                <span className="w-6 text-center">{i === 0 && r.best !== null ? '🏆' : `${i + 1}`}</span>
-                <Avatar id={r.playerId} alias={players.nameOf(r.playerId)} size={26} color={players.byId[r.playerId]?.color} photo={players.byId[r.playerId]?.photo} />
-                <span className="font-semibold truncate">{players.nameOf(r.playerId)}</span>
+                <span className="w-6 text-center shrink-0">{i === 0 && r.best !== null ? '🏆' : `${i + 1}`}</span>
+                <Avatar id={r.playerId} alias={players.nameOf(r.playerId)} size={28} color={players.byId[r.playerId]?.color} photo={players.byId[r.playerId]?.photo} />
+                <span className="min-w-0">
+                  <span className="font-semibold block truncate">{players.nameOf(r.playerId)}</span>
+                  <span className="tiny muted block">
+                    prom. {r.avg === null ? '—' : String(r.avg).replace('.', ',')} · {r.rounds} {r.rounds === 1 ? 'vuelta' : 'vueltas'} · última {fmtDayShort(r.last)}
+                  </span>
+                </span>
               </span>
-              <span className="small tabular-nums text-right shrink-0">
-                mejor <b>{r.best ?? '—'}</b> · prom. {r.avg === null ? '—' : String(r.avg).replace('.', ',')} · {r.rounds} {r.rounds === 1 ? 'vuelta' : 'vueltas'}
-                <span className="tiny muted block">última {fmtDayShort(r.last)}</span>
+              <span className="text-right shrink-0">
+                <span className="tiny muted block">mejor</span>
+                <b className="text-xl tabular-nums">{r.best ?? '—'}</b>
               </span>
             </div>
           ))}

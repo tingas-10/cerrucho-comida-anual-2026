@@ -1,6 +1,6 @@
 // Datos de ejemplo del modo demo (sin Firebase). Sólo se cargan en memoria/localStorage.
 // Cada miembro de ejemplo tiene usuario = su alias en minúsculas y contraseña "demo123".
-import { EDICION_ACTUAL } from '../content/config'
+import { EDICION_ACTUAL, MIEMBROS_INICIALES } from '../content/config'
 import { authEmailFor, normalizeUsername } from '../domain/accounts'
 import { defaultPosition } from '../domain/fmo'
 import { demoRegisterAccount } from './auth'
@@ -11,13 +11,14 @@ import GOLF_CANCHAS from '../content/golf-canchas.json'
 import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
 
 export const DEMO_PASSWORD = 'demo123'
-export const DEMO_ACTIVE_ALIASES = ['Choclo', 'Facu', 'Felix', 'Marcos', 'Mateo', 'Nacho', 'Pato', 'Pipe', 'Santi', 'Tomi', 'Topo', 'Ucky']
+// Usuarios de ejemplo (el id sale de este nombre; lo que se muestra es el apodo actual de MIEMBROS_INICIALES).
+export const DEMO_ACTIVE_ALIASES = ['Choclo', 'Facu', 'Felix', 'Marcos', 'Mateo', 'Nacho', 'Pato', 'Pipe', 'Santi', 'Tomi', 'Topo', 'Ucky', 'Saimon', 'Agus']
 
 /** Cuentas de ejemplo para el selector rápido del login demo. */
 export function demoAccounts(): Array<{ id: string; label: string; uid: string; email: string }> {
   return [
     { id: OWNER_ID, label: 'Agustín (administrador)', uid: 'demo-owner', email: authEmailFor('agustin', 'demo') },
-    ...DEMO_ACTIVE_ALIASES.map((a) => ({ id: 'm-' + slugify(a), label: a === 'Facu' ? 'Facu (presidente)' : a, uid: 'demo-m-' + slugify(a), email: authEmailFor(normalizeUsername(a), 'demo') })),
+    ...DEMO_ACTIVE_ALIASES.map((a) => ({ id: 'm-' + slugify(a), label: a === 'Facu' ? 'Facu (presidente)' : (MIEMBROS_INICIALES.find((x) => (x.id ?? 'm-' + slugify(x.alias)) === 'm-' + slugify(a))?.alias ?? a), uid: 'demo-m-' + slugify(a), email: authEmailFor(normalizeUsername(a), 'demo') })),
   ]
 }
 

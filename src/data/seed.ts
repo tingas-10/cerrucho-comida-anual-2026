@@ -250,7 +250,7 @@ export async function ensureOwnerAndDrafts(db: DataAdapter) {
   const members = await db.getCollection<Member>(P.members)
   if (members.filter((m) => m.id !== OWNER_ID).length === 0) {
     for (const m of MIEMBROS_INICIALES) {
-      const id = 'm-' + slugify(m.alias)
+      const id = m.id ?? 'm-' + slugify(m.alias)
       await db.setDoc(P.member(id), newMember(id, m.alias, now, { name: m.nombre }))
     }
   }

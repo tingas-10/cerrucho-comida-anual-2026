@@ -41,29 +41,30 @@ export const TEXTOS = {
 
 // Miembros del grupo de WhatsApp (alias + nombre). Se cargan sin mail: Agus les carga el
 // correo desde Administración > Miembros, donde también puede editar alias y nombre.
-export const MIEMBROS_INICIALES: Array<{ alias: string; nombre: string }> = [
+// `id` fijo para los que cambiaron de apodo después de crearse (13/10/2026): su usuario sigue siendo el mismo.
+export const MIEMBROS_INICIALES: Array<{ id?: string; alias: string; nombre: string }> = [
   { alias: 'pay', nombre: 'Pay Aguilar' },
-  { alias: 'Saimon', nombre: 'Simon Avellaneda' },
+  { id: 'm-saimon', alias: 'Morron', nombre: 'Simon Avellaneda' },
   { alias: 'tobi', nombre: 'Tobi Aguilar' },
-  { alias: 'Francisco', nombre: 'Francisco Chueco Baque' },
+  { id: 'm-francisco', alias: 'Chueco', nombre: 'Francisco Chueco Baque' },
   { alias: 'Ucky', nombre: 'Ucky Baliña' },
   { alias: 'Pato', nombre: 'Pato Carrere' },
   { alias: 'Choclo', nombre: 'Choclo' },
   { alias: 'Facu', nombre: 'Facu Caputo' },
-  { alias: 'Tomas', nombre: 'Tomas Chiocarelli' },
-  { alias: 'Marcos', nombre: 'Marcos D.W.' },
+  { id: 'm-tomas', alias: 'Choca', nombre: 'Tomas Chiocarelli' },
+  { id: 'm-marcos', alias: 'Zubel', nombre: 'Marcos D.W.' },
   { alias: 'Felix', nombre: 'Felix' },
   { alias: 'Nacho', nombre: 'Nacho Furesz' },
   { alias: 'rodri', nombre: 'Rodri Landaburu' },
-  { alias: 'Santi', nombre: 'Santi Lilo' },
+  { id: 'm-santi', alias: 'Lils', nombre: 'Santi Lilo' },
   { alias: 'Mene', nombre: 'Mene' },
   { alias: 'Pipe', nombre: 'Pipe Martignone' },
   { alias: 'Topo', nombre: 'Topo Mao' },
-  { alias: 'Tomi', nombre: 'Tomi Orreily' },
+  { id: 'm-tomi', alias: 'Orrito', nombre: 'Tomi Orreily' },
   { alias: 'Mateo', nombre: 'Mateo Ramirez' },
   { alias: 'Tita', nombre: 'Jero Sasiain' },
   { alias: 'Torta', nombre: 'Torta' },
-  { alias: 'Agus', nombre: 'Agus Vayo' },
+  { id: 'm-agus', alias: 'Yayo', nombre: 'Agus Vayo' },
   { alias: 'Thomas', nombre: 'Thomas Warner' },
 ]
 
