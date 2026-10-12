@@ -111,6 +111,7 @@ export function GolfJugadores() {
 
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
         <Stat label="Partidos" value={st.rounds} />
+        <Stat label="Vueltas individuales" value={st.solos} />
         <Stat label="Primeros" value={st.wins} />
         <Stat label="Podios" value={st.podiums} />
         <Stat label="Mejor 18" value={st.best18 ?? '—'} />

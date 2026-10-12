@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { GOLF, GOLF_MODOS } from '../../content/golf'
 import { useCollection, useDoc } from '../../data/hooks'
 import { P } from '../../data/paths'
-import type { GolfConfig, GolfCourse, GolfEntrant, GolfPlayerDoc, GolfProposal, GolfRound } from '../../data/types'
+import type { GolfChallenge, GolfConfig, GolfCourse, GolfEntrant, GolfPlayerDoc, GolfProposal, GolfRound } from '../../data/types'
 import type { FmoPlayers } from '../fmo/fmoShared'
 
 export function useGolfRounds() {
@@ -18,6 +18,9 @@ export function useGolfCourses() {
 export function useGolfConfig() {
   const d = useDoc<GolfConfig>(P.golfConfig)
   return { ...d, points: d.data?.points ?? { participation: GOLF.puntosIniciales.participation, positions: [...GOLF.puntosIniciales.positions], byField: { '2': [...GOLF.puntosIniciales.byField['2']], '3': [...GOLF.puntosIniciales.byField['3']] } } }
+}
+export function useGolfChallenges() {
+  return useCollection<GolfChallenge>(P.golfChallenges)
 }
 export function useGolfProposals() {
   return useCollection<GolfProposal>(P.golfProposals)
@@ -33,7 +36,7 @@ const TABS = [
   { to: '/golf', label: 'Partidos', end: true },
   { to: '/golf/ranking', label: 'Ranking' },
   { to: '/golf/jugadores', label: 'Jugadores' },
-  { to: '/golf/versus', label: '1 vs 1' },
+  { to: '/golf/modalidades', label: 'Modalidades' },
   { to: '/golf/canchas', label: 'Canchas' },
   { to: '/golf/comision', label: 'Comisión' },
 ]
@@ -63,3 +66,14 @@ export function formatHcp(h: number | null | undefined): string {
   const s = Number.isInteger(h) ? String(h) : h.toFixed(1).replace('.', ',')
   return h < 0 ? `+${s.slice(1)}` : s
 }
+
+/** Opciones de cancha agrupadas por club ("Jockey Club Argentino · Colorada" → grupo "Jockey Club Argentino"). */
+export function courseGroups(courses: GolfCourse[]): Array<{ club: string; items: GolfCourse[] }> {
+  const groups = new Map<string, GolfCourse[]>()
+  for (const c of courses) {
+    const club = c.name.split(' · ')[0]
+    groups.set(club, [...(groups.get(club) ?? []), c])
+  }
+  return [...groups.entries()].map(([club, items]) => ({ club, items }))
+}
+

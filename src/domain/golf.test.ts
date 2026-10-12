@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GolfCard, GolfEntrant, GolfMode, GolfRound } from '../data/types'
-import { calcCard, golfPlayerStats, golfVersus, meritTable, playingHcp, pointsText, regroup, roundResult, strokesOn, validateRound } from './golf'
+import { calcCard, courseHistory, defaultLines, golfPlayerStats, golfVersus, liveBoard, meritTable, playingHcp, pointsText, regroup, roundResult, strokesOn, validateRound } from './golf'
 
 const holes18 = Array.from({ length: 18 }, (_, i) => ({ par: 4, si: i + 1 }))
 const all = (v: number, n = 18) => Array.from({ length: n }, () => v)
@@ -148,3 +148,50 @@ describe('golf · Orden de Mérito, estadísticas y 1 vs 1', () => {
     expect(v.bAhead).toBe(1)
   })
 })
+
+describe('golf · vueltas individuales, rankings por modalidad, en vivo y canchas', () => {
+  const cfg = { participation: 1, positions: [10, 6, 4], byField: { '2': [5, 0], '3': [7, 3, 0] } }
+  const solo1 = round('solo', solo('a'), { a: card(all(4)) })
+  const m1 = round('match', solo('a', 'b'), { a: card(all(4)), b: card(all(5)) })
+  const fb = round('fourball', [{ id: 't1', players: ['a', 'c'] }, { id: 't2', players: ['b', 'd'] }], { a: card(all(4)), c: card(all(5)), b: card(all(5)), d: card(all(6)) })
+  it('la vuelta individual se valida sola, no suma al ranking pero cuenta en estadísticas', () => {
+    expect(validateRound(solo1)).toBeNull()
+    expect(roundResult(solo1).complete).toBe(true)
+    expect(meritTable([solo1], cfg)).toEqual([])
+    const st = golfPlayerStats([solo1, m1], 'a')
+    expect(st.solos).toBe(1)
+    expect(st.rounds).toBe(1)
+    expect(st.best18).toBe(72)
+  })
+  it('ranking por modalidad', () => {
+    const general = Object.fromEntries(meritTable([m1, fb], cfg).map((x) => [x.playerId, x.points]))
+    const onlyMatch = Object.fromEntries(meritTable([m1, fb], cfg, undefined, 'match').map((x) => [x.playerId, x.points]))
+    expect(onlyMatch).toEqual({ a: 6, b: 1 })
+    expect(general.a).toBe(12)
+    expect(general.c).toBe(6)
+  })
+  it('en vivo: hasta qué hoyo va cada uno y cómo viene', () => {
+    const r = round('fourball', [{ id: 't1', players: ['a', 'c'] }, { id: 't2', players: ['b', 'd'] }], {
+      a: card([3, 4, null, ...all(null as unknown as number, 15)]),
+      c: card([5, 5, null, ...all(null as unknown as number, 15)]),
+      b: card([4, null, ...all(null as unknown as number, 16)]),
+      d: card([4, null, ...all(null as unknown as number, 16)]),
+    }, { useHcp: false })
+    const board = liveBoard(r)
+    expect(board[0]).toMatchObject({ entrantId: 't1', thru: 2, toPar: -1 })
+    expect(board[1]).toMatchObject({ entrantId: 't2', thru: 1, toPar: 0 })
+    const mm = liveBoard(round('match', solo('a', 'b'), { a: card([3, 4, null, ...all(null as unknown as number, 15)]), b: card([4, 4, null, ...all(null as unknown as number, 15)]) }, { useHcp: false }))
+    expect(mm[0].label).toBe('1 arriba (hoyo 2)')
+  })
+  it('líneas de a 4 sin separar parejas', () => {
+    expect(defaultLines({ entrants: solo('a', 'b', 'c', 'd', 'e') }).map((l) => l.players)).toEqual([['a', 'b', 'c', 'd'], ['e']])
+    expect(defaultLines({ entrants: [{ id: 't1', players: ['a', 'b'] }, { id: 't2', players: ['c', 'd'] }, { id: 't3', players: ['e', 'f'] }] }).map((l) => l.players.length)).toEqual([4, 2])
+  })
+  it('historial de la cancha: récord de cada uno (incluye vueltas individuales)', () => {
+    const h = courseHistory([solo1, m1, fb], 'c1')
+    const a = h.find((x) => x.playerId === 'a')!
+    expect(a.rounds).toBe(3)
+    expect(a.best).toBe(72)
+  })
+})
+

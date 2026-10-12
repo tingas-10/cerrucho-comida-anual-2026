@@ -508,11 +508,14 @@ export interface PadelMatch {
 }
 
 // ---------- Golf ----------
-export type GolfMode = 'medal' | 'stableford' | 'match' | 'fourball' | 'scramble'
+export type GolfMode = 'match' | 'fourball' | 'scramble' | 'solo' | 'medal' | 'stableford'
 
 export interface GolfHole {
   par: number
   si: number // índice de dificultad del hoyo (1 = el más difícil)
+  meters?: number | null // largo desde los tees de hombres
+  tip?: string | null // consejo de caddy
+  mapRef?: string | null // hoyo en el mapa del club (public/golf/mapas/<club>.json)
 }
 
 export interface GolfCourse {
@@ -520,6 +523,9 @@ export interface GolfCourse {
   name: string
   holes: GolfHole[] // 9 o 18
   archived: boolean
+  club?: string | null // mapa del club (public/golf/mapas/<club>.json)
+  mapCourse?: string | null // recorrido dentro del mapa (ej. 'C' Colorada, 'Azul')
+  source?: string | null // de dónde salen par, dificultad y metros
   lastProposal?: string
   updatedAt: number
 }
@@ -547,6 +553,9 @@ export interface GolfRound {
   useHcp: boolean
   entrants: GolfEntrant[]
   cards: Record<string, GolfCard> // por jugador (o por equipo en scramble)
+  lines?: GolfLine[] // líneas (grupos que salen juntos); cada uno carga sus golpes en vivo
+  live?: boolean // arrancó: se cargan los golpes hoyo por hoyo y todos ven cómo viene cada línea
+  challengeId?: string | null // si salió de un desafío
   notes?: string
   lastProposal?: string
   createdBy: string
@@ -554,6 +563,27 @@ export interface GolfRound {
   createdAt: number
   updatedAt: number
   revision: number
+}
+
+export interface GolfLine {
+  id: string
+  players: string[]
+}
+
+export interface GolfChallenge {
+  id: string
+  mode: 'match' | 'fourball'
+  challengers: string[] // quien desafía (1, o 2 en four ball)
+  challenged: string[] // a quién desafían
+  playAt: number | null
+  courseId: string | null
+  message: string
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED'
+  roundId: string | null
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+  answeredBy?: string | null
 }
 
 export interface GolfPointsConfig {

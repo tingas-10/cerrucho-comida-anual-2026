@@ -108,11 +108,12 @@ function rank<T>(items: T[], score: (x: T) => number, better: 'low' | 'high'): A
 export function roundResult(r: GolfRound): RoundResult {
   const n = r.course.holes.length
   const ids = cardIds(r)
-  const complete = r.entrants.length >= 2 && ids.length > 0 && ids.every((id) => cardComplete(r.cards[id], n, r.mode))
+  const minEntrants = r.mode === 'solo' ? 1 : 2
+  const complete = r.entrants.length >= minEntrants && ids.length > 0 && ids.every((id) => cardComplete(r.cards[id], n, r.mode))
   if (!complete) return { standings: [], complete: false }
   const c = (id: string) => calcCard(r, r.cards[id])
 
-  if (r.mode === 'medal' || r.mode === 'scramble') {
+  if (r.mode === 'medal' || r.mode === 'scramble' || r.mode === 'solo') {
     const rows = r.entrants.map((e) => {
       const cc = c(r.mode === 'scramble' ? e.id : e.players[0])
       const score = r.useHcp ? (cc.net as number) : (cc.gross as number)
@@ -173,10 +174,12 @@ export function validateRound(r: GolfRound): string | null {
   if (r.course.holes.some((h) => !Number.isInteger(h.par) || h.par < 3 || h.par > 6)) return 'Revisá el par de los hoyos (entre 3 y 6).'
   const players = allPlayers(r)
   if (new Set(players).size !== players.length) return 'Hay un jugador repetido.'
-  if (r.entrants.length < 2) return isTeamMode(r.mode) ? 'Tiene que haber al menos 2 equipos.' : 'Tiene que haber al menos 2 jugadores.'
-  if (r.mode === 'match' && r.entrants.length !== 2) return 'El match play es entre 2 jugadores.'
-  if (r.mode === 'fourball' && r.entrants.some((e) => e.players.length !== 2)) return 'En mejor pelota cada pareja tiene 2 jugadores.'
-  if (r.mode === 'scramble' && r.entrants.some((e) => e.players.length < 2)) return 'En scramble cada equipo tiene al menos 2 jugadores.'
+  if (r.mode === 'solo') {
+    if (r.entrants.length !== 1) return 'La vuelta individual es de un solo jugador.'
+  } else if (r.entrants.length < 2) return isTeamMode(r.mode) ? 'Tiene que haber al menos 2 equipos.' : 'Tiene que haber al menos 2 jugadores.'
+  if (r.mode === 'match' && r.entrants.length !== 2) return 'El 1 vs 1 es entre 2 jugadores.'
+  if (r.mode === 'fourball' && r.entrants.some((e) => e.players.length !== 2)) return 'En four ball cada pareja tiene 2 jugadores.'
+  if (r.mode === 'scramble' && r.entrants.some((e) => e.players.length < 2)) return 'En la laguneada cada equipo tiene al menos 2 jugadores.'
   if (!isTeamMode(r.mode) && r.entrants.some((e) => e.players.length !== 1)) return 'Revisá los jugadores.'
   const missing = cardIds(r).filter((id) => !cardComplete(r.cards[id], n, r.mode))
   if (missing.length) return allowsTotal(r.mode) ? 'Faltan tarjetas: cargá todos los hoyos o el total.' : 'Faltan tarjetas: cargá todos los hoyos.'
@@ -207,10 +210,12 @@ export interface MeritRow {
   points: number
 }
 
-/** Ranking: puntos por jugar y por puesto en cada ronda jugada (los empatados comparten puesto). */
-export function meritTable(rounds: GolfRound[], cfg: GolfPointsConfig, year?: number): MeritRow[] {
+/** Ranking: puntos por jugar y por puesto en cada partido jugado (los empatados comparten puesto).
+ *  Las vueltas individuales no suman. Con `mode`, sólo los partidos de esa modalidad. */
+export function meritTable(rounds: GolfRound[], cfg: GolfPointsConfig, year?: number, mode?: GolfMode): MeritRow[] {
   const out: Record<string, MeritRow> = {}
   for (const r of counted(rounds, year)) {
+    if (r.mode === 'solo' || (mode && r.mode !== mode)) continue
     const res = roundResult(r)
     if (!res.complete) continue
     for (const s of res.standings) {
@@ -227,7 +232,8 @@ export function meritTable(rounds: GolfRound[], cfg: GolfPointsConfig, year?: nu
 }
 
 export interface GolfPlayerStats {
-  rounds: number
+  rounds: number // partidos (sin las vueltas individuales)
+  solos: number // vueltas individuales
   wins: number
   podiums: number
   best18: number | null
@@ -241,17 +247,20 @@ export interface GolfPlayerStats {
 
 /** Estadísticas de un jugador. Los golpes y los logros salen de sus tarjetas propias (no del scramble). */
 export function golfPlayerStats(rounds: GolfRound[], playerId: string, year?: number): GolfPlayerStats {
-  const st: GolfPlayerStats = { rounds: 0, wins: 0, podiums: 0, best18: null, avg18: null, best9: null, bestStableford: null, birdies: 0, eagles: 0, aces: 0 }
+  const st: GolfPlayerStats = { rounds: 0, solos: 0, wins: 0, podiums: 0, best18: null, avg18: null, best9: null, bestStableford: null, birdies: 0, eagles: 0, aces: 0 }
   const gross18: number[] = []
   for (const r of counted(rounds, year)) {
     const entrant = r.entrants.find((e) => e.players.includes(playerId))
     if (!entrant) continue
     const res = roundResult(r)
     if (!res.complete) continue
-    st.rounds++
-    const pos = res.standings.find((s) => s.entrantId === entrant.id)?.position ?? 99
-    if (pos === 1) st.wins++
-    if (pos <= 3) st.podiums++
+    if (r.mode === 'solo') st.solos++
+    else {
+      st.rounds++
+      const pos = res.standings.find((s) => s.entrantId === entrant.id)?.position ?? 99
+      if (pos === 1) st.wins++
+      if (pos <= 3) st.podiums++
+    }
     if (r.mode === 'scramble') continue
     const card = r.cards[playerId]
     const cc = calcCard(r, card)
@@ -345,3 +354,111 @@ export function pointsText(cfg: GolfPointsConfig): string {
   const general = sizes.length ? `${Math.max(...sizes) + 1} o más: ${fmt(cfg.positions)}` : `por puesto: ${fmt(cfg.positions)}`
   return [`${cfg.participation} por jugar`, ...rows, general].join(' · ')
 }
+
+export interface LiveRow {
+  entrantId: string
+  players: string[]
+  thru: number // hoyos completos
+  toPar: number | null // golpes respecto del par en los hoyos jugados (neto si la ronda es con hándicap)
+  label: string // "+3 (hoyo 7)", "2 arriba (hoyo 9)"
+}
+
+/** Cómo viene cada uno mientras juegan: hasta qué hoyo cargó y cómo está respecto del par. */
+export function liveBoard(r: GolfRound): LiveRow[] {
+  const holes = r.course.holes
+  const n = holes.length
+  const si = siOf(holes)
+  const played = (cid: string) => (r.cards[cid]?.strokes ?? []).map((s) => s !== null && s !== undefined)
+  const netOn = (cid: string, i: number) => {
+    const card = r.cards[cid]
+    const s = card?.strokes[i]
+    if (s === null || s === undefined) return null
+    return r.useHcp ? s - strokesOn(playingHcp(card.hcp, n), si[i], n) : s
+  }
+  const fmt = (v: number) => (v === 0 ? 'par' : v > 0 ? `+${v}` : String(v))
+  if (r.mode === 'match' && r.entrants.length === 2) {
+    const [a, b] = r.entrants.map((e) => e.players[0])
+    const ca = r.cards[a]
+    const cb = r.cards[b]
+    const diff = r.useHcp && ca && cb ? playingHcp(ca.hcp, n) - playingHcp(cb.hcp, n) : 0
+    let up = 0
+    let thru = 0
+    for (let i = 0; i < n; i++) {
+      const sa = ca?.strokes[i]
+      const sb = cb?.strokes[i]
+      if (sa == null || sb == null) continue
+      thru++
+      const na = sa - (diff > 0 ? strokesOn(diff, si[i], n) : 0)
+      const nb = sb - (diff < 0 ? strokesOn(-diff, si[i], n) : 0)
+      if (na < nb) up++
+      else if (nb < na) up--
+    }
+    const label = (v: number) => (v === 0 ? 'iguales' : v > 0 ? `${v} arriba` : `${-v} abajo`)
+    return [
+      { entrantId: r.entrants[0].id, players: r.entrants[0].players, thru, toPar: -up, label: `${label(up)}${thru ? ` (hoyo ${thru})` : ''}` },
+      { entrantId: r.entrants[1].id, players: r.entrants[1].players, thru, toPar: up, label: `${label(-up)}${thru ? ` (hoyo ${thru})` : ''}` },
+    ].sort((x, y) => (x.toPar ?? 0) - (y.toPar ?? 0))
+  }
+  const rows: LiveRow[] = r.entrants.map((e) => {
+    const cids = r.mode === 'scramble' ? [e.id] : e.players
+    let thru = 0
+    let toPar = 0
+    for (let i = 0; i < n; i++) {
+      const vals = cids.map((cid) => netOn(cid, i)).filter((v): v is number => v !== null)
+      const allIn = r.mode === 'fourball' ? vals.length > 0 && cids.every((cid) => played(cid)[i]) : vals.length === cids.length
+      if (!allIn) continue
+      thru++
+      toPar += Math.min(...vals) - holes[i].par
+    }
+    return { entrantId: e.id, players: e.players, thru, toPar: thru ? toPar : null, label: thru ? `${fmt(toPar)} (hoyo ${thru})` : 'sin empezar' }
+  })
+  return rows.sort((x, y) => (x.toPar ?? 999) - (y.toPar ?? 999) || y.thru - x.thru)
+}
+
+/** Líneas por defecto: de a 4 en el orden en que se anotaron (las parejas o equipos no se separan). */
+export function defaultLines(r: Pick<GolfRound, 'entrants'>, perLine = 4): Array<{ id: string; players: string[] }> {
+  const out: Array<{ id: string; players: string[] }> = []
+  let cur: string[] = []
+  for (const e of r.entrants) {
+    if (cur.length && cur.length + e.players.length > perLine) {
+      out.push({ id: `l${out.length + 1}`, players: cur })
+      cur = []
+    }
+    cur = cur.concat(e.players)
+  }
+  if (cur.length) out.push({ id: `l${out.length + 1}`, players: cur })
+  return out
+}
+
+export interface CourseRecord {
+  playerId: string
+  rounds: number
+  best: number | null // mejor gross (18 o 9 según la cancha)
+  avg: number | null
+  last: number // fecha del último partido o vuelta
+}
+
+/** Historial de una cancha: récord y promedio de cada jugador (tarjetas propias, incluye vueltas individuales). */
+export function courseHistory(rounds: GolfRound[], courseId: string): CourseRecord[] {
+  const out: Record<string, { rounds: number; scores: number[]; last: number }> = {}
+  for (const r of rounds) {
+    if (r.status !== 'PLAYED' || r.voided || r.courseId !== courseId || r.mode === 'scramble') continue
+    for (const pid of allPlayers(r)) {
+      const cc = calcCard(r, r.cards[pid])
+      const row = (out[pid] ??= { rounds: 0, scores: [], last: 0 })
+      row.rounds++
+      row.last = Math.max(row.last, r.playedAt)
+      if (cc.gross !== null) row.scores.push(cc.gross)
+    }
+  }
+  return Object.entries(out)
+    .map(([playerId, v]) => ({
+      playerId,
+      rounds: v.rounds,
+      best: v.scores.length ? Math.min(...v.scores) : null,
+      avg: v.scores.length ? Math.round((v.scores.reduce((a, b) => a + b, 0) / v.scores.length) * 10) / 10 : null,
+      last: v.last,
+    }))
+    .sort((a, b) => (a.best ?? 999) - (b.best ?? 999) || b.rounds - a.rounds)
+}
+

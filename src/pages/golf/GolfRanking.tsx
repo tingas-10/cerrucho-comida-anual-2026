@@ -1,9 +1,11 @@
 // Golf · Ranking del año, con el sistema de puntos que define la comisión.
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import type { GolfMode } from '../../data/types'
 import { Link } from 'react-router-dom'
 import { yearOf } from '../../domain/fmo'
 import { golfYears, meritTable, pointsText } from '../../domain/golf'
-import { Avatar, Card, Empty, Loading, PageHeader, Pill } from '../../ui/components'
+import { Avatar, Card, Empty, Loading, PageHeader, Pill, Segmented } from '../../ui/components'
 import { YearSelect, useFmoPlayers } from '../fmo/fmoShared'
 import { GolfTabs, useGolfConfig, useGolfRounds } from './golfShared'
 
@@ -14,7 +16,9 @@ export function GolfRanking() {
   const current = yearOf(Date.now())
   const [year, setYear] = useState<number | 'all'>(current)
   const years = useMemo(() => golfYears(rows, current), [rows, current])
-  const table = useMemo(() => meritTable(rows, cfg.points, year === 'all' ? undefined : year), [rows, cfg.points, year])
+  const [params, setParams] = useSearchParams()
+  const mode = (['match', 'fourball', 'scramble'].includes(params.get('m') ?? '') ? params.get('m') : 'all') as GolfMode | 'all'
+  const table = useMemo(() => meritTable(rows, cfg.points, year === 'all' ? undefined : year, mode === 'all' ? undefined : mode), [rows, cfg.points, year, mode])
 
   if (loading || cfg.loading || players.loading) return <Loading />
   return (
@@ -24,12 +28,25 @@ export function GolfRanking() {
         title="Ranking"
         intro={
           <>
-            Puntos: {pointsText(cfg.points)}. Los empatados comparten el puesto. El sistema lo define la <Link to="/golf/comision" className="underline">comisión</Link>.
+            Puntos: {pointsText(cfg.points)}. Los empatados comparten el puesto. Las vueltas individuales no suman. El sistema lo define la <Link to="/golf/comision" className="underline">comisión</Link>.
           </>
         }
         actions={<YearSelect value={year} onChange={setYear} years={years} allowAll />}
       />
       <GolfTabs />
+      <div className="mb-4 overflow-x-auto">
+        <Segmented
+          ariaLabel="Ranking"
+          value={mode}
+          onChange={(v) => setParams(v === 'all' ? {} : { m: v }, { replace: true })}
+          options={[
+            { value: 'all', label: 'General' },
+            { value: 'match', label: '1 vs 1' },
+            { value: 'fourball', label: 'Four ball' },
+            { value: 'scramble', label: 'Laguneada' },
+          ]}
+        />
+      </div>
       {table.length === 0 ? (
         <Empty title="Todavía no hay partidos jugados" text="Guarden un partido y el ranking se arma solo." />
       ) : (

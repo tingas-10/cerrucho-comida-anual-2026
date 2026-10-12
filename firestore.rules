@@ -170,6 +170,22 @@ service cloud.firestore {
           && request.resource.data.hcp == gprop(request.resource.data.lastProposal).payload.hcp);
     }
 
+    // Desafíos: desafía alguien que juega; acepta o rechaza el desafiado; cancela quien desafió.
+    match /golfChallenges/{cid} {
+      allow read: if true;
+      allow create: if isActive()
+        && request.resource.data.createdBy == myId()
+        && myId() in request.resource.data.challengers
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.mode in ['match', 'fourball'];
+      allow update: if isActive() && resource.data.status == 'PENDING'
+        && request.resource.data.challengers == resource.data.challengers
+        && request.resource.data.challenged == resource.data.challenged
+        && ((myId() in resource.data.challenged && request.resource.data.status in ['ACCEPTED', 'DECLINED'])
+          || (myId() in resource.data.challengers && request.resource.data.status == 'CANCELLED'));
+      allow delete: if isAdmin();
+    }
+
     // Rondas: cualquiera de la banda las arma. Jugadas, se corrigen durante 48 h; después, la comisión.
     match /golfRounds/{rid} {
       allow read: if true;

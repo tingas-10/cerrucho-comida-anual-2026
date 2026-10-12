@@ -29,3 +29,7 @@ firebase-debug.log
 
 # Material del video tutorial (local, no se publica)
 video-tutorial/
+
+# Datos crudos de OpenStreetMap (se regeneran)
+scripts/golf/raw-*.json
+scripts/golf/rawbox-*.json

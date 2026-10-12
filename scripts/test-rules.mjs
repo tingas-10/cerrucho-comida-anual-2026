@@ -134,6 +134,15 @@ const cases = [
   tc('comisión NO pone puntos distintos a los aprobados', 'ana', 'update', '/config/golf', 'DENY', { existing: { points: { participation: 1, positions: [10, 6, 4] } }, data: { points: { participation: 50, positions: [12, 8] }, lastProposal: 'gp4' }, mocks: [mockGet('/golfProposals/gp4', { status: 'OPEN', type: 'points', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { points: { participation: 2, positions: [12, 8] } } })] }),
   tc('miembro NO cambia el sistema de puntos', 'pipe', 'update', '/config/golf', 'DENY', { existing: { points: {} }, data: { points: { participation: 9, positions: [] } } }),
 
+  // Golf: desafíos
+  tc('miembro desafía', 'pipe', 'create', '/golfChallenges/c1', 'ALLOW', { data: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'PENDING', mode: 'match' } }),
+  tc('NO se desafía en nombre de otro', 'pipe', 'create', '/golfChallenges/c1', 'DENY', { data: { createdBy: 'm-pipe', challengers: ['m-ana'], challenged: ['m-facu'], status: 'PENDING', mode: 'match' } }),
+  tc('el desafiado acepta', 'ana', 'update', '/golfChallenges/c1', 'ALLOW', { existing: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'PENDING', mode: 'match' }, data: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'ACCEPTED', mode: 'match', roundId: 'r9' } }),
+  tc('quien desafió NO acepta por el otro', 'pipe', 'update', '/golfChallenges/c1', 'DENY', { existing: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'PENDING', mode: 'match' }, data: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'ACCEPTED', mode: 'match' } }),
+  tc('quien desafió cancela', 'pipe', 'update', '/golfChallenges/c1', 'ALLOW', { existing: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'PENDING', mode: 'match' }, data: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'CANCELLED', mode: 'match' } }),
+  tc('un tercero NO responde', 'facu', 'update', '/golfChallenges/c1', 'DENY', { existing: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'PENDING', mode: 'match' }, data: { createdBy: 'm-pipe', challengers: ['m-pipe'], challenged: ['m-ana'], status: 'DECLINED', mode: 'match' } }),
+  tc('en vivo: un jugador guarda su tarjeta', 'pipe', 'update', '/golfRounds/r1', 'ALLOW', { existing: { status: 'DRAFT', voided: false, live: true }, data: { status: 'DRAFT', voided: false, live: true, cards: { 'm-pipe': { strokes: [4] } } } }),
+
   // Pádel: cualquiera mira, los miembros cargan
   tc('visitante lee pádel', null, 'get', '/padelMatches/x', 'ALLOW', { existing: {} }),
   tc('visitante NO carga pádel', null, 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 3, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),

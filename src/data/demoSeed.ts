@@ -7,7 +7,8 @@ import { demoRegisterAccount } from './auth'
 import type { MemoryAdapter } from './memoryAdapter'
 import { P } from './paths'
 import { OWNER_ID, ensureEdition, ensureOwnerAndDrafts, slugify } from './seed'
-import type { BeverageProfile, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
+import GOLF_CANCHAS from '../content/golf-canchas.json'
+import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
 
 export const DEMO_PASSWORD = 'demo123'
 export const DEMO_ACTIVE_ALIASES = ['Choclo', 'Facu', 'Felix', 'Marcos', 'Mateo', 'Nacho', 'Pato', 'Pipe', 'Santi', 'Tomi', 'Topo', 'Ucky']
@@ -134,66 +135,86 @@ export async function seedDemo(db: MemoryAdapter) {
   await db.setDoc(P.padelMatch('demo-p1'), { ...padelBase, id: 'demo-p1', playedAt: now - 5 * 86400000, bestOf: 3, pairA: ['owner', 'm-pato'], pairB: ['m-facu', 'g-demo-primo'], sets: [{ a: 6, b: 4 }, { a: 3, b: 6 }, { a: 7, b: 5 }] })
   await db.setDoc(P.padelMatch('demo-p2'), { ...padelBase, id: 'demo-p2', playedAt: now - 86400000, bestOf: 1, pairA: ['m-choclo', 'm-felix'], pairB: ['owner', 'm-pato'], sets: [{ a: 4, b: 6 }] })
 
-  // Golf: dos canchas, hándicaps, dos rondas jugadas, una por jugarse y una propuesta pendiente de la comisión.
-  const par18 = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
-  const si18 = [7, 3, 15, 1, 11, 5, 17, 9, 13, 8, 16, 2, 12, 6, 10, 18, 4, 14]
-  const holes18 = par18.map((par, i) => ({ par, si: si18[i] }))
-  const holes9 = [4, 3, 5, 4, 4, 3, 4, 5, 4].map((par, i) => ({ par, si: [5, 9, 1, 3, 7, 8, 4, 2, 6][i] }))
-  await db.setDoc(P.golfCourse('demo-pilar'), { id: 'demo-pilar', name: 'Golf Club Pilar', holes: holes18, archived: false, updatedAt: now })
-  await db.setDoc(P.golfCourse('demo-9'), { id: 'demo-9', name: 'Cancha de 9 del barrio', holes: holes9, archived: false, updatedAt: now })
+  // Golf: las canchas reales, hándicaps, un 1 vs 1 jugado, una vuelta individual, un four ball en vivo
+  // con dos líneas, un desafío pendiente para Pato y una propuesta pendiente de la comisión.
+  for (const c of GOLF_CANCHAS as GolfCourse[]) await db.setDoc(P.golfCourse(c.id), { ...c, updatedAt: now })
+  const colorada = (GOLF_CANCHAS as GolfCourse[]).find((c) => c.id === 'jockey-colorada')!
+  const maylingC = (GOLF_CANCHAS as GolfCourse[]).find((c) => c.id === 'mayling')!
+  const par18 = colorada.holes.map((h) => h.par)
   for (const [id, hcp] of [['m-pato', 14], ['m-tomi', 9], ['owner', 22], ['m-choclo', 18], ['m-facu', 26]] as const) await db.setDoc(P.golfPlayer(id), { hcp, history: [{ at: now - 20 * 86400000, hcp, by: id }], updatedAt: now })
   const score = (base: number[], adj: number[]) => base.map((p, i) => p + (adj[i % adj.length] ?? 0))
-  const golfBase = { notes: '', createdBy: 'm-pato', updatedBy: 'm-pato', createdAt: now, updatedAt: now, revision: 1, voided: false }
+  const golfBase = { notes: '', createdBy: 'm-pato', updatedBy: 'm-pato', createdAt: now, updatedAt: now, revision: 1, voided: false, lines: [], live: false, challengeId: null }
+  const course = (c: GolfCourse) => ({ courseId: c.id, course: { name: c.name, holes: c.holes } })
   await db.setDoc(P.golfRound('demo-g1'), {
     ...golfBase,
+    ...course(colorada),
     id: 'demo-g1',
     playedAt: now - 6 * 86400000,
     status: 'PLAYED',
     editableUntil: now - 4 * 86400000,
-    courseId: 'demo-pilar',
-    course: { name: 'Golf Club Pilar', holes: holes18 },
-    mode: 'stableford',
+    mode: 'match',
     useHcp: true,
-    entrants: ['m-pato', 'm-tomi', 'owner', 'm-choclo'].map((id) => ({ id, players: [id] })),
+    entrants: ['m-pato', 'm-tomi'].map((id) => ({ id, players: [id] })),
     cards: {
       'm-pato': { strokes: score(par18, [1, 0, 1, 1, -1, 1]), total: null, hcp: 14 },
       'm-tomi': { strokes: score(par18, [0, 1, 0, 0, 1, 0]), total: null, hcp: 9 },
-      owner: { strokes: score(par18, [1, 2, 1, 1, 2, 0]), total: null, hcp: 22 },
-      'm-choclo': { strokes: score(par18, [2, 1, 1, 0, 1, 2]), total: null, hcp: 18 },
     },
   })
   await db.setDoc(P.golfRound('demo-g2'), {
     ...golfBase,
+    ...course(maylingC),
     id: 'demo-g2',
     playedAt: now - 2 * 86400000,
     status: 'PLAYED',
     editableUntil: now + 86400000,
-    courseId: 'demo-9',
-    course: { name: 'Cancha de 9 del barrio', holes: holes9 },
-    mode: 'medal',
+    mode: 'solo',
     useHcp: true,
-    entrants: ['m-pato', 'owner', 'm-facu'].map((id) => ({ id, players: [id] })),
-    cards: {
-      'm-pato': { strokes: holes9.map(() => null), total: 44, hcp: 14 },
-      owner: { strokes: holes9.map(() => null), total: 49, hcp: 22 },
-      'm-facu': { strokes: holes9.map(() => null), total: 52, hcp: 26 },
-    },
+    entrants: [{ id: 'm-pato', players: ['m-pato'] }],
+    cards: { 'm-pato': { strokes: maylingC.holes.map(() => null), total: 86, hcp: 14 } },
   })
+  const half = (adj: number[]) => score(par18, adj).map((v, i) => (i < 7 ? v : null))
   await db.setDoc(P.golfRound('demo-g3'), {
     ...golfBase,
+    ...course(colorada),
     id: 'demo-g3',
-    playedAt: now + 4 * 86400000,
+    playedAt: now - 2 * 3600000,
     status: 'DRAFT',
     editableUntil: null,
-    courseId: 'demo-pilar',
-    course: { name: 'Golf Club Pilar', holes: holes18 },
+    live: true,
     mode: 'fourball',
     useHcp: true,
     entrants: [
       { id: 't1', players: ['m-pato', 'owner'] },
       { id: 't2', players: ['m-tomi', 'm-choclo'] },
+      { id: 't3', players: ['m-facu', 'm-felix'] },
     ],
-    cards: Object.fromEntries(['m-pato', 'owner', 'm-tomi', 'm-choclo'].map((id) => [id, { strokes: holes18.map(() => null), total: null, hcp: id === 'm-pato' ? 14 : id === 'owner' ? 22 : id === 'm-tomi' ? 9 : 18 }])),
+    lines: [
+      { id: 'l1', players: ['m-pato', 'owner', 'm-tomi', 'm-choclo'] },
+      { id: 'l2', players: ['m-facu', 'm-felix'] },
+    ],
+    cards: {
+      'm-pato': { strokes: half([0, 1, 0, -1]), total: null, hcp: 14 },
+      owner: { strokes: half([1, 1, 2, 0]), total: null, hcp: 22 },
+      'm-tomi': { strokes: half([0, 0, 1, 0]), total: null, hcp: 9 },
+      'm-choclo': { strokes: half([1, 2, 1, 1]), total: null, hcp: 18 },
+      'm-facu': { strokes: score(par18, [1, 2, 1]).map((v, i) => (i < 3 ? v : null)), total: null, hcp: 26 },
+      'm-felix': { strokes: score(par18, [2, 1, 2]).map((v, i) => (i < 3 ? v : null)), total: null, hcp: 30 },
+    },
+  })
+  await db.setDoc(P.golfChallenge('demo-ch1'), {
+    id: 'demo-ch1',
+    mode: 'match',
+    challengers: ['m-choclo'],
+    challenged: ['m-pato'],
+    playAt: now + 3 * 86400000,
+    courseId: 'olivos-blanca-colorada',
+    message: 'Te espero en Olivos',
+    status: 'PENDING',
+    roundId: null,
+    createdBy: 'm-choclo',
+    createdAt: now - 3600000,
+    updatedAt: now - 3600000,
+    answeredBy: null,
   })
   await db.setDoc(P.golfProposal('demo-gp1'), {
     id: 'demo-gp1',

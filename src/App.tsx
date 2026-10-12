@@ -20,7 +20,8 @@ import { GolfJugadores } from './pages/golf/GolfJugadores'
 import { GolfRanking } from './pages/golf/GolfRanking'
 import { GolfPartido } from './pages/golf/GolfPartido'
 import { GolfPartidos } from './pages/golf/GolfPartidos'
-import { GolfVersus } from './pages/golf/GolfVersus'
+import { GolfCancha } from './pages/golf/GolfCancha'
+import { GolfModalidades } from './pages/golf/GolfModalidades'
 import { PadelJugadores } from './pages/padel/PadelJugadores'
 import { PadelPartido } from './pages/padel/PadelPartido'
 import { PadelPartidos } from './pages/padel/PadelPartidos'
@@ -90,7 +91,9 @@ export default function App() {
           <Route path="/golf/ranking" element={<GolfRanking />} />
           <Route path="/golf/merito" element={<Navigate to="/golf/ranking" replace />} />
           <Route path="/golf/jugadores" element={<GolfJugadores />} />
-          <Route path="/golf/versus" element={<GolfVersus />} />
+          <Route path="/golf/modalidades" element={<GolfModalidades />} />
+          <Route path="/golf/versus" element={<Navigate to="/golf/modalidades" replace />} />
+          <Route path="/golf/cancha/:id" element={<GolfCancha />} />
           <Route path="/golf/canchas" element={<GolfCanchas />} />
           <Route path="/golf/comision" element={<GolfComision />} />
           <Route path="/miembros" element={<Miembros />} />

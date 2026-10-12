@@ -1,0 +1,1315 @@
+{
+  "jockey_colorada": {
+    "name": "Jockey Club Argentino (San Isidro) - Cancha Colorada",
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": 5,
+        "yards": 407,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 4,
+        "si": 13,
+        "yards": 340,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 3,
+        "si": 17,
+        "yards": 137,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 5,
+        "si": 1,
+        "yards": 480,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 4,
+        "si": 11,
+        "yards": 325,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": 9,
+        "yards": 345,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 4,
+        "si": 3,
+        "yards": 415,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 3,
+        "si": 15,
+        "yards": 198,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 7,
+        "yards": 405,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 5,
+        "si": 6,
+        "yards": 457,
+        "tip": "Par 5 corto; bunker grande a la derecha, green elevado y traicionero",
+        "tipSource": "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+      },
+      {
+        "n": 11,
+        "par": 5,
+        "si": 4,
+        "yards": 491,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 3,
+        "si": 18,
+        "yards": 161,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": 8,
+        "yards": 434,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 12,
+        "yards": 378,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 5,
+        "si": 2,
+        "yards": 500,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 4,
+        "si": 10,
+        "yards": 392,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 3,
+        "si": 16,
+        "yards": 160,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 4,
+        "si": 14,
+        "yards": 345,
+        "tip": "Cierre frente al club house; green muy inclinado con 'valle'",
+        "tipSource": "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+      }
+    ],
+    "tee": "Blanco (white), yardas; total 6370",
+    "sources": [
+      "https://www.golfify.io/courses/jockey-club-argentino-colorada",
+      "https://offcourse.co/courses/scorecard/the-jockey-club",
+      "https://www.golfingrecord.com/golf-scorecard/81f5a7bd-5c18-4c1f-bba7-815c3b71d553",
+      "https://www.golfingrecord.com/golf-scorecard/79f113ae-3ef4-ccee-43ce-ec39c4ebb0e7",
+      "https://www.jockeyclub.org.ar/golf/",
+      "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+    ],
+    "confidence": "high",
+    "notes": "Par, SI y yardas idénticos en golfify, offcourse y golfingrecord (probablemente la misma fuente de origen). El sitio oficial del Jockey confirma el total de 6.577 yardas desde el tee de atrás (Rojo), igual que los agregadores. No hay tarjeta oficial hoyo por hoyo publicada, así que el SI no está confirmado por el club. Tee de damas (Señoras): par 74, con los hoyos 1 y 13 par 5 y otro SI (no incluido). Tip del hoyo 10: Top100 lo pone en el puesto 10 de un recorrido imaginario como 'par 5 de 500 yardas'; la tarjeta da 457 (blanco) y 470 (rojo), y el que mide 500 desde blanco es el 15. Lo asigné al hoyo 10 real porque el artículo usa el número real en los otros casos (Olivos 15, Pilará 14, Jockey 18), pero no es seguro. Bluegolf (jockeyc) está bloqueado por verificación anti-bot y no se pudo leer."
+  },
+  "jockey_azul": {
+    "name": "Jockey Club Argentino (San Isidro) - Cancha Azul",
+    "holes": [
+      {
+        "n": 1,
+        "par": 5,
+        "si": 5,
+        "yards": 446,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 5,
+        "si": 1,
+        "yards": 474,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 15,
+        "yards": 330,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 4,
+        "si": 9,
+        "yards": 328,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 3,
+        "si": 17,
+        "yards": 114,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": 13,
+        "yards": 305,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 3,
+        "si": 11,
+        "yards": 152,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": 3,
+        "yards": 417,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 7,
+        "yards": 399,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 5,
+        "si": 4,
+        "yards": 473,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 3,
+        "si": 14,
+        "yards": 176,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 4,
+        "si": 8,
+        "yards": 399,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": 2,
+        "yards": 385,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 3,
+        "si": 16,
+        "yards": 140,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 4,
+        "si": 18,
+        "yards": 335,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 4,
+        "si": 12,
+        "yards": 367,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 5,
+        "si": 6,
+        "yards": 482,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 4,
+        "si": 10,
+        "yards": 427,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "Blanco (white), yardas; total 6149",
+    "sources": [
+      "https://www.golfify.io/courses/jockey-club-argentino-azul",
+      "https://offcourse.co/courses/scorecard/the-jockey-club",
+      "https://www.golfingrecord.com/golf-scorecard/5b0b7427-c39e-47e9-8125-b416ba74a361",
+      "https://www.jockeyclub.org.ar/golf/"
+    ],
+    "confidence": "high",
+    "notes": "Par y SI coinciden en golfify, offcourse y golfingrecord. El sitio oficial confirma 6.378 yardas desde el tee de atrás (Azul), igual que los agregadores. Conflicto: hoyo 1 desde blanco: golfify y golfingrecord dicen 446, offcourse dice 466 (y su total blanco es 6169 en vez de 6149). Usé 446. SI no confirmado contra una tarjeta oficial. Tee de damas: par 75 con otro SI (no incluido). No encontré descripciones ni tips hoyo por hoyo para la Azul."
+  },
+  "olivos": {
+    "name": "Olivos Golf Club (Ing. Pablo Nogués) - 27 hoyos",
+    "nines": [
+      {
+        "name": "Blanca",
+        "osmMatch": "(b) 5,4,4,3,4,4,3,5,4",
+        "note": "Hoyos 1-9 del recorrido de campeonato Blanca-Colorada",
+        "holes": [
+          {
+            "n": 1,
+            "par": 5,
+            "si": 5,
+            "yards": 491,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 2,
+            "par": 4,
+            "si": 4,
+            "yards": 362,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 3,
+            "par": 4,
+            "si": 2,
+            "yards": 410,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 4,
+            "par": 3,
+            "si": 8,
+            "yards": 169,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 5,
+            "par": 4,
+            "si": 1,
+            "yards": 420,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 6,
+            "par": 4,
+            "si": 3,
+            "yards": 396,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 7,
+            "par": 3,
+            "si": 9,
+            "yards": 165,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 8,
+            "par": 5,
+            "si": 7,
+            "yards": 477,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 9,
+            "par": 4,
+            "si": 6,
+            "yards": 338,
+            "tip": null,
+            "tipSource": null
+          }
+        ]
+      },
+      {
+        "name": "Colorada",
+        "osmMatch": "(c) 3,5,4,3,4,5,4,3,5",
+        "note": "En la tarjeta oficial figura como hoyos 10-18 (Blanca-Colorada); el n=6 de acá es el famoso hoyo 15",
+        "holes": [
+          {
+            "n": 1,
+            "par": 3,
+            "si": 6,
+            "yards": 184,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 2,
+            "par": 5,
+            "si": 1,
+            "yards": 535,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 3,
+            "par": 4,
+            "si": 4,
+            "yards": 383,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 4,
+            "par": 3,
+            "si": 9,
+            "yards": 168,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 5,
+            "par": 4,
+            "si": 3,
+            "yards": 392,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 6,
+            "par": 5,
+            "si": 7,
+            "yards": 461,
+            "tip": "Dogleg fuerte a derecha; segundo tiro en bajada, laguna antes del green",
+            "tipSource": "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+          },
+          {
+            "n": 7,
+            "par": 4,
+            "si": 2,
+            "yards": 391,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 8,
+            "par": 3,
+            "si": 5,
+            "yards": 190,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 9,
+            "par": 5,
+            "si": 8,
+            "yards": 493,
+            "tip": null,
+            "tipSource": null
+          }
+        ]
+      },
+      {
+        "name": "Azul",
+        "osmMatch": "(a) 4,3,4,5,3,4,5,3,5, pero OSM tiene mal el hoyo 7: es par 4",
+        "note": "Tercer nueve",
+        "holes": [
+          {
+            "n": 1,
+            "par": 4,
+            "si": 4,
+            "yards": 395,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 2,
+            "par": 3,
+            "si": 9,
+            "yards": 124,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 3,
+            "par": 4,
+            "si": 5,
+            "yards": 370,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 4,
+            "par": 5,
+            "si": 2,
+            "yards": 525,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 5,
+            "par": 3,
+            "si": 8,
+            "yards": 152,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 6,
+            "par": 4,
+            "si": 1,
+            "yards": 400,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 7,
+            "par": 4,
+            "si": 7,
+            "yards": 347,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 8,
+            "par": 3,
+            "si": 6,
+            "yards": 174,
+            "tip": null,
+            "tipSource": null
+          },
+          {
+            "n": 9,
+            "par": 5,
+            "si": 3,
+            "yards": 556,
+            "tip": null,
+            "tipSource": null
+          }
+        ]
+      }
+    ],
+    "tee": "Blancos (white), yardas. Totales: Blanca 3228, Colorada 3197, Azul 3043",
+    "sources": [
+      "http://olivosgolf.com.ar/site/wp-content/uploads/2015/10/Tarjeta.pdf",
+      "https://olivosgolf.com.ar/site/imprima-su-tarjeta/",
+      "https://www.hole19golf.com/courses/olivos-golf-club",
+      "https://www.golfify.io/courses/olivos-golf-club-blanca",
+      "https://www.golfify.io/courses/olivos-golf-club-colorada",
+      "https://www.golfify.io/courses/olivos-golf-club-azul",
+      "https://www.golfingrecord.com/golf-scorecard/52eb6a26-74d5-11ed-bdd3-0adb4a0974f2",
+      "https://shotnavi.jp/world/32/1/gc_34.htm",
+      "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina",
+      "https://www.top100golfcourses.com/golf-course/olivos-blanca-colorada/reviews/26740"
+    ],
+    "confidence": "high",
+    "notes": "Fuente principal: la tarjeta oficial del club (PDF de 2015 en olivosgolf.com.ar, leída como imagen). Hole19 (Azul-Blanca, tee blancos, en metros aunque dice 'yds') coincide exacto con las yardas oficiales convertidas, y su SI de 18 hoyos es consistente con el ranking por nueve de la tarjeta. El campo 'si' es el HCP por nueve (1 a 9) tal como figura en la tarjeta oficial. El SI de 18 hoyos depende de la combinación (Hole19 Azul-Blanca: Azul con impares 7,17,9,3,15,1,13,11,5; Blanca con pares 10,8,4,16,2,6,18,14,12). Mapeo OSM: (a)=Azul, (b)=Blanca, (c)=Colorada. Conflictos de par: Azul hoyo 7: OSM dice 5, pero la tarjeta oficial, golfify, golfingrecord, shotnavi y hole19 dicen 4 (357 yd desde azul). Colorada hoyo 6: la tarjeta oficial, golfify, golfingrecord, hole19 (Colorada par 36) y OSM dicen 5; shotnavi dice 4. Top100 explica que se juega como par 4 en torneos profesionales. Totales oficiales: Blanca-Colorada par 72 (6727 yd desde azules, rating 72.7), Azul-Blanca par 71, Azul-Colorada par 71. Golfify y golfingrecord tienen yardas algo distintas en varios hoyos (ej. Blanca 8 azul 502 vs 511 oficial; Azul 9 azul 534 vs 562; Colorada 4 azul 162 vs 168) y otro SI en Azul y Colorada: parecen otra versión de la tarjeta. Como la oficial es de 2015, puede haber cambios posteriores. Tees de damas: Colorada hoyo 5 y Azul hoyo 6 son par 5 para damas."
+  },
+  "mayling": {
+    "name": "Mayling Club de Campo (Pilar)",
+    "holes": [
+      {
+        "n": 1,
+        "par": 5,
+        "si": 9,
+        "yards": 478,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 4,
+        "si": 17,
+        "yards": 318,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 11,
+        "yards": 305,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 3,
+        "si": 13,
+        "yards": 165,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 5,
+        "si": 7,
+        "yards": 492,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": 3,
+        "yards": 388,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 4,
+        "si": 1,
+        "yards": 470,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 3,
+        "si": 15,
+        "yards": 160,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 5,
+        "yards": 388,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 3,
+        "si": 10,
+        "yards": 186,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 4,
+        "si": 4,
+        "yards": 375,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 3,
+        "si": 18,
+        "yards": 156,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": 12,
+        "yards": 363,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 14,
+        "yards": 325,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 4,
+        "si": 8,
+        "yards": 379,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 4,
+        "si": 2,
+        "yards": 452,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 5,
+        "si": 6,
+        "yards": 598,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 4,
+        "si": 16,
+        "yards": 339,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "Negro (black, tee de atrás), yardas; total 6337",
+    "sources": [
+      "https://www.golfingrecord.com/golf-scorecard/33700515-9edd-8002-a374-b13cad6ec4f3",
+      "https://www.hole19golf.com/courses/mayling-club-de-campo",
+      "https://www.golfify.io/courses/mayling-club-de-campo",
+      "https://www.golfpass.com/courses/30595-mayling-country-club/scorecard-and-layout"
+    ],
+    "confidence": "medium",
+    "notes": "Par total 71 según golfingrecord, hole19 y golfpass; 70 según golfify. Conflicto clave: par del hoyo 1: golfingrecord y hole19 dicen 5, golfify dice 4 (478 yd). Usé 5. SI: golfingrecord y hole19 coinciden en los 18 hoyos y es el que usé. Golfify trae otro SI (11,17,5,13,9,1,3,15,7 / 8,4,18,12,16,10,2,6,14). Yardas: usé el tee Negro de golfify porque Hole19 (tee black, en metros aunque dice 'yds') coincide al convertir, con menos de 1 yarda de diferencia en 17 de 18 hoyos (hoyo 2: 318 en golfify vs ~315 en hole19). No usé un tee intermedio porque las fuentes no coinciden: Azul de golfify 6226, Blue de golfingrecord 6163, Blue de golfpass 6243, con diferencias en los hoyos 2, 4, 6, 7, 8, 11, 13, 15, 17 y 18. Sin tarjeta oficial: el sitio mayling.com.ar no respondió. No encontré tips hoyo por hoyo."
+  },
+  "mapuche": {
+    "name": "Mapuche Country Club (Pilar) - 9 hoyos jugados dos veces",
+    "holes": [
+      {
+        "n": 1,
+        "par": 3,
+        "si": 13,
+        "yards": 183,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 3,
+        "si": 15,
+        "yards": 162,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 5,
+        "yards": 283,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 3,
+        "si": 7,
+        "yards": 195,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 4,
+        "si": 3,
+        "yards": 311,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 3,
+        "si": 17,
+        "yards": null,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 3,
+        "si": 11,
+        "yards": 173,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": 9,
+        "yards": 310,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 1,
+        "yards": 347,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 3,
+        "si": 12,
+        "yards": 183,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 3,
+        "si": 16,
+        "yards": 162,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 4,
+        "si": 8,
+        "yards": 283,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 3,
+        "si": 4,
+        "yards": 195,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 2,
+        "yards": 311,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 3,
+        "si": 18,
+        "yards": null,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 3,
+        "si": 14,
+        "yards": 173,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 4,
+        "si": 10,
+        "yards": 310,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 4,
+        "si": 6,
+        "yards": 347,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "Blanco (golfify), yardas; hoyo 6/15 sin dato confiable",
+    "sources": [
+      "https://www.golfify.io/courses/mapuche-country-club",
+      "https://www.hole19golf.com/courses/mapuche-country-club",
+      "https://www.golfadvisor.com/courses/30591-mapuche-country-club/"
+    ],
+    "confidence": "medium",
+    "notes": "Resuelto: la cancha física es de 9 hoyos par 31 (golfadvisor: 9 hoyos par 31; golfify: un solo nueve con 'Front' y 'Back'; una reseña de Hole19 dice 'nueve hoyos'). Se juegan dos vueltas como 18 hoyos par 62 (Hole19: 18 hoyos par 62), con otro SI en la segunda vuelta: impares en la primera, pares en la segunda. Par y SI coinciden exacto entre golfify y Hole19. Los hoyos 10-18 son los hoyos 1-9 otra vez. Yardas: solo golfify tiene el tee Blanco (2061 por vuelta). El hoyo 6 dice 97 desde Blanco pero 141 desde Amarillo y 127 desde Rojo, algo inconsistente, por eso quedó en null. El tee Rojo de golfify (148,155,276,171,292,127,144,288,336) coincide con el tee red de Hole19 en metros (135,141,252,156,267,116,131,263,307). En la segunda vuelta Hole19 da el hoyo 15 en 74 m desde rojo (116 m en la primera) y golfify Rojo Back da 81 yd: probablemente usa otro tee. No encontré tips."
+  },
+  "estancias": {
+    "name": "Estancias Golf Club / Estancias del Pilar (Pilar)",
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": null,
+        "yards": 358,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 4,
+        "si": null,
+        "yards": 412,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": null,
+        "yards": 367,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 4,
+        "si": null,
+        "yards": 337,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 3,
+        "si": null,
+        "yards": 155,
+        "tip": "Hoyo en el borde norte, junto al río Luján",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 6,
+        "par": 5,
+        "si": null,
+        "yards": 546,
+        "tip": "Par 5 que dobla a derecha; green con bunkers junto al río",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 7,
+        "par": 3,
+        "si": null,
+        "yards": 164,
+        "tip": "Hoyo en el borde norte, junto al río Luján",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": null,
+        "yards": 390,
+        "tip": "Lago largo y angosto corre entre este fairway y el del 9",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": null,
+        "yards": 421,
+        "tip": "Lago largo y angosto separa este fairway del hoyo 8",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 10,
+        "par": 4,
+        "si": null,
+        "yards": 442,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 4,
+        "si": null,
+        "yards": 345,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 3,
+        "si": null,
+        "yards": 175,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": null,
+        "yards": 330,
+        "tip": "Par 4; laguna a la derecha que envuelve el fondo del green",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 14,
+        "par": 5,
+        "si": null,
+        "yards": 442,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 3,
+        "si": null,
+        "yards": 160,
+        "tip": "Hoyo en el borde norte, junto al río Luján",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 16,
+        "par": 5,
+        "si": null,
+        "yards": 474,
+        "tip": "Par 5 con quiebre brusco de 45 grados a la derecha",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 17,
+        "par": 4,
+        "si": null,
+        "yards": 394,
+        "tip": "Lago largo y angosto corre entre este fairway y el del 18",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      },
+      {
+        "n": 18,
+        "par": 5,
+        "si": null,
+        "yards": 537,
+        "tip": "Lago largo y angosto separa este fairway del hoyo 17",
+        "tipSource": "https://www.top100golfcourses.com/golf-course/estancias"
+      }
+    ],
+    "tee": "Azul (blue), yardas; total 6449 (golfify)",
+    "siCandidates": {
+      "golfify": [
+        13,
+        9,
+        5,
+        11,
+        15,
+        3,
+        17,
+        7,
+        1,
+        2,
+        16,
+        18,
+        14,
+        6,
+        12,
+        10,
+        4,
+        8
+      ],
+      "offcourse": [
+        8,
+        10,
+        6,
+        12,
+        16,
+        2,
+        18,
+        14,
+        4,
+        9,
+        13,
+        17,
+        11,
+        7,
+        15,
+        3,
+        5,
+        1
+      ],
+      "hole19": [
+        11,
+        3,
+        7,
+        9,
+        17,
+        13,
+        15,
+        5,
+        1,
+        2,
+        10,
+        12,
+        16,
+        18,
+        8,
+        14,
+        4,
+        6
+      ]
+    },
+    "sources": [
+      "https://www.golfify.io/courses/estancias-golf-club",
+      "https://offcourse.co/courses/scorecard/estancias-golf-club",
+      "https://www.hole19golf.com/courses/estancias-golf-club",
+      "https://www.golfpass.com/travel-advisor/courses/30375-estancias-golf-club/scorecard-and-layout",
+      "https://www.top100golfcourses.com/golf-course/estancias"
+    ],
+    "confidence": "medium",
+    "notes": "Par confirmado: 35 de ida y 37 de vuelta = 72 según golfify, offcourse, Hole19 y Top100. Top100 además confirma el 6 como único par 5 de la ida, el 13 como par 4 y el 16 como par 5. SI DESCONOCIDO: tres fuentes dan tres órdenes distintos (ver siCandidates), así que si quedó en null. Yardas Azul: golfify y offcourse coinciden en la ida pero no en la vuelta: hoyo 14 (442 golfify vs 462 offcourse), 15 (160 vs 180) y 18 (537 vs 562). Usé golfify porque su total (6449) es el más cercano al de golfpass (Blue 6442); offcourse suma 6514. Rareza en golfify: en el hoyo 14 el tee Rojo (442) es más largo que el Blanco (413). El tee 'gold' de Hole19 mezcla distancias de distintos tees. mscorecard pide login y el sitio del club no tiene tarjeta. Tips de Top100: los hoyos 5 a 7 y 15-16 bordean el río Luján; un lago largo corre entre los fairways del 8 y el 9 y entre los del 17 y el 18."
+  },
+  "pilara": {
+    "name": "Pilará Golf Club (Pilar) - Jack Nicklaus Signature",
+    "holes": [
+      {
+        "n": 1,
+        "par": 5,
+        "si": null,
+        "yards": 500,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 3,
+        "si": null,
+        "yards": 190,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": null,
+        "yards": 394,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 4,
+        "si": null,
+        "yards": 377,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 4,
+        "si": null,
+        "yards": 283,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": null,
+        "yards": 381,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 5,
+        "si": null,
+        "yards": 503,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 3,
+        "si": null,
+        "yards": 165,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": null,
+        "yards": 405,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 4,
+        "si": null,
+        "yards": 334,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 3,
+        "si": null,
+        "yards": 134,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 4,
+        "si": null,
+        "yards": 405,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 3,
+        "si": null,
+        "yards": 191,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 5,
+        "si": null,
+        "yards": 490,
+        "tip": "Par 5 estilo links; green chico entre bunkers, agua y bañado detrás",
+        "tipSource": "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+      },
+      {
+        "n": 15,
+        "par": 4,
+        "si": null,
+        "yards": 274,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 4,
+        "si": null,
+        "yards": 335,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 4,
+        "si": null,
+        "yards": 417,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 5,
+        "si": null,
+        "yards": 487,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "White / Blanca, yardas; total 6265",
+    "siCandidates": {
+      "golfpass_offcourse_golfify": [
+        7,
+        9,
+        11,
+        13,
+        15,
+        1,
+        5,
+        17,
+        3,
+        6,
+        18,
+        2,
+        10,
+        14,
+        16,
+        12,
+        4,
+        8
+      ],
+      "hole19": [
+        3,
+        13,
+        5,
+        11,
+        15,
+        9,
+        1,
+        17,
+        7,
+        12,
+        18,
+        6,
+        14,
+        2,
+        16,
+        10,
+        8,
+        4
+      ]
+    },
+    "sources": [
+      "https://www.golfpass.com/courses/30411-pilara-golf-club/scorecard-and-layout",
+      "https://offcourse.co/courses/scorecard/pilara-golf-club",
+      "https://www.hole19golf.com/courses/pilara-golf-club",
+      "https://www.golfify.io/courses/pilara-golf-club",
+      "https://www.top100golfcourses.com/golf-course/pilara",
+      "https://www.top100golfcourses.com/news-item/my-best-18-golf-holes-in-argentina"
+    ],
+    "confidence": "medium",
+    "notes": "Par 72 (36/36): coincide en todas las fuentes. Las yardas White/Blanca son idénticas en golfpass y offcourse, y el tee Black de golfpass coincide con el de Hole19 en metros, lo que confirma el set. SI DESCONOCIDO: golfpass, offcourse y golfify dan un orden (hoyo 6 = SI 1) y Hole19 da otro (hoyo 7 = SI 1), así que si quedó en null (ver siCandidates). Golfify parece haber convertido de metros a yardas datos que ya estaban en yardas: todas sus distancias son 1,0936 veces las de golfpass (7827 desde Signature contra 7216 según Top100). No usarlo para yardas. Error de tipeo en offcourse: el hoyo 6 desde Black dice 542; golfpass dice 452 y Hole19 413 m (= 452 yd). Hoyo 16 desde Black: 413 en offcourse vs 411 en golfpass. Ojo: los hoyos 9 y 12 tienen exactamente las mismas yardas en todos los tees en todas las fuentes. Puede ser un error de carga heredado; no lo pude verificar. El sitio del club no publica la tarjeta; bluegolf (anti-bot) y mscorecard (login) no se pudieron leer."
+  }
+}

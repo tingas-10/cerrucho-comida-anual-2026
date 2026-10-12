@@ -62,6 +62,8 @@ export const P = {
   golfPlayers: 'golfPlayers',
   golfPlayer: (id: string) => `golfPlayers/${id}`,
   golfProposals: 'golfProposals',
+  golfChallenges: 'golfChallenges',
+  golfChallenge: (id: string) => `golfChallenges/${id}`,
   golfProposal: (id: string) => `golfProposals/${id}`,
   archive: 'archive',
   archiveEntry: (slug: string) => `archive/${slug}`,

@@ -88,7 +88,7 @@ function useNav() {
     { to: '/golf', label: 'Partidos', icon: <Flag size={18} />, end: true },
     { to: '/golf/ranking', label: 'Ranking', icon: <Trophy size={18} /> },
     { to: '/golf/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
-    { to: '/golf/versus', label: '1 vs 1', icon: <Swords size={18} /> },
+    { to: '/golf/modalidades', label: 'Modalidades', icon: <Swords size={18} /> },
     { to: '/golf/canchas', label: 'Canchas', icon: <LayoutList size={18} /> },
     { to: '/golf/comision', label: 'Comisión', icon: <Landmark size={18} /> },
   ]

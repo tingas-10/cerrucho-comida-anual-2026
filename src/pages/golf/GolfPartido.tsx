@@ -3,7 +3,7 @@
 import { Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { GOLF, GOLF_MODOS } from '../../content/golf'
+import { GOLF, GOLF_MODOS, MODOS_ACTIVOS } from '../../content/golf'
 import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
 import { proposeGolf } from '../../data/golf'
@@ -15,7 +15,8 @@ import { allPlayers, allowsTotal, calcCard, cardIds, emptyCard, isTeamMode, parT
 import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
-import { entrantName, formatHcp, modeLabel, useGolfCourses, useGolfHcps } from './golfShared'
+import { LinesEditor, LiveBoard, LiveEntry, linesOf } from './golfLive'
+import { courseGroups, entrantName, formatHcp, modeLabel, useGolfCourses, useGolfHcps } from './golfShared'
 
 const MANUAL = '__manual'
 const HOURS = GOLF.horasParaCorregir * 3600000
@@ -55,6 +56,10 @@ export function GolfPartido() {
   const inRound = new Set(allPlayers(m))
   const available = players.list.filter((p) => !inRound.has(p.id))
   const team = isTeamMode(m.mode)
+  const isSolo = m.mode === 'solo'
+  const isLive = !played && !!m.live
+  const setupEditable = canEdit && !isLive
+  const modeOptions = MODOS_ACTIVOS.includes(m.mode) || isSolo ? MODOS_ACTIVOS : [m.mode, ...MODOS_ACTIVOS]
 
   /** Deja una tarjeta por cada jugador (o equipo) y saca las que sobran. */
   function withCards(r: GolfRound): GolfRound {
@@ -86,7 +91,7 @@ export function GolfPartido() {
     change((r) => ({ ...r, course: { ...r.course, holes: r.course.holes.map((h, j) => (j === i ? { ...h, par } : h)) } }))
   }
   function setMode(mode: GolfMode) {
-    change((r) => ({ ...r, mode, entrants: regroup(allPlayers(r), mode), cards: isTeamMode(mode) !== isTeamMode(r.mode) || mode === 'scramble' || r.mode === 'scramble' ? {} : r.cards }))
+    change((r) => ({ ...r, mode, lines: [], entrants: regroup(allPlayers(r), mode), cards: isTeamMode(mode) !== isTeamMode(r.mode) || mode === 'scramble' || r.mode === 'scramble' ? {} : r.cards }))
   }
   function addPlayer(pid: string, entrantId?: string) {
     if (!pid) return
@@ -151,6 +156,49 @@ export function GolfPartido() {
     }
   }
 
+  async function startLive() {
+    if (!memberId || !m) return
+    const players = allPlayers(m)
+    if (m.entrants.length < 2 || new Set(players).size !== players.length) return toast.error('Primero armá el partido: al menos 2 jugadores o equipos, sin repetir.')
+    setBusy(true)
+    try {
+      const next: GolfRound = { ...m, live: true, lines: linesOf(m), updatedBy: memberId, updatedAt: Date.now(), revision: (m.revision ?? 0) + 1 }
+      await db.setDoc(P.golfRound(m.id), next)
+      setM(next)
+      setDirty(false)
+      toast.ok('¡Arrancó! Cada línea carga sus golpes y todos ven cómo viene.')
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function finishLive() {
+    if (!memberId || !remote.data) return
+    const err = validateRound(remote.data)
+    if (err) return toast.error(err)
+    setBusy(true)
+    try {
+      const t = Date.now()
+      await db.updateDoc(P.golfRound(m!.id), { status: 'PLAYED', live: false, editableUntil: t + HOURS, updatedBy: memberId, updatedAt: t })
+      toast.ok('Partido terminado y guardado.')
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function backToSetup() {
+    if (!memberId) return
+    try {
+      await db.updateDoc(P.golfRound(m!.id), { live: false, updatedBy: memberId, updatedAt: Date.now() })
+    } catch (e) {
+      toast.error(errorText(e))
+    }
+  }
+
   async function proposeFix() {
     if (!memberId || !m) return
     const err = validateRound(m)
@@ -180,7 +228,8 @@ export function GolfPartido() {
         </p>
       </div>
       <span className="flex items-center gap-2 flex-wrap">
-        {m.voided ? <Pill tone="danger">Anulada</Pill> : played ? <Pill tone="ok">Jugada</Pill> : <Pill tone="warn">Por jugarse</Pill>}
+        {m.voided ? <Pill tone="danger">Anulado</Pill> : played ? <Pill tone="ok">{isSolo ? 'Vuelta cargada' : 'Jugado'}</Pill> : isLive ? <Pill tone="ok">● En vivo</Pill> : <Pill tone="warn">{isSolo ? 'Sin terminar' : 'Por jugarse'}</Pill>}
+        {m.challengeId ? <Pill tone="accent">Desafío</Pill> : null}
         {dirty ? <Pill tone="danger">Cambios sin guardar</Pill> : null}
       </span>
     </div>
@@ -218,6 +267,11 @@ export function GolfPartido() {
     return (
       <div>
         {header}
+        {isLive ? (
+          <div className="mb-4">
+            <LiveBoard round={m} players={players} />
+          </div>
+        ) : null}
         <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
           <Scorecard round={m} players={players} editable={false} onCard={() => undefined} />
           {standings}
@@ -244,9 +298,15 @@ export function GolfPartido() {
       ) : null}
 
       <div className="grid gap-4 mt-4">
-        {canEdit ? (
+        {isLive ? (
+          <div className="grid lg:grid-cols-2 gap-4 items-start">
+            <LiveEntry round={m} players={players} />
+            <LiveBoard round={m} players={players} />
+          </div>
+        ) : null}
+        {setupEditable ? (
           <Card>
-            <p className="h3 mb-3">Datos del partido</p>
+            <p className="h3 mb-3">{isSolo ? 'Datos de la vuelta' : 'Datos del partido'}</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Día" id="g-date">
                 <Input id="g-date" type="date" value={msToLocalParts(m.playedAt).date} onChange={(e) => change((r) => ({ ...r, playedAt: localToMs(e.target.value, msToLocalParts(r.playedAt).time) ?? r.playedAt }))} />
@@ -257,10 +317,14 @@ export function GolfPartido() {
             </div>
             <Field label="Cancha" id="g-course" hint={courses.active.length ? undefined : 'Todavía no hay canchas cargadas por la comisión: cargá el par a mano.'}>
               <select id="g-course" className="input" value={m.courseId ?? MANUAL} onChange={(e) => setCourse(e.target.value)}>
-                {courses.active.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} · {c.holes.length} hoyos, par {parTotal(c.holes)}
-                  </option>
+                {courseGroups(courses.active).map((g) => (
+                  <optgroup key={g.club} label={g.club}>
+                    {g.items.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name.split(' · ')[1] ?? c.name} · {c.holes.length} hoyos, par {parTotal(c.holes)}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
                 <option value={MANUAL}>Otra cancha (cargar el par a mano)</option>
               </select>
@@ -296,15 +360,19 @@ export function GolfPartido() {
                 <p className="tiny muted mt-2">Par {parTotal(m.course.holes)}. Para que quede guardada para siempre, pedile a la comisión que la cargue en Canchas.</p>
               </div>
             ) : null}
-            <Field label="Modalidad" id="g-mode" hint={GOLF_MODOS[m.mode].desc}>
-              <select id="g-mode" className="input" value={m.mode} onChange={(e) => setMode(e.target.value as GolfMode)}>
-                {(Object.keys(GOLF_MODOS) as GolfMode[]).map((k) => (
-                  <option key={k} value={k}>
-                    {GOLF_MODOS[k].label}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            {isSolo ? (
+              <p className="small muted mb-3">{GOLF_MODOS.solo.desc}</p>
+            ) : (
+              <Field label="Modalidad" id="g-mode" hint={GOLF_MODOS[m.mode].desc}>
+                <select id="g-mode" className="input" value={m.mode} onChange={(e) => setMode(e.target.value as GolfMode)}>
+                  {modeOptions.map((k) => (
+                    <option key={k} value={k}>
+                      {GOLF_MODOS[k].label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <label className="flex items-center gap-2 small font-semibold min-h-[40px]">
               <input type="checkbox" className="w-5 h-5" checked={m.useHcp} onChange={(e) => change((r) => ({ ...r, useHcp: e.target.checked }))} />
               Con hándicap
@@ -312,7 +380,7 @@ export function GolfPartido() {
           </Card>
         ) : null}
 
-        {canEdit ? (
+        {setupEditable && !isSolo ? (
           <Card>
             <p className="h3 mb-2">{team ? (m.mode === 'fourball' ? 'Parejas' : 'Equipos') : 'Jugadores'}</p>
             {!team ? (
@@ -367,9 +435,10 @@ export function GolfPartido() {
             <p className="tiny muted mt-1">Los invitados son los mismos de FMO y Pádel. {team ? 'El invitado nuevo entra en el primer equipo con lugar.' : ''}</p>
           </Card>
         ) : null}
+        {setupEditable && !isSolo && !played ? <LinesEditor round={m} players={players} onChange={(lines) => change((r) => ({ ...r, lines }))} /> : null}
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
-          <Scorecard round={m} players={players} editable={cardsEditable} onCard={setCard} />
+          <Scorecard round={m} players={players} editable={cardsEditable && !isLive} onCard={setCard} />
           {standings}
         </div>
 
@@ -379,10 +448,31 @@ export function GolfPartido() {
               <Button variant="gold" onClick={() => void save('PLAYED')} loading={busy}>
                 Guardar cambios
               </Button>
+            ) : isLive ? (
+              <>
+                <Button variant="gold" onClick={() => void finishLive()} loading={busy}>
+                  Terminar y guardar resultado
+                </Button>
+                <Button variant="line" onClick={() => void backToSetup()}>
+                  Volver a armar
+                </Button>
+              </>
+            ) : isSolo ? (
+              <>
+                <Button variant="gold" onClick={() => void save('PLAYED')} loading={busy}>
+                  Guardar vuelta
+                </Button>
+                <Button variant="line" onClick={() => setDeleteOpen(true)} aria-label="Eliminar vuelta">
+                  <Trash2 size={16} /> Eliminar
+                </Button>
+              </>
             ) : (
               <>
                 <Button variant="gold" onClick={() => void save('DRAFT')} loading={busy}>
                   Guardar por jugarse
+                </Button>
+                <Button variant="line" onClick={() => void startLive()} loading={busy}>
+                  ● Empezar en vivo
                 </Button>
                 <Button variant="line" onClick={() => void save('PLAYED')} loading={busy}>
                   Ya se jugó: guardar resultado

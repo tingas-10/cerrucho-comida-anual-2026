@@ -1,13 +1,13 @@
-// Golf · 1 vs 1: comparar dos jugadores.
+// Golf · Cara a cara: comparar dos jugadores (va dentro de Modalidades → 1 vs 1).
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '../../data/DataContext'
 import { yearOf } from '../../domain/fmo'
 import { golfPlayerStats, golfVersus, golfYears } from '../../domain/golf'
-import { Avatar, Card, Loading, Notice, PageHeader, Section } from '../../ui/components'
+import { Avatar, Card, Loading, Notice, Section } from '../../ui/components'
 import { YearSelect, useFmoPlayers } from '../fmo/fmoShared'
-import { GolfTabs, formatHcp, useGolfHcps, useGolfRounds } from './golfShared'
+import { formatHcp, useGolfHcps, useGolfRounds } from './golfShared'
 
-export function GolfVersus() {
+export function VersusPanel() {
   const { memberId } = useSession()
   const { rows, loading } = useGolfRounds()
   const hcps = useGolfHcps()
@@ -53,8 +53,9 @@ export function GolfVersus() {
 
   return (
     <div>
-      <PageHeader eyebrow="Golf" title="1 vs 1" intro="Elegí dos y compará." actions={<YearSelect value={year} onChange={setYear} years={years} allowAll />} />
-      <GolfTabs />
+      <div className="flex justify-end mb-2">
+        <YearSelect value={year} onChange={setYear} years={years} allowAll />
+      </div>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-4">
         {select(a, setA, 'Jugador 1')}
         <span className="font-extrabold muted">vs</span>
