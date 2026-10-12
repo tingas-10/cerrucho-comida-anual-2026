@@ -93,7 +93,7 @@ export function LiveEntry({ round, players }: { round: GolfRound; players: FmoPl
       </div>
       <p className="small muted mb-2">
         Hoyo {hole + 1} · par {par}
-        {holes[hole]?.meters ? ` · ${holes[hole].meters} m` : ''}
+        {holes[hole]?.yards ? ` · ${holes[hole].yards} yd` : ''}
       </p>
       <div className="grid gap-2">
         {cids.map((cid) => {

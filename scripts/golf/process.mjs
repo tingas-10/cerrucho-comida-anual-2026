@@ -214,7 +214,7 @@ function caddyTip(h, polys) {
   if (line.length < 2) return null
   const total = h.len
   const parTxt = h.par ? `Par ${h.par}` : 'Hoyo'
-  const parts = [`${parTxt} de ${total} m (${yardas(total)} yardas).`]
+  const parts = [`${parTxt} de ${yardas(total)} yardas.`]
   // Quiebre (dogleg): no en los par 3
   const isPar3 = h.par === 3 || (h.par == null && total < 230)
   if (line.length >= 3 && !isPar3) {
@@ -226,7 +226,7 @@ function caddyTip(h, polys) {
     while (turn < -180) turn += 360
     if (Math.abs(turn) > 18) {
       const dist = Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]))
-      parts.push(`Dogleg a la ${turn > 0 ? 'derecha' : 'izquierda'} a unos ${dist} m del tee: ${h.par === 5 ? 'no hace falta arriesgar el primer golpe' : `dejá la salida del lado de ${turn > 0 ? 'la izquierda' : 'la derecha'} del fairway para abrir el ángulo`}.`)
+      parts.push(`Dogleg a la ${turn > 0 ? 'derecha' : 'izquierda'} a unas ${yardas(dist)} yardas del tee: ${h.par === 5 ? 'no hace falta arriesgar el primer golpe' : `dejá la salida del lado de ${turn > 0 ? 'la izquierda' : 'la derecha'} del fairway para abrir el ángulo`}.`)
     }
   }
   const near = (list, maxOff) =>
@@ -240,11 +240,11 @@ function caddyTip(h, polys) {
   const fairwayB = bunkers.filter((b) => total - b.s >= 90 && b.s > 120 && !isPar3)
   if (fairwayB.length) {
     const f = fairwayB.sort((x, y) => x.s - y.s)[0]
-    parts.push(`Bunker de fairway a la ${lado(f.off)} a unos ${Math.round(f.s)} m de la salida${fairwayB.length > 1 ? ` (hay ${fairwayB.length} en el recorrido)` : ''}.`)
+    parts.push(`Bunker de fairway a la ${lado(f.off)} a unas ${yardas(f.s)} yardas de la salida${fairwayB.length > 1 ? ` (hay ${fairwayB.length} en el recorrido)` : ''}.`)
   }
   if (approachB.length) {
     const a = approachB.sort((x, y) => y.s - x.s)[0]
-    parts.push(`Bunker a la ${lado(a.off)} en la zona del approach, a unos ${Math.round(total - a.s)} m del green.`)
+    parts.push(`Bunker a la ${lado(a.off)} en la zona del approach, a unas ${yardas(total - a.s)} yardas del green.`)
   }
   if (greenSide.length) {
     const sides = new Set(greenSide.map((b) => (total - b.s > 12 ? 'adelante' : Math.abs(b.off) < 8 ? 'atrás' : lado(b.off))))

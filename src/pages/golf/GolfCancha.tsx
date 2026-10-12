@@ -82,10 +82,10 @@ export function GolfCancha() {
               <p className="h2">Hoyo {sel + 1}</p>
               <p className="small muted text-right">
                 Par <b className="text-[var(--text)]">{h.par}</b> · Dificultad <b className="text-[var(--text)]">{h.si}</b>
-                {h.meters ? (
+                {h.yards ? (
                   <>
                     {' '}
-                    · <b className="text-[var(--text)]">{h.meters} m</b>
+                    · <b className="text-[var(--text)]">{h.yards} yd</b>
                   </>
                 ) : null}
               </p>
@@ -127,7 +127,7 @@ export function GolfCancha() {
                   <th className="py-1.5 pr-2">Hoyo</th>
                   <th className="py-1.5 pr-2 text-right">Par</th>
                   <th className="py-1.5 pr-2 text-right">Dificultad</th>
-                  <th className="py-1.5 text-right">Metros</th>
+                  <th className="py-1.5 text-right">Yardas</th>
                 </tr>
               </thead>
               <tbody>
@@ -136,14 +136,14 @@ export function GolfCancha() {
                     <td className="py-1.5 pr-2 font-bold">{i + 1}</td>
                     <td className="py-1.5 pr-2 text-right tabular-nums">{x.par}</td>
                     <td className="py-1.5 pr-2 text-right tabular-nums">{x.si}</td>
-                    <td className="py-1.5 text-right tabular-nums">{x.meters ?? '—'}</td>
+                    <td className="py-1.5 text-right tabular-nums">{x.yards ?? '—'}</td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-line font-bold">
                   <td className="py-1.5 pr-2">Total</td>
                   <td className="py-1.5 pr-2 text-right tabular-nums">{parTotal(course.holes)}</td>
                   <td />
-                  <td className="py-1.5 text-right tabular-nums">{course.holes.every((x) => x.meters) ? course.holes.reduce((a, x) => a + (x.meters ?? 0), 0) : '—'}</td>
+                  <td className="py-1.5 text-right tabular-nums">{course.holes.every((x) => x.yards) ? course.holes.reduce((a, x) => a + (x.yards ?? 0), 0) : '—'}</td>
                 </tr>
               </tbody>
             </table>

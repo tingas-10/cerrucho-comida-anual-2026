@@ -181,7 +181,7 @@ export function HoleView({ map, hole }: { map: ClubMap; hole: ClubMapHole }) {
           <circle cx={0} cy={0} r={3} fill="#0e1119" />
         </g>
       </svg>
-      <figcaption className="tiny muted mt-1 text-center">Tee abajo, green arriba · {Math.round(hole.len)} m · {map.attribution}</figcaption>
+      <figcaption className="tiny muted mt-1 text-center">Tee abajo, green arriba · {map.attribution}</figcaption>
     </figure>
   )
 }

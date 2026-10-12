@@ -513,7 +513,7 @@ export type GolfMode = 'match' | 'fourball' | 'scramble' | 'solo' | 'medal' | 's
 export interface GolfHole {
   par: number
   si: number // índice de dificultad del hoyo (1 = el más difícil)
-  meters?: number | null // largo desde los tees de hombres
+  yards?: number | null // largo en yardas desde los tees de hombres (en golf, siempre yardas)
   tip?: string | null // consejo de caddy
   mapRef?: string | null // hoyo en el mapa del club (public/golf/mapas/<club>.json)
 }
@@ -525,7 +525,7 @@ export interface GolfCourse {
   archived: boolean
   club?: string | null // mapa del club (public/golf/mapas/<club>.json)
   mapCourse?: string | null // recorrido dentro del mapa (ej. 'C' Colorada, 'Azul')
-  source?: string | null // de dónde salen par, dificultad y metros
+  source?: string | null // de dónde salen par, dificultad y yardas
   lastProposal?: string
   updatedAt: number
 }

@@ -13,7 +13,7 @@ import { useToast } from '../../ui/toast'
 import { GolfTabs, courseGroups, useGolfCourses } from './golfShared'
 
 function blankHoles(n: number): GolfHole[] {
-  return Array.from({ length: n }, (_, i) => ({ par: 4, si: i + 1, meters: null, tip: null, mapRef: null }))
+  return Array.from({ length: n }, (_, i) => ({ par: 4, si: i + 1, yards: null, tip: null, mapRef: null }))
 }
 
 export function GolfCanchas() {
@@ -28,7 +28,7 @@ export function GolfCanchas() {
       <PageHeader
         eyebrow="Golf"
         title="Canchas"
-        intro="Cada cancha con su mapa, la tarjeta (par, dificultad y metros de cada hoyo), consejos de caddy y los récords de la banda. Las carga la comisión: cada cambio necesita 2 aprobaciones."
+        intro="Cada cancha con su mapa, la tarjeta (par, dificultad y yardas de cada hoyo), consejos de caddy y los récords de la banda. Las carga la comisión: cada cambio necesita 2 aprobaciones."
         actions={
           showTools ? (
             <Button variant="gold" onClick={() => setEditing(true)}>
@@ -83,7 +83,7 @@ export function CourseEditor({ course, onClose }: { course: GolfCourse | null; o
     setBusy(true)
     try {
       const courseId = course?.id ?? db.newId()
-      const clean = holes.map((h) => ({ par: h.par, si: h.si, meters: h.meters ?? null, tip: h.tip?.trim() || null, mapRef: h.mapRef ?? null }))
+      const clean = holes.map((h) => ({ par: h.par, si: h.si, yards: h.yards ?? null, tip: h.tip?.trim() || null, mapRef: h.mapRef ?? null }))
       const summary = archived ? `Archivar la cancha ${course!.name}` : course ? `Cambiar la cancha ${course.name} (${n} hoyos, par ${parTotal(holes)})` : `Cancha nueva: ${name.trim()} (${n} hoyos, par ${parTotal(holes)})`
       await proposeGolf(db, memberId, summary, { type: 'course', courseId, name: archived ? course!.name : name.trim(), holes: archived ? course!.holes : clean, archived })
       toast.ok('Propuesta enviada. Se aplica cuando otro de la comisión la apruebe.')
@@ -108,7 +108,7 @@ export function CourseEditor({ course, onClose }: { course: GolfCourse | null; o
           </select>
         </Field>
       </div>
-      <p className="label">Par, dificultad (1 = el más difícil), metros y consejo de caddy de cada hoyo.</p>
+      <p className="label">Par, dificultad (1 = el más difícil), yardas y consejo de caddy de cada hoyo.</p>
       <div className="grid gap-2">
         {holes.map((h, i) => (
           <div key={i} className="rounded-lg border border-line p-2">
@@ -122,7 +122,7 @@ export function CourseEditor({ course, onClose }: { course: GolfCourse | null; o
                 ))}
               </select>
               <input className="input !px-1 text-center" type="number" inputMode="numeric" min={1} max={n} value={h.si} onChange={(e) => setHole(i, { si: Math.floor(Number(e.target.value)) || 0 })} aria-label={`Dificultad del hoyo ${i + 1}`} />
-              <input className="input !px-1 text-center" type="number" inputMode="numeric" min={0} placeholder="metros" value={h.meters ?? ''} onChange={(e) => setHole(i, { meters: e.target.value === '' ? null : Math.max(0, Math.floor(Number(e.target.value)) || 0) })} aria-label={`Metros del hoyo ${i + 1}`} />
+              <input className="input !px-1 text-center" type="number" inputMode="numeric" min={0} placeholder="yardas" value={h.yards ?? ''} onChange={(e) => setHole(i, { yards: e.target.value === '' ? null : Math.max(0, Math.floor(Number(e.target.value)) || 0) })} aria-label={`Yardas del hoyo ${i + 1}`} />
             </div>
             <textarea className="input mt-2 !min-h-[44px]" rows={2} maxLength={400} placeholder="Consejo de caddy (opcional)" value={h.tip ?? ''} onChange={(e) => setHole(i, { tip: e.target.value })} aria-label={`Consejo del hoyo ${i + 1}`} />
           </div>

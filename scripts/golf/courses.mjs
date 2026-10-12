@@ -9,22 +9,22 @@ const map = (club) => {
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null
 }
 const MAPS = { jockey: map('jockey'), olivos: map('olivos') }
-const m = (yd) => (yd ? Math.round(yd * 0.9144) : null)
 
-function genericTip(par, meters) {
-  if (!meters) return null
-  const base = `Par ${par} de ${meters} m.`
-  if (par === 3) return `${base} ${meters > 170 ? 'Par 3 largo: el centro del green ya es buen resultado.' : 'Elegí el palo por la distancia al centro del green.'}`
-  if (par === 4) return `${base} ${meters > 370 ? 'Par 4 largo: priorizá el fairway y aceptá el bogey.' : meters < 300 ? 'Par 4 corto: buena chance de birdie con un buen approach.' : 'Salida al fairway y approach al centro.'}`
-  return `${base} ${meters < 440 ? 'Par 5 corto: los que pegan largo pueden llegar en dos.' : 'Pensalo en tres golpes y dejate un approach cómodo.'}`
+function genericTip(par, yards) {
+  if (!yards) return null
+  const base = `Par ${par} de ${yards} yardas.`
+  if (par === 3) return `${base} ${yards > 185 ? 'Par 3 largo: el centro del green ya es buen resultado.' : 'Elegí el palo por la distancia al centro del green.'}`
+  if (par === 4) return `${base} ${yards > 400 ? 'Par 4 largo: priorizá el fairway y aceptá el bogey.' : yards < 330 ? 'Par 4 corto: buena chance de birdie con un buen approach.' : 'Salida al fairway y approach al centro.'}`
+  return `${base} ${yards < 480 ? 'Par 5 corto: los que pegan largo pueden llegar en dos.' : 'Pensalo en tres golpes y dejate un approach cómodo.'}`
 }
 
 function hole(par, si, yards, mapClub, mapCourse, ref, researchedTip) {
-  const meters = m(yards)
   const mh = mapClub ? MAPS[mapClub]?.holes.find((h) => h.course === mapCourse && h.ref === String(ref)) : null
   const extra = researchedTip ? researchedTip.trim().replace(/[^.!?]$/, (c) => c + '.') : null
-  const tips = [mh?.tip ?? genericTip(par, meters), extra].filter(Boolean)
-  return { par, si, meters: meters ?? (mh ? mh.len : null), tip: tips.join(' ') || null, mapRef: mh ? `${mapCourse}|${ref}` : null }
+  // El consejo del mapa arranca con el largo medido en el dibujo; si hay tarjeta, manda la distancia de la tarjeta.
+  const mapTip = mh?.tip && yards ? mh.tip.replace(/^Par \d+ de \d+ yardas\./, `Par ${par} de ${yards} yardas.`) : mh?.tip
+  const tips = [mapTip ?? genericTip(par, yards), extra].filter(Boolean)
+  return { par, si, yards: yards ?? (mh ? Math.round(mh.len * 1.0936) : null), tip: tips.join(' ') || null, mapRef: mh ? `${mapCourse}|${ref}` : null }
 }
 
 const courses = []
@@ -39,13 +39,13 @@ for (const [key, code, label] of [['jockey_colorada', 'C', 'Colorada'], ['jockey
     club: 'jockey',
     mapCourse: code,
     holes: sc.holes.map((h) => hole(h.par, h.si, h.yards, 'jockey', code, h.n, h.tip)),
-    source: `Par, dificultad y metros (tee ${sc.tee.split(',')[0]}): golfify, offcourse y golfingrecord; totales confirmados por el club. Mapa y consejos: OpenStreetMap.`,
+    source: `Par, dificultad y yardas (tee ${sc.tee.split(',')[0]}): golfify, offcourse y golfingrecord; totales confirmados por el club. Mapa y consejos: OpenStreetMap.`,
   })
 }
 
 // Olivos: tres nueves; las vueltas de 18 combinan dos (índice impar el primer nueve, par el segundo).
 const nine = (name) => SC.olivos.nines.find((x) => x.name === name)
-const olivosSrc = 'Par, dificultad y metros (tee Blancos): tarjeta oficial del club. Mapa y consejos: OpenStreetMap.'
+const olivosSrc = 'Par, dificultad y yardas (tee Blancos): tarjeta oficial del club. Mapa y consejos: OpenStreetMap.'
 for (const name of ['Blanca', 'Colorada', 'Azul']) {
   add({
     id: `olivos-${name.toLowerCase()}`,
@@ -72,10 +72,10 @@ for (const [a, b, extra] of [['Blanca', 'Colorada', ' (campeonato)'], ['Azul', '
 
 // Sin hoyos dibujados en el mapa: tarjeta y consejos según distancia (más lo publicado, si hay).
 const simple = [
-  ['mayling', 'Mayling Club de Campo', 'mayling', 'Par, dificultad y metros (tee Negro): golfify, golfingrecord y Hole19. Consejos orientativos según la distancia.'],
-  ['mapuche', 'Mapuche Country Club (9 hoyos x 2)', 'mapuche', 'Par y dificultad: golfify y Hole19 (9 hoyos que se juegan dos veces). Metros del tee Blanco: golfify. Consejos orientativos según la distancia.'],
-  ['estancias', 'Estancias Golf Club', 'estancias', 'Par y metros (tee Azul): golfify, offcourse, golfpass y Top100. La dificultad de cada hoyo NO está confirmada (las fuentes no coinciden): conviene que la comisión la revise con la tarjeta del club.'],
-  ['pilara', 'Pilará Golf Club', 'pilara', 'Par y metros (tee Blanco): golfpass, offcourse y Hole19. Dificultad: golfpass, offcourse y golfify (Hole19 da otra). Consejos orientativos según la distancia y Top100.'],
+  ['mayling', 'Mayling Club de Campo', 'mayling', 'Par, dificultad y yardas (tee Negro): golfify, golfingrecord y Hole19. Consejos orientativos según la distancia.'],
+  ['mapuche', 'Mapuche Country Club (9 hoyos x 2)', 'mapuche', 'Par y dificultad: golfify y Hole19 (9 hoyos que se juegan dos veces). Yardas del tee Blanco: golfify. Consejos orientativos según la distancia.'],
+  ['estancias', 'Estancias Golf Club', 'estancias', 'Par y yardas (tee Azul): golfify, offcourse, golfpass y Top100. La dificultad de cada hoyo NO está confirmada (las fuentes no coinciden): conviene que la comisión la revise con la tarjeta del club.'],
+  ['pilara', 'Pilará Golf Club', 'pilara', 'Par y yardas (tee Blanco): golfpass, offcourse y Hole19. Dificultad: golfpass, offcourse y golfify (Hole19 da otra). Consejos orientativos según la distancia y Top100.'],
 ]
 for (const [key, name, club, source] of simple) {
   const sc = SC[key]
