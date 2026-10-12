@@ -29,6 +29,8 @@ export interface Session {
   isPresident: boolean
   canDecide: boolean // confirma fecha, lugar y comida (presidente o administrador)
   presidentId: string | null
+  golfCommission: string[] // comisión de golf
+  isGolfComm: boolean
   slug: string
   error: string | null
   signOut: () => Promise<void>
@@ -50,6 +52,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>('loading')
   const [error, setError] = useState<string | null>(null)
   const [presidentId, setPresidentId] = useState<string | null>(null)
+  const [golfCommission, setGolfCommission] = useState<string[]>([])
   const [demoReady, setDemoReady] = useState(!IS_DEMO)
   const unsubMember = useRef<(() => void) | null>(null)
   const seeded = useRef(false)
@@ -64,7 +67,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Rol de presidente (público).
   useEffect(() => {
     if (!demoReady) return
-    return adapters.db.subscribeDoc<RolesConfig>(P.roles, (r) => setPresidentId(r?.presidentId ?? null), () => setPresidentId(null))
+    return adapters.db.subscribeDoc<RolesConfig>(
+      P.roles,
+      (r) => {
+        setPresidentId(r?.presidentId ?? null)
+        setGolfCommission(r?.golfCommission ?? [])
+      },
+      () => setPresidentId(null),
+    )
   }, [adapters, demoReady])
 
   // Resolver el miembro de la cuenta: uids/{uid} → memberId (lo escribe sólo el administrador).
@@ -114,6 +124,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const isAdmin = isMember && member!.role === 'owner'
   const isAgus = isMember && memberId === OWNER_ID
   const isPresident = isMember && !!presidentId && presidentId === memberId
+  const isGolfComm = isMember && !!memberId && golfCommission.includes(memberId)
 
   // El administrador completa lo que falte de la edición (idempotente, no pisa nada).
   useEffect(() => {
@@ -149,12 +160,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       isPresident,
       canDecide: isAdmin || isPresident,
       presidentId,
+      golfCommission,
+      isGolfComm,
       slug: EDICION_ACTUAL.slug,
       error,
       signOut,
       resetDemo,
     }),
-    [adapters, user, member, memberId, status, demoReady, isMember, isAdmin, isAgus, isPresident, presidentId, error, signOut, resetDemo],
+    [adapters, user, member, memberId, status, demoReady, isMember, isAdmin, isAgus, isPresident, presidentId, golfCommission, isGolfComm, error, signOut, resetDemo],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

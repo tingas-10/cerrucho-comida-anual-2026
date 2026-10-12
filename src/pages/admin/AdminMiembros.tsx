@@ -100,9 +100,21 @@ export function AdminMiembros() {
 
   async function setPresident(id: string) {
     try {
-      await db.setDoc<RolesConfig>(P.roles, { presidentId: id || null, updatedAt: Date.now() })
+      await db.setDoc<RolesConfig>(P.roles, { presidentId: id || null, updatedAt: Date.now() }, { merge: true })
       await logAudit(db, slug, memberId!, 'rol.presidente', id || 'ninguno')
       toast.ok(id ? `${members.aliasOf(id)} es el presidente` : 'Sin presidente')
+    } catch (e) {
+      toast.error(errorText(e))
+    }
+  }
+
+  async function toggleGolf(id: string) {
+    const cur = roles?.golfCommission ?? []
+    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    try {
+      await db.setDoc<RolesConfig>(P.roles, { presidentId: roles?.presidentId ?? null, golfCommission: next, updatedAt: Date.now() }, { merge: true })
+      await logAudit(db, slug, memberId!, 'rol.golf', next.join(',') || 'nadie')
+      toast.ok(cur.includes(id) ? `${members.aliasOf(id)} salió de la comisión de golf` : `${members.aliasOf(id)} entró a la comisión de golf`)
     } catch (e) {
       toast.error(errorText(e))
     }
@@ -136,6 +148,24 @@ export function AdminMiembros() {
       <Notice>
         Cada uno entra con <b>usuario y contraseña</b> (sin mail). Creale el usuario, pasale la contraseña por WhatsApp y en el primer ingreso la puede cambiar. Si se la olvida, la reseteás acá: nunca vas a ver la que eligió.
       </Notice>
+
+      <Card>
+        <p className="h3 mb-1">Comisión de golf</p>
+        <p className="tiny muted mb-2">Definen el sistema de puntos, las canchas, corrigen tarjetas y ajustan hándicaps. Cada decisión necesita 2 aprobaciones entre ellos.</p>
+        <div className="flex flex-wrap gap-2">
+          {members.list
+            .filter((m) => m.status !== 'suspended')
+            .map((m) => {
+              const on = (roles?.golfCommission ?? []).includes(m.id)
+              return (
+                <button key={m.id} type="button" aria-pressed={on} onClick={() => void toggleGolf(m.id)} className={`pill min-h-[36px] ${on ? '' : 'pill-muted'}`}>
+                  {on ? '⛳ ' : ''}
+                  {m.alias}
+                </button>
+              )
+            })}
+        </div>
+      </Card>
 
       <Card>
         <div className="grid sm:grid-cols-2 gap-4">

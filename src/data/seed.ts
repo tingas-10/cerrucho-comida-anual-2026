@@ -10,11 +10,12 @@ import {
   RESERVA_COMPRA_PCT,
 } from '../content/bebidas'
 import { COMIDAS_INICIALES, EDICION_ACTUAL, FECHAS_CANDIDATAS, GRUPO, LUGARES_INICIALES, MIEMBROS_INICIALES, PRESIDENTE_INICIAL, QUORUM_LOGISTICO_PCT, REGALO_TOLERANCIA_PCT } from '../content/config'
+import { GOLF } from '../content/golf'
 import { CATEGORIAS_INICIALES, VAO_ACTIVO } from '../content/premios'
 import { AGENDA_PLANTILLA, TAREAS_PLANTILLA } from '../content/tareas'
 import type { DataAdapter } from './adapter'
 import { P } from './paths'
-import type { Award, Edition, GiftCampaign, Member, Poll, PollOption, Proposal, RolesConfig, Task } from './types'
+import type { Award, Edition, GiftCampaign, GolfConfig, Member, Poll, PollOption, Proposal, RolesConfig, Task } from './types'
 import { fmtDayLong } from '../domain/format'
 
 export const OWNER_ID = 'owner'
@@ -143,9 +144,12 @@ export async function ensureEdition(db: DataAdapter, slug: string = EDICION_ACTU
     await db.setDoc(P.edition(slug), newEdition(slug, year, title, now))
     await seedProposals(db, slug, now)
   }
+  if (!(await db.getDoc<GolfConfig>(P.golfConfig))) {
+    await db.setDoc<GolfConfig>(P.golfConfig, { points: { participation: GOLF.puntosIniciales.participation, positions: [...GOLF.puntosIniciales.positions] }, updatedAt: now })
+  }
   if (!(await db.getDoc<RolesConfig>(P.roles))) {
     const pres = await db.getDoc<Member>(P.member(PRESIDENTE_INICIAL))
-    await db.setDoc<RolesConfig>(P.roles, { presidentId: pres ? PRESIDENTE_INICIAL : null, updatedAt: now })
+    await db.setDoc<RolesConfig>(P.roles, { presidentId: pres ? PRESIDENTE_INICIAL : null, golfCommission: [...GOLF.comisionInicial], updatedAt: now })
   }
   const awards = await db.getCollection<Award>(P.awards(slug))
   if (awards.length === 0) {

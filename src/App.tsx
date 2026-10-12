@@ -14,6 +14,13 @@ import { FmoPartido } from './pages/fmo/FmoPartido'
 import { FmoPartidos } from './pages/fmo/FmoPartidos'
 import { FmoRanking } from './pages/fmo/FmoRanking'
 import { FmoVersus } from './pages/fmo/FmoVersus'
+import { GolfCanchas } from './pages/golf/GolfCanchas'
+import { GolfComision } from './pages/golf/GolfComision'
+import { GolfJugadores } from './pages/golf/GolfJugadores'
+import { GolfMerito } from './pages/golf/GolfMerito'
+import { GolfRonda } from './pages/golf/GolfRonda'
+import { GolfRondas } from './pages/golf/GolfRondas'
+import { GolfVersus } from './pages/golf/GolfVersus'
 import { PadelJugadores } from './pages/padel/PadelJugadores'
 import { PadelPartido } from './pages/padel/PadelPartido'
 import { PadelPartidos } from './pages/padel/PadelPartidos'
@@ -71,6 +78,13 @@ export default function App() {
           <Route path="/padel/parejas" element={<PadelRanking pairs />} />
           <Route path="/padel/jugadores" element={<PadelJugadores />} />
           <Route path="/padel/versus" element={<PadelVersus />} />
+          <Route path="/golf" element={<GolfRondas />} />
+          <Route path="/golf/ronda/:id" element={<GolfRonda />} />
+          <Route path="/golf/merito" element={<GolfMerito />} />
+          <Route path="/golf/jugadores" element={<GolfJugadores />} />
+          <Route path="/golf/versus" element={<GolfVersus />} />
+          <Route path="/golf/canchas" element={<GolfCanchas />} />
+          <Route path="/golf/comision" element={<GolfComision />} />
           <Route path="/miembros" element={<Miembros />} />
           <Route path="/galeria" element={<Galeria />} />
           <Route path="/archivo" element={<Archivo />} />

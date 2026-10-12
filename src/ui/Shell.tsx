@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Flag,
+  Landmark,
   Gift,
   Goal,
   Home,
@@ -82,6 +84,14 @@ function useNav() {
     { to: '/padel/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
     { to: '/padel/versus', label: '1 vs 1', icon: <Swords size={18} /> },
   ]
+  const golf: NavItem[] = [
+    { to: '/golf', label: 'Rondas', icon: <Flag size={18} />, end: true },
+    { to: '/golf/merito', label: 'Orden de Mérito', icon: <Trophy size={18} /> },
+    { to: '/golf/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
+    { to: '/golf/versus', label: '1 vs 1', icon: <Swords size={18} /> },
+    { to: '/golf/canchas', label: 'Canchas', icon: <LayoutList size={18} /> },
+    { to: '/golf/comision', label: 'Comisión', icon: <Landmark size={18} /> },
+  ]
   const banda: NavItem[] = [
     { to: '/cumples', label: 'Cumpleaños', icon: <Cake size={18} /> },
     ...(isMember ? [{ to: '/miembros', label: 'Miembros', icon: <Users size={18} /> }] : []),
@@ -92,7 +102,7 @@ function useNav() {
     ...(isMember ? [{ to: '/perfil', label: 'Mi perfil', icon: <UserRound size={18} /> }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Administración', icon: <Settings size={18} /> }] : []),
   ]
-  return { comida, fmo, padel, banda, mas, e }
+  return { comida, fmo, padel, golf, banda, mas, e }
 }
 
 function Item({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
@@ -187,7 +197,7 @@ export function Shell({ children }: { children: ReactNode }) {
       }
       return next
     })
-  const [sheet, setSheet] = useState<'comida' | 'mas' | null>(null)
+  const [sheet, setSheet] = useState<'comida' | 'deportes' | 'mas' | null>(null)
   const location = useLocation()
   useEffect(() => {
     setSheet(null)
@@ -197,6 +207,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const comidaTitle = edition?.title ?? EDICION_ACTUAL.titulo
   const sideWidth = collapsed ? 64 : 248
   const inComida = location.pathname.startsWith(nav.e)
+  const inDeportes = ['/fmo', '/padel', '/golf'].some((x) => location.pathname.startsWith(x))
   const tab = (active: boolean) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] ${active ? 'text-accent font-bold bg-soft' : 'muted'}`
 
   return (
@@ -220,6 +231,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Group title={comidaTitle} items={nav.comida} collapsed={collapsed} open={isOpen('edicion')} onToggle={() => toggleGroup('edicion')} />
           <Group title="FMO" items={nav.fmo} collapsed={collapsed} open={isOpen('fmo')} onToggle={() => toggleGroup('fmo')} />
           <Group title="Pádel" items={nav.padel} collapsed={collapsed} open={isOpen('padel')} onToggle={() => toggleGroup('padel')} />
+          <Group title="Golf" items={nav.golf} collapsed={collapsed} open={isOpen('golf')} onToggle={() => toggleGroup('golf')} />
           <Group title="La banda" items={nav.banda} collapsed={collapsed} open={isOpen('banda')} onToggle={() => toggleGroup('banda')} />
           <Group title="Más" items={nav.mas} collapsed={collapsed} open={isOpen('mas')} onToggle={() => toggleGroup('mas')} />
         </nav>
@@ -269,14 +281,10 @@ export function Shell({ children }: { children: ReactNode }) {
           <UtensilsCrossed size={20} />
           Comida
         </button>
-        <NavLink to="/fmo" className={({ isActive }) => tab(isActive)}>
+        <button type="button" onClick={() => setSheet('deportes')} className={tab(sheet === 'deportes' || (sheet === null && inDeportes))}>
           <Goal size={20} />
-          FMO
-        </NavLink>
-        <NavLink to="/padel" className={({ isActive }) => tab(isActive)}>
-          <PadelIcon size={20} />
-          Pádel
-        </NavLink>
+          Deportes
+        </button>
         <NavLink to="/cumples" className={({ isActive }) => tab(isActive)}>
           <Cake size={20} />
           Cumples
@@ -288,11 +296,11 @@ export function Shell({ children }: { children: ReactNode }) {
       </nav>
 
       {sheet ? (
-        <div className="md:hidden fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={sheet === 'comida' ? comidaTitle : 'Más'}>
+        <div className="md:hidden fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={sheet === 'comida' ? comidaTitle : sheet === 'deportes' ? 'Deportes' : 'Más'}>
           <div className="absolute inset-0 bg-black/50" onClick={() => setSheet(null)} aria-hidden />
           <div className="absolute bottom-0 left-0 right-0 card rounded-b-none p-4 safe-bottom pop-in max-h-[85dvh] overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
-              <p className="h3">{sheet === 'comida' ? comidaTitle : 'Más'}</p>
+              <p className="h3">{sheet === 'comida' ? comidaTitle : sheet === 'deportes' ? 'Deportes' : 'Más'}</p>
               <button type="button" className="btn btn-line btn-sm" onClick={() => setSheet(null)} aria-label="Cerrar">
                 <X size={16} />
               </button>
@@ -301,6 +309,25 @@ export function Shell({ children }: { children: ReactNode }) {
               <div className="grid grid-cols-2 gap-1">
                 {nav.comida.map((i) => (
                   <Item key={i.to} item={i} onClick={() => setSheet(null)} />
+                ))}
+              </div>
+            ) : sheet === 'deportes' ? (
+              <div className="grid gap-3">
+                {(
+                  [
+                    ['FMO', nav.fmo],
+                    ['Pádel', nav.padel],
+                    ['Golf', nav.golf],
+                  ] as const
+                ).map(([title, items]) => (
+                  <div key={title}>
+                    <p className="eyebrow text-[10px] px-1 mb-1">{title}</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {items.map((i) => (
+                        <Item key={i.to} item={i} onClick={() => setSheet(null)} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (

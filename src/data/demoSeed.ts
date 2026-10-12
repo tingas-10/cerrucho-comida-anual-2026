@@ -134,6 +134,82 @@ export async function seedDemo(db: MemoryAdapter) {
   await db.setDoc(P.padelMatch('demo-p1'), { ...padelBase, id: 'demo-p1', playedAt: now - 5 * 86400000, bestOf: 3, pairA: ['owner', 'm-pato'], pairB: ['m-facu', 'g-demo-primo'], sets: [{ a: 6, b: 4 }, { a: 3, b: 6 }, { a: 7, b: 5 }] })
   await db.setDoc(P.padelMatch('demo-p2'), { ...padelBase, id: 'demo-p2', playedAt: now - 86400000, bestOf: 1, pairA: ['m-choclo', 'm-felix'], pairB: ['owner', 'm-pato'], sets: [{ a: 4, b: 6 }] })
 
+  // Golf: dos canchas, hándicaps, dos rondas jugadas, una por jugarse y una propuesta pendiente de la comisión.
+  const par18 = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
+  const si18 = [7, 3, 15, 1, 11, 5, 17, 9, 13, 8, 16, 2, 12, 6, 10, 18, 4, 14]
+  const holes18 = par18.map((par, i) => ({ par, si: si18[i] }))
+  const holes9 = [4, 3, 5, 4, 4, 3, 4, 5, 4].map((par, i) => ({ par, si: [5, 9, 1, 3, 7, 8, 4, 2, 6][i] }))
+  await db.setDoc(P.golfCourse('demo-pilar'), { id: 'demo-pilar', name: 'Golf Club Pilar', holes: holes18, archived: false, updatedAt: now })
+  await db.setDoc(P.golfCourse('demo-9'), { id: 'demo-9', name: 'Cancha de 9 del barrio', holes: holes9, archived: false, updatedAt: now })
+  for (const [id, hcp] of [['m-pato', 14], ['m-tomi', 9], ['owner', 22], ['m-choclo', 18], ['m-facu', 26]] as const) await db.setDoc(P.golfPlayer(id), { hcp, history: [{ at: now - 20 * 86400000, hcp, by: id }], updatedAt: now })
+  const score = (base: number[], adj: number[]) => base.map((p, i) => p + (adj[i % adj.length] ?? 0))
+  const golfBase = { notes: '', createdBy: 'm-pato', updatedBy: 'm-pato', createdAt: now, updatedAt: now, revision: 1, voided: false }
+  await db.setDoc(P.golfRound('demo-g1'), {
+    ...golfBase,
+    id: 'demo-g1',
+    playedAt: now - 6 * 86400000,
+    status: 'PLAYED',
+    editableUntil: now - 4 * 86400000,
+    courseId: 'demo-pilar',
+    course: { name: 'Golf Club Pilar', holes: holes18 },
+    mode: 'stableford',
+    useHcp: true,
+    entrants: ['m-pato', 'm-tomi', 'owner', 'm-choclo'].map((id) => ({ id, players: [id] })),
+    cards: {
+      'm-pato': { strokes: score(par18, [1, 0, 1, 1, -1, 1]), total: null, hcp: 14 },
+      'm-tomi': { strokes: score(par18, [0, 1, 0, 0, 1, 0]), total: null, hcp: 9 },
+      owner: { strokes: score(par18, [1, 2, 1, 1, 2, 0]), total: null, hcp: 22 },
+      'm-choclo': { strokes: score(par18, [2, 1, 1, 0, 1, 2]), total: null, hcp: 18 },
+    },
+  })
+  await db.setDoc(P.golfRound('demo-g2'), {
+    ...golfBase,
+    id: 'demo-g2',
+    playedAt: now - 2 * 86400000,
+    status: 'PLAYED',
+    editableUntil: now + 86400000,
+    courseId: 'demo-9',
+    course: { name: 'Cancha de 9 del barrio', holes: holes9 },
+    mode: 'medal',
+    useHcp: true,
+    entrants: ['m-pato', 'owner', 'm-facu'].map((id) => ({ id, players: [id] })),
+    cards: {
+      'm-pato': { strokes: holes9.map(() => null), total: 44, hcp: 14 },
+      owner: { strokes: holes9.map(() => null), total: 49, hcp: 22 },
+      'm-facu': { strokes: holes9.map(() => null), total: 52, hcp: 26 },
+    },
+  })
+  await db.setDoc(P.golfRound('demo-g3'), {
+    ...golfBase,
+    id: 'demo-g3',
+    playedAt: now + 4 * 86400000,
+    status: 'DRAFT',
+    editableUntil: null,
+    courseId: 'demo-pilar',
+    course: { name: 'Golf Club Pilar', holes: holes18 },
+    mode: 'fourball',
+    useHcp: true,
+    entrants: [
+      { id: 't1', players: ['m-pato', 'owner'] },
+      { id: 't2', players: ['m-tomi', 'm-choclo'] },
+    ],
+    cards: Object.fromEntries(['m-pato', 'owner', 'm-tomi', 'm-choclo'].map((id) => [id, { strokes: holes18.map(() => null), total: null, hcp: id === 'm-pato' ? 14 : id === 'owner' ? 22 : id === 'm-tomi' ? 9 : 18 }])),
+  })
+  await db.setDoc(P.golfProposal('demo-gp1'), {
+    id: 'demo-gp1',
+    type: 'points',
+    summary: 'Sistema de puntos: 2 por jugar · 12/8/5/3 a los primeros 4',
+    payload: { points: { participation: 2, positions: [12, 8, 5, 3] } },
+    proposedBy: 'm-pato',
+    approvals: { 'm-pato': now - 3600000 },
+    rejections: {},
+    status: 'OPEN',
+    createdAt: now - 3600000,
+    updatedAt: now - 3600000,
+    appliedAt: null,
+    appliedBy: null,
+  })
+
   // Propuestas de comida pendientes.
   await db.setDoc(P.proposal(slug, 'prop-1'), {
     id: 'prop-1',

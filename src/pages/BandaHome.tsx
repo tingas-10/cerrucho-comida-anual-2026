@@ -1,5 +1,5 @@
-// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel y cumpleaños.
-import { Cake, CalendarDays, Goal, LogIn } from 'lucide-react'
+// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel, golf y cumpleaños.
+import { Cake, CalendarDays, Flag, Goal, LogIn } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { EDICION_ACTUAL, GRUPO } from '../content/config'
@@ -10,10 +10,12 @@ import { formatBirthday, upcoming } from '../domain/birthdays'
 import { computeStats, formatPoints, ranking, scoreOf, upcomingMatches, yearOf } from '../domain/fmo'
 import { fmtDayLong, fmtTime } from '../domain/format'
 import { computePadelStats, padelRanking, tally } from '../domain/padel'
+import { meritTable, roundResult, upcomingRounds } from '../domain/golf'
 import { PadelIcon } from '../ui/Shell'
 import { Card, MemberAvatar } from '../ui/components'
 import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
 import { pairName, usePadelMatches } from './padel/padelShared'
+import { entrantName, useGolfConfig, useGolfRounds } from './golf/golfShared'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -31,6 +33,12 @@ export function BandaHome() {
   const next = useMemo(() => upcomingMatches(matches)[0], [matches])
   const { rows: padelMatches } = usePadelMatches()
   const lastPadel = useMemo(() => padelMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [padelMatches])
+  const { rows: golfRounds } = useGolfRounds()
+  const golfCfg = useGolfConfig()
+  const lastGolf = useMemo(() => golfRounds.filter((r) => r.status === 'PLAYED' && !r.voided).sort((a, b) => b.playedAt - a.playedAt)[0], [golfRounds])
+  const nextGolf = useMemo(() => upcomingRounds(golfRounds)[0], [golfRounds])
+  const golfLeader = useMemo(() => meritTable(golfRounds, golfCfg.points, yearOf(now))[0], [golfRounds, golfCfg.points, now])
+  const lastGolfWinner = lastGolf ? roundResult(lastGolf).standings[0] : undefined
   const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
   const e = `/e/${EDICION_ACTUAL.slug}`
   const hero = BASE + (edition?.heroPhoto ?? FOTOS[0].src)
@@ -47,7 +55,7 @@ export function BandaHome() {
             <br />
             del cerrucho.
           </h1>
-          <p className="text-[#f2e7c8] mt-3">{isMember && member ? `Hola, ${member.alias}.` : 'Comida anual, fútbol, pádel y cumpleaños de la banda.'}</p>
+          <p className="text-[#f2e7c8] mt-3">{isMember && member ? `Hola, ${member.alias}.` : 'Comida anual, fútbol, pádel, golf y cumpleaños de la banda.'}</p>
         </div>
       </div>
 
@@ -139,6 +147,48 @@ export function BandaHome() {
           </div>
           <Link to="/padel" className="btn mt-3">
             Ir a Pádel
+          </Link>
+        </Card>
+
+        <Card className="flex flex-col">
+          <p className="eyebrow flex items-center gap-2">
+            <Flag size={14} /> Golf
+          </p>
+          <div className="mt-2 flex-1 small">
+            {lastGolf ? (
+              <p>
+                <span className="muted">
+                  Última ronda · {fmtDayLong(lastGolf.playedAt)} · {lastGolf.course.name}
+                </span>
+                <br />
+                {lastGolfWinner ? (
+                  <b>
+                    Ganó {entrantName(lastGolf.entrants.find((x) => x.id === lastGolfWinner.entrantId)!, players)} ({lastGolfWinner.label})
+                  </b>
+                ) : null}
+              </p>
+            ) : (
+              <p className="muted">Todavía no hay rondas cargadas.</p>
+            )}
+            {nextGolf ? (
+              <p className="mt-2">
+                <span className="muted">
+                  Próxima · {fmtDayLong(nextGolf.playedAt)} · {fmtTime(nextGolf.playedAt)} h
+                </span>
+                <br />
+                <b>{nextGolf.course.name}</b>
+              </p>
+            ) : null}
+            {golfLeader ? (
+              <p className="mt-2 flex items-center gap-2">
+                <span className="muted">Orden de Mérito {yearOf(now)}:</span>
+                <b>{players.nameOf(golfLeader.playerId)}</b>
+                <span className="muted">({golfLeader.points} pts)</span>
+              </p>
+            ) : null}
+          </div>
+          <Link to="/golf" className="btn mt-3">
+            Ir a Golf
           </Link>
         </Card>
 

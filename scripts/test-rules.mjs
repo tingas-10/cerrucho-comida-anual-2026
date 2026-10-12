@@ -20,6 +20,7 @@ const people = {
   facu: { uid: 'uFacu', id: 'm-facu', member: { status: 'active', role: 'member' } },
   ana: { uid: 'uAna', id: 'm-ana', member: { status: 'active', role: 'member' } },
   susp: { uid: 'uSusp', id: 'm-susp', member: { status: 'suspended', role: 'member' } },
+  pipe: { uid: 'uPipe', id: 'm-pipe', member: { status: 'active', role: 'member' } },
 }
 
 function mockGet(p, data) {
@@ -33,7 +34,7 @@ function identityMocks(who) {
   const p = people[who]
   return [mockExists(`/uids/${p.uid}`, true), mockGet(`/uids/${p.uid}`, { memberId: p.id }), mockGet(`/members/${p.id}`, p.member)]
 }
-const rolesMocks = [mockExists('/config/roles', true), mockGet('/config/roles', { presidentId: 'm-facu' })]
+const rolesMocks = [mockExists('/config/roles', true), mockGet('/config/roles', { presidentId: 'm-facu', golfCommission: ['m-ana', 'm-facu'] })]
 const award = { candidates: ['m-ana', 'm-facu'], finalists: [], electorate: ['m-ana', 'm-facu', 'owner'], state: 'ROUND1_OPEN', round1: { openAt: NOW_MS - 3600000, closeAt: NOW_MS + 3600000 } }
 const awardClosed = { ...award, round1: { openAt: NOW_MS - 7200000, closeAt: NOW_MS - 3600000 } }
 const awardLater = { ...award, round1: { openAt: NOW_MS + 3600000, closeAt: NOW_MS + 7200000 } }
@@ -104,6 +105,34 @@ const cases = [
     data: { label: 'Galpón', votes: { 'm-facu': 'down' }, authorId: 'owner', state: 'PENDING' },
   }),
   tc('suspendido NO carga FMO', 'susp', 'create', '/fmoMatches/x', 'DENY', { data: { a: 1 } }),
+
+  // Golf: rondas de cualquiera; jugadas se corrigen 48 h; después, la comisión con 2 aprobaciones
+  tc('visitante lee rondas de golf', null, 'get', '/golfRounds/r1', 'ALLOW', { existing: {} }),
+  tc('visitante NO arma rondas', null, 'create', '/golfRounds/r1', 'DENY', { data: { status: 'DRAFT', voided: false } }),
+  tc('miembro arma una ronda', 'pipe', 'create', '/golfRounds/r1', 'ALLOW', { data: { status: 'DRAFT', voided: false } }),
+  tc('miembro NO crea una ronda ya jugada', 'pipe', 'create', '/golfRounds/r1', 'DENY', { data: { status: 'PLAYED', voided: false } }),
+  tc('miembro guarda el resultado con 48 h para corregir', 'pipe', 'update', '/golfRounds/r1', 'ALLOW', { existing: { status: 'DRAFT', voided: false }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS + 48 * 3600000 } }),
+  tc('miembro NO se da una semana para corregir', 'pipe', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'DRAFT', voided: false }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS + 7 * 86400000 } }),
+  tc('miembro corrige dentro del plazo', 'pipe', 'update', '/golfRounds/r1', 'ALLOW', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS + 3600000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS + 3600000, cards: { a: 1 } } }),
+  tc('miembro NO corrige pasado el plazo', 'pipe', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000, cards: { a: 1 } } }),
+  tc('miembro NO anula una ronda', 'pipe', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS + 3600000 }, data: { status: 'PLAYED', voided: true, editableUntil: NOW_MS + 3600000 } }),
+  tc('comisión corrige con 2 aprobaciones', 'ana', 'update', '/golfRounds/r1', 'ALLOW', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000, cards: { a: 2 }, lastProposal: 'gp1' }, mocks: [mockGet('/golfProposals/gp1', { status: 'OPEN', type: 'round_fix', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { roundId: 'r1', cards: { a: 2 } } })] }),
+  tc('comisión NO corrige con 1 sola aprobación', 'ana', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000, cards: { a: 2 }, lastProposal: 'gp1' }, mocks: [mockGet('/golfProposals/gp1', { status: 'OPEN', type: 'round_fix', approvals: { 'm-ana': 1 }, payload: { roundId: 'r1', cards: { a: 2 } } })] }),
+  tc('comisión NO aplica una tarjeta distinta a la aprobada', 'ana', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000, cards: { a: 9 }, lastProposal: 'gp1' }, mocks: [mockGet('/golfProposals/gp1', { status: 'OPEN', type: 'round_fix', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { roundId: 'r1', cards: { a: 2 } } })] }),
+  tc('fuera de la comisión NO usa una propuesta aprobada', 'pipe', 'update', '/golfRounds/r1', 'DENY', { existing: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000 }, data: { status: 'PLAYED', voided: false, editableUntil: NOW_MS - 1000, cards: { a: 2 }, lastProposal: 'gp1' }, mocks: [mockGet('/golfProposals/gp1', { status: 'OPEN', type: 'round_fix', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { roundId: 'r1', cards: { a: 2 } } })] }),
+  tc('miembro carga su hándicap', 'pipe', 'update', '/golfPlayers/m-pipe', 'ALLOW', { existing: { hcp: 20 }, data: { hcp: 18 } }),
+  tc('miembro carga el hándicap de un invitado', 'pipe', 'create', '/golfPlayers/g-primo', 'ALLOW', { data: { hcp: 30 } }),
+  tc('miembro NO cambia el hándicap de otro', 'pipe', 'update', '/golfPlayers/m-ana', 'DENY', { existing: { hcp: 20 }, data: { hcp: 2 } }),
+  tc('comisión cambia un hándicap aprobado', 'ana', 'update', '/golfPlayers/m-pipe', 'ALLOW', { existing: { hcp: 20 }, data: { hcp: 16, lastProposal: 'gp2' }, mocks: [mockGet('/golfProposals/gp2', { status: 'OPEN', type: 'hcp', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { playerId: 'm-pipe', hcp: 16 } })] }),
+  tc('comisionado propone', 'ana', 'create', '/golfProposals/gp3', 'ALLOW', { data: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1 }, rejections: {} } }),
+  tc('fuera de la comisión NO propone', 'pipe', 'create', '/golfProposals/gp3', 'DENY', { data: { proposedBy: 'm-pipe', status: 'OPEN', approvals: { 'm-pipe': 1 }, rejections: {} } }),
+  tc('nadie propone con aprobaciones ajenas', 'ana', 'create', '/golfProposals/gp3', 'DENY', { data: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1, 'm-facu': 1 }, rejections: {} } }),
+  tc('otro comisionado aprueba', 'facu', 'update', '/golfProposals/gp3', 'ALLOW', { existing: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1 }, rejections: {}, updatedAt: 1 }, data: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1, 'm-facu': 2 }, rejections: {}, updatedAt: 2 } }),
+  tc('NO se aprueba en nombre de otro', 'facu', 'update', '/golfProposals/gp3', 'DENY', { existing: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1 }, rejections: {}, updatedAt: 1 }, data: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1, 'm-otro': 2 }, rejections: {}, updatedAt: 2 } }),
+  tc('NO se marca aplicada con 1 aprobación', 'ana', 'update', '/golfProposals/gp3', 'DENY', { existing: { proposedBy: 'm-ana', status: 'OPEN', approvals: { 'm-ana': 1 }, rejections: {}, updatedAt: 1 }, data: { proposedBy: 'm-ana', status: 'APPLIED', approvals: { 'm-ana': 1 }, rejections: {}, updatedAt: 2, appliedAt: 2, appliedBy: 'm-ana' } }),
+  tc('comisión cambia el sistema de puntos aprobado', 'ana', 'update', '/config/golf', 'ALLOW', { existing: { points: { participation: 1, positions: [10, 6, 4] } }, data: { points: { participation: 2, positions: [12, 8] }, lastProposal: 'gp4' }, mocks: [mockGet('/golfProposals/gp4', { status: 'OPEN', type: 'points', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { points: { participation: 2, positions: [12, 8] } } })] }),
+  tc('comisión NO pone puntos distintos a los aprobados', 'ana', 'update', '/config/golf', 'DENY', { existing: { points: { participation: 1, positions: [10, 6, 4] } }, data: { points: { participation: 50, positions: [12, 8] }, lastProposal: 'gp4' }, mocks: [mockGet('/golfProposals/gp4', { status: 'OPEN', type: 'points', approvals: { 'm-ana': 1, 'm-facu': 2 }, payload: { points: { participation: 2, positions: [12, 8] } } })] }),
+  tc('miembro NO cambia el sistema de puntos', 'pipe', 'update', '/config/golf', 'DENY', { existing: { points: {} }, data: { points: { participation: 9, positions: [] } } }),
 
   // Pádel: cualquiera mira, los miembros cargan
   tc('visitante lee pádel', null, 'get', '/padelMatches/x', 'ALLOW', { existing: {} }),

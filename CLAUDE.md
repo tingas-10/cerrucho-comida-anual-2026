@@ -17,6 +17,7 @@ Que los cambios chicos salgan rápido por chat: editar el archivo correspondient
 | Plantillas de tareas, lista personal y agenda | `src/content/tareas.ts` |
 | FMO (fútbol): puntos del ranking, tamaños de equipo, nombres por defecto, frase e imágenes de la historia de Instagram (`FMO_HISTORIA`, fotos en `public/fmo-historia/`) | `src/content/fmo.ts` |
 | Pádel: formatos (1, 3 o 5 sets), puntos por formato, cupo de invitados | `src/content/padel.ts` |
+| Golf: modalidades y sus textos, comisión inicial, puntos iniciales del Orden de Mérito, plazo para corregir (48 h) | `src/content/golf.ts` |
 | Colores, tipografía, radios, estilos globales | `src/index.css` |
 | Config de Firebase (pública por diseño; excepción autorizada por Agus) | `src/firebase/firebase.config.json` |
 | Reglas de seguridad (al cambiarlas: probar con `scripts/test-rules.mjs` y publicarlas, ver abajo) | `firestore.rules` |
@@ -30,6 +31,8 @@ Los contenidos de `src/content/*` sólo se usan como **seed** al crear una edici
 - `src/domain/` reglas puras con tests (`npm test`): `awards.ts` (conteo y ballotage), `beverages.ts` (validación y compras), `expenses.ts` (reparto en centavos, saldos), `gift.ts` (sorteo cripto), `polls.ts`, `format.ts` (fechas Buenos Aires).
 - `src/ui/` carcasa (`Shell.tsx`), componentes base (`components.tsx`), `PollCard.tsx`, toast, tema.
 - `src/pages/` una pantalla por archivo; `src/pages/admin/` una pestaña del panel por archivo.
+- `src/pages/golf/` sección Golf (pedido de 12/10/2026): rondas que arma cualquiera (medal, stableford, match play, mejor pelota, scramble; con o sin hándicap; tarjeta hoyo por hoyo o sólo el total en medal y scramble), Orden de Mérito, jugadores con hándicap, 1 vs 1, canchas y comisión. Reglas puras en `src/domain/golf.ts`; colecciones `golfRounds`, `golfCourses`, `golfPlayers` (hándicap: cada uno el suyo y el de invitados), `golfProposals` y `config/golf` (puntos).
+- Comisión de golf (`config/roles.golfCommission`, se elige en Administración → Miembros; hoy Pato, Morron, Yayo y Orrito): todo lo que decide (puntos, canchas, corregir o anular una ronda pasadas las 48 h, hándicap de otro) es una propuesta que se aplica sólo con 2 aprobaciones (`src/data/golf.ts`). Las reglas de Firestore lo verifican: el cambio tiene que citar una propuesta abierta con 2 aprobaciones y coincidir con lo aprobado.
 - `src/pages/padel/` sección Pádel: partidos de 4 (al menos 3 de la banda, hasta 1 invitado) en una cancha azul, sets, ranking individual y de parejas, jugadores y 1 vs 1. Reglas puras en `src/domain/padel.ts`; colección `padelMatches`. Los invitados son los mismos de FMO (`fmoGuests`).
 - `src/pages/fmo/FmoStory.tsx`: historia de Instagram (1080 × 1920) dibujada con canvas al guardar un partido; la descarga o comparte cualquiera, también visitantes. El "bailado" sale al azar del equipo ganador, fijo por partido (`src/domain/fmoStory.ts`).
 - FMO: cada equipo tiene titulares (los de la cancha, hasta el tamaño elegido) y suplentes ilimitados (`sub: true`, juegan y suman en estadísticas). Un partido se guarda "por jugarse" (`status: 'DRAFT'`, con día y hora, lo ve todo el mundo en Partidos y en la portada) o jugado (`PLAYED`, cuenta para el ranking y abre la historia).

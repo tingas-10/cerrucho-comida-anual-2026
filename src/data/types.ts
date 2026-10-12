@@ -47,6 +47,7 @@ export interface LoginDoc {
 // config/roles: quién es el presidente (se cambia desde Administración, sin tocar código).
 export interface RolesConfig {
   presidentId: string | null
+  golfCommission?: string[] // comisión de golf: sus decisiones necesitan 2 aprobaciones
   updatedAt?: number
 }
 
@@ -505,3 +506,88 @@ export interface PadelMatch {
   updatedAt: number
   revision: number
 }
+
+// ---------- Golf ----------
+export type GolfMode = 'medal' | 'stableford' | 'match' | 'fourball' | 'scramble'
+
+export interface GolfHole {
+  par: number
+  si: number // índice de dificultad del hoyo (1 = el más difícil)
+}
+
+export interface GolfCourse {
+  id: string
+  name: string
+  holes: GolfHole[] // 9 o 18
+  archived: boolean
+  lastProposal?: string
+  updatedAt: number
+}
+
+export interface GolfCard {
+  strokes: Array<number | null> // golpes por hoyo (null = sin cargar)
+  total: number | null // si se cargó sólo el total (medal y scramble)
+  hcp: number // hándicap usado en esta ronda (en scramble, el del equipo)
+}
+
+export interface GolfEntrant {
+  id: string // en modalidades individuales es el id del jugador; en equipos, 't1', 't2'...
+  players: string[]
+}
+
+export interface GolfRound {
+  id: string
+  playedAt: number
+  status: 'DRAFT' | 'PLAYED' // DRAFT = por jugarse
+  editableUntil: number | null // hasta cuándo la pueden corregir los jugadores después de guardarla jugada
+  voided?: boolean // anulada por la comisión
+  courseId: string | null // null = cancha cargada a mano en la ronda
+  course: { name: string; holes: GolfHole[] } // copia de la cancha al momento de jugar
+  mode: GolfMode
+  useHcp: boolean
+  entrants: GolfEntrant[]
+  cards: Record<string, GolfCard> // por jugador (o por equipo en scramble)
+  notes?: string
+  lastProposal?: string
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt: number
+  revision: number
+}
+
+export interface GolfPointsConfig {
+  participation: number // puntos por jugar una ronda
+  positions: number[] // puntos extra por puesto: [1º, 2º, 3º, ...]
+}
+
+export interface GolfConfig {
+  points: GolfPointsConfig
+  lastProposal?: string
+  updatedAt: number
+}
+
+export interface GolfPlayerDoc {
+  hcp: number
+  history: Array<{ at: number; hcp: number; by: string; proposalId?: string }>
+  lastProposal?: string
+  updatedAt: number
+}
+
+export type GolfProposalType = 'points' | 'course' | 'round_fix' | 'round_void' | 'hcp'
+
+export interface GolfProposal {
+  id: string
+  type: GolfProposalType
+  summary: string
+  payload: Record<string, unknown>
+  proposedBy: string
+  approvals: Record<string, number> // quién aprobó y cuándo (quien propone ya aprueba)
+  rejections: Record<string, number>
+  status: 'OPEN' | 'APPLIED' | 'REJECTED' | 'WITHDRAWN'
+  createdAt: number
+  updatedAt: number
+  appliedAt?: number | null
+  appliedBy?: string | null
+}
+

@@ -102,6 +102,97 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isActive();
     }
+    // ---------- Golf ----------
+    // La comisión (config/roles.golfCommission) decide con propuestas: se aplican sólo con 2 aprobaciones.
+    function golfComm() {
+      return get(/databases/$(database)/documents/config/roles).data.get('golfCommission', []);
+    }
+    function isGolfComm() {
+      return isActive() && myId() in golfComm();
+    }
+    function gprop(pid) {
+      return get(/databases/$(database)/documents/golfProposals/$(pid)).data;
+    }
+    function approvedProp(pid, type) {
+      let p = gprop(pid);
+      return p.status == 'OPEN' && p.type == type && p.approvals.size() >= 2;
+    }
+
+    match /golfProposals/{pid} {
+      allow read: if true;
+      allow create: if isGolfComm()
+        && request.resource.data.proposedBy == myId()
+        && request.resource.data.status == 'OPEN'
+        && request.resource.data.approvals.keys().hasOnly([myId()])
+        && request.resource.data.rejections.size() == 0;
+      allow update: if isGolfComm() && resource.data.status == 'OPEN' && (
+        // votar: cada uno sólo agrega o cambia su propio voto
+        (onlyKeys(['approvals', 'rejections', 'updatedAt'])
+          && request.resource.data.approvals.diff(resource.data.approvals).affectedKeys()
+               .union(request.resource.data.rejections.diff(resource.data.rejections).affectedKeys()).hasOnly([myId()]))
+        // aplicar: con 2 aprobaciones
+        || (resource.data.approvals.size() >= 2 && request.resource.data.status == 'APPLIED'
+          && onlyKeys(['status', 'appliedAt', 'appliedBy', 'updatedAt']))
+        // rechazar (2 rechazos) o retirar (quien la propuso)
+        || (onlyKeys(['status', 'updatedAt'])
+          && ((request.resource.data.status == 'REJECTED' && resource.data.rejections.size() >= 2)
+            || (request.resource.data.status == 'WITHDRAWN' && resource.data.proposedBy == myId())))
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /config/golf {
+      allow read: if true;
+      allow write: if isAdmin() || (isGolfComm()
+        && approvedProp(request.resource.data.lastProposal, 'points')
+        && request.resource.data.points == gprop(request.resource.data.lastProposal).payload.points);
+    }
+
+    match /golfCourses/{cid} {
+      allow read: if true;
+      allow create, update: if isAdmin() || (isGolfComm()
+        && approvedProp(request.resource.data.lastProposal, 'course')
+        && gprop(request.resource.data.lastProposal).payload.courseId == cid
+        && request.resource.data.name == gprop(request.resource.data.lastProposal).payload.name
+        && request.resource.data.holes == gprop(request.resource.data.lastProposal).payload.holes
+        && request.resource.data.archived == gprop(request.resource.data.lastProposal).payload.archived);
+      allow delete: if isAdmin();
+    }
+
+    // Hándicap: cada uno el suyo y el de los invitados; el de otro miembro, la comisión.
+    match /golfPlayers/{pid} {
+      allow read: if true;
+      allow write: if isAdmin()
+        || (isActive() && (pid == myId() || pid.matches('g-.*')))
+        || (isGolfComm()
+          && approvedProp(request.resource.data.lastProposal, 'hcp')
+          && gprop(request.resource.data.lastProposal).payload.playerId == pid
+          && request.resource.data.hcp == gprop(request.resource.data.lastProposal).payload.hcp);
+    }
+
+    // Rondas: cualquiera de la banda las arma. Jugadas, se corrigen durante 48 h; después, la comisión.
+    match /golfRounds/{rid} {
+      allow read: if true;
+      allow create: if isActive() && request.resource.data.status == 'DRAFT' && request.resource.data.get('voided', false) == false;
+      allow update: if (isActive()
+          && request.resource.data.get('voided', false) == resource.data.get('voided', false)
+          && (resource.data.status == 'DRAFT'
+            ? (request.resource.data.status == 'DRAFT'
+              || (request.resource.data.status == 'PLAYED' && request.resource.data.editableUntil is int
+                && request.resource.data.editableUntil <= now() + 173100000))
+            : (now() < resource.data.editableUntil
+              && request.resource.data.status == 'PLAYED'
+              && request.resource.data.editableUntil == resource.data.editableUntil)))
+        || (isGolfComm()
+          && ((approvedProp(request.resource.data.lastProposal, 'round_fix')
+              && gprop(request.resource.data.lastProposal).payload.roundId == rid
+              && request.resource.data.cards == gprop(request.resource.data.lastProposal).payload.cards)
+            || (approvedProp(request.resource.data.lastProposal, 'round_void')
+              && gprop(request.resource.data.lastProposal).payload.roundId == rid
+              && request.resource.data.voided == true)));
+      allow delete: if isAdmin() || (isActive() && resource.data.status == 'DRAFT');
+    }
+
     // ---------- Pádel: igual que FMO (los invitados son los mismos de fmoGuests) ----------
     match /padelMatches/{matchId} {
       allow read: if true;
