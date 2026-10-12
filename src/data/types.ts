@@ -557,8 +557,9 @@ export interface GolfRound {
 }
 
 export interface GolfPointsConfig {
-  participation: number // puntos por jugar una ronda
-  positions: number[] // puntos extra por puesto: [1º, 2º, 3º, ...]
+  participation: number // puntos por jugar un partido
+  positions: number[] // puntos extra por puesto cuando juegan 4 o más (jugadores o equipos): [1º, 2º, 3º, ...]
+  byField?: Record<string, number[]> // puntos por puesto según cuántos juegan: { '2': [5, 0], '3': [7, 3, 0] }
 }
 
 export interface GolfConfig {

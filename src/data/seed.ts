@@ -145,7 +145,7 @@ export async function ensureEdition(db: DataAdapter, slug: string = EDICION_ACTU
     await seedProposals(db, slug, now)
   }
   if (!(await db.getDoc<GolfConfig>(P.golfConfig))) {
-    await db.setDoc<GolfConfig>(P.golfConfig, { points: { participation: GOLF.puntosIniciales.participation, positions: [...GOLF.puntosIniciales.positions] }, updatedAt: now })
+    await db.setDoc<GolfConfig>(P.golfConfig, { points: { participation: GOLF.puntosIniciales.participation, positions: [...GOLF.puntosIniciales.positions], byField: { '2': [...GOLF.puntosIniciales.byField['2']], '3': [...GOLF.puntosIniciales.byField['3']] } }, updatedAt: now })
   }
   if (!(await db.getDoc<RolesConfig>(P.roles))) {
     const pres = await db.getDoc<Member>(P.member(PRESIDENTE_INICIAL))

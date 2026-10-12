@@ -31,6 +31,7 @@ export interface Session {
   presidentId: string | null
   golfCommission: string[] // comisión de golf
   isGolfComm: boolean
+  golfPreview: boolean // administrador fuera de la comisión: ve sus herramientas, sin poder usarlas
   slug: string
   error: string | null
   signOut: () => Promise<void>
@@ -125,6 +126,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const isAgus = isMember && memberId === OWNER_ID
   const isPresident = isMember && !!presidentId && presidentId === memberId
   const isGolfComm = isMember && !!memberId && golfCommission.includes(memberId)
+  const golfPreview = isAdmin && !isGolfComm
 
   // El administrador completa lo que falte de la edición (idempotente, no pisa nada).
   useEffect(() => {
@@ -162,12 +164,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       presidentId,
       golfCommission,
       isGolfComm,
+      golfPreview,
       slug: EDICION_ACTUAL.slug,
       error,
       signOut,
       resetDemo,
     }),
-    [adapters, user, member, memberId, status, demoReady, isMember, isAdmin, isAgus, isPresident, presidentId, golfCommission, isGolfComm, error, signOut, resetDemo],
+    [adapters, user, member, memberId, status, demoReady, isMember, isAdmin, isAgus, isPresident, presidentId, golfCommission, isGolfComm, golfPreview, error, signOut, resetDemo],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -21,8 +21,9 @@ export const GOLF = {
   // Comisión de golf inicial (se cambia desde Administración → Miembros): Pato, Morron, Yayo y Orrito.
   comisionInicial: ['m-pato', 'm-saimon', 'm-agus', 'm-tomi'],
   aprobacionesNecesarias: 2,
-  // Puntos iniciales del ranking: 1 por jugar y 10, 6 y 4 al podio. Los cambia la comisión.
-  puntosIniciales: { participation: 1, positions: [10, 6, 4] },
+  // Puntos iniciales del ranking (pedido de Agus, 12/10): 1 por jugar y, por puesto, según cuántos juegan
+  // (jugadores o equipos): 2 → 5/0 · 3 → 7/3/0 · 4 o más → 10/6/4. El último nunca suma por puesto. Los cambia la comisión.
+  puntosIniciales: { participation: 1, positions: [10, 6, 4], byField: { '2': [5, 0], '3': [7, 3, 0] } },
   // Después de guardar una ronda jugada, los jugadores la pueden corregir durante este plazo; después, la comisión.
   horasParaCorregir: 48,
   parDefault: 4,

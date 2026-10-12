@@ -22,7 +22,7 @@ const HOURS = GOLF.horasParaCorregir * 3600000
 
 export function GolfPartido() {
   const { id } = useParams()
-  const { db, memberId, isMember, isGolfComm } = useSession()
+  const { db, memberId, isMember, isGolfComm, golfPreview } = useSession()
   const toast = useToast()
   const navigate = useNavigate()
   const now = useNow(30000)
@@ -48,8 +48,8 @@ export function GolfPartido() {
   const played = m.status === 'PLAYED'
   const locked = played && (!!m.voided || !m.editableUntil || now > m.editableUntil)
   const canEdit = isMember && !locked
-  const canPropose = isGolfComm && locked && !m.voided
-  const cardsEditable = canEdit || (canPropose && fixMode)
+  const canPropose = (isGolfComm || golfPreview) && locked && !m.voided
+  const cardsEditable = canEdit || (isGolfComm && canPropose && fixMode)
   const n = m.course.holes.length
   const res = roundResult(m)
   const inRound = new Set(allPlayers(m))
@@ -398,7 +398,7 @@ export function GolfPartido() {
         {canPropose ? (
           <Card>
             <p className="h3 mb-1">Comisión de golf</p>
-            <p className="tiny muted mb-3">Los cambios se aplican cuando los aprueban 2 comisionados (vos ya contás como uno).</p>
+            <p className="tiny muted mb-3">{golfPreview ? 'Vista de administrador: así lo ven los comisionados. Los botones están desactivados.' : 'Los cambios se aplican cuando los aprueban 2 comisionados (vos ya contás como uno).'}</p>
             <div className="flex gap-2 flex-wrap">
               {fixMode ? (
                 <>
@@ -418,10 +418,10 @@ export function GolfPartido() {
                 </>
               ) : (
                 <>
-                  <Button variant="line" onClick={() => setFixMode(true)}>
+                  <Button variant="line" disabled={!isGolfComm} onClick={() => setFixMode(true)}>
                     Corregir la tarjeta
                   </Button>
-                  <Button variant="line" onClick={() => setVoidOpen(true)}>
+                  <Button variant="line" disabled={!isGolfComm} onClick={() => setVoidOpen(true)}>
                     Proponer anularlo
                   </Button>
                 </>

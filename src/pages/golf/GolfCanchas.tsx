@@ -14,7 +14,8 @@ function blankHoles(n: number): GolfHole[] {
 }
 
 export function GolfCanchas() {
-  const { isGolfComm } = useSession()
+  const { isGolfComm, golfPreview } = useSession()
+  const showTools = isGolfComm || golfPreview
   const courses = useGolfCourses()
   const [open, setOpen] = useState<string | null>(null)
   const [editing, setEditing] = useState<GolfCourse | 'new' | null>(null)
@@ -27,7 +28,7 @@ export function GolfCanchas() {
         title="Canchas"
         intro="Par e índice de dificultad de cada hoyo (sirve para repartir los golpes del hándicap). Las carga la comisión: cada cambio necesita 2 aprobaciones."
         actions={
-          isGolfComm ? (
+          showTools ? (
             <Button variant="gold" onClick={() => setEditing('new')}>
               Proponer cancha nueva
             </Button>
@@ -52,7 +53,7 @@ export function GolfCanchas() {
                   <Button size="sm" variant="line" onClick={() => setOpen(open === c.id ? null : c.id)}>
                     {open === c.id ? 'Ocultar hoyos' : 'Ver hoyos'}
                   </Button>
-                  {isGolfComm ? (
+                  {showTools ? (
                     <Button size="sm" variant="line" onClick={() => setEditing(c)}>
                       Proponer cambios
                     </Button>
@@ -74,14 +75,14 @@ export function GolfCanchas() {
           ))}
         </div>
       )}
-      {!isGolfComm ? <p className="tiny muted mt-4">¿Falta una cancha o hay un error? Pedíselo a la comisión de golf.</p> : null}
+      {!showTools ? <p className="tiny muted mt-4">¿Falta una cancha o hay un error? Pedíselo a la comisión de golf.</p> : null}
       {editing ? <CourseEditor course={editing === 'new' ? null : editing} onClose={() => setEditing(null)} /> : null}
     </div>
   )
 }
 
 function CourseEditor({ course, onClose }: { course: GolfCourse | null; onClose: () => void }) {
-  const { db, memberId } = useSession()
+  const { db, memberId, isGolfComm } = useSession()
   const toast = useToast()
   const [name, setName] = useState(course?.name ?? '')
   const [holes, setHoles] = useState<GolfHole[]>(course?.holes ?? blankHoles(18))
@@ -92,7 +93,7 @@ function CourseEditor({ course, onClose }: { course: GolfCourse | null; onClose:
   const valid = name.trim().length >= 2 && siOk
 
   async function propose(archived: boolean) {
-    if (!memberId) return
+    if (!memberId || !isGolfComm) return
     setBusy(true)
     try {
       const courseId = course?.id ?? db.newId()
@@ -148,11 +149,11 @@ function CourseEditor({ course, onClose }: { course: GolfCourse | null; onClose:
       <p className="small mt-3">Par total: {parTotal(holes)}</p>
       {!siOk ? <Notice tone="warn">Los índices tienen que ir del 1 al {n} sin repetirse.</Notice> : null}
       <div className="flex gap-2 flex-wrap mt-3">
-        <Button variant="gold" onClick={() => void propose(false)} disabled={!valid} loading={busy}>
+        <Button variant="gold" onClick={() => void propose(false)} disabled={!valid || !isGolfComm} loading={busy}>
           Proponer
         </Button>
         {course ? (
-          <Button variant="line" onClick={() => void propose(true)} loading={busy}>
+          <Button variant="line" onClick={() => void propose(true)} disabled={!isGolfComm} loading={busy}>
             Proponer archivarla
           </Button>
         ) : null}

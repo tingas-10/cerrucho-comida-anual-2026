@@ -17,7 +17,7 @@ export function useGolfCourses() {
 }
 export function useGolfConfig() {
   const d = useDoc<GolfConfig>(P.golfConfig)
-  return { ...d, points: d.data?.points ?? { ...GOLF.puntosIniciales, positions: [...GOLF.puntosIniciales.positions] } }
+  return { ...d, points: d.data?.points ?? { participation: GOLF.puntosIniciales.participation, positions: [...GOLF.puntosIniciales.positions], byField: { '2': [...GOLF.puntosIniciales.byField['2']], '3': [...GOLF.puntosIniciales.byField['3']] } } }
 }
 export function useGolfProposals() {
   return useCollection<GolfProposal>(P.golfProposals)

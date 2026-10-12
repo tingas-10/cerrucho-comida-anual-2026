@@ -217,7 +217,7 @@ export function meritTable(rounds: GolfRound[], cfg: GolfPointsConfig, year?: nu
       for (const p of s.players) {
         const row = (out[p] ??= { playerId: p, rounds: 0, wins: 0, podiums: 0, points: 0 })
         row.rounds++
-        row.points += cfg.participation + (cfg.positions[s.position - 1] ?? 0)
+        row.points += cfg.participation + (positionsFor(cfg, res.standings.length)[s.position - 1] ?? 0)
         if (s.position === 1) row.wins++
         if (s.position <= 3) row.podiums++
       }
@@ -330,8 +330,18 @@ export function parTotal(holes: GolfHole[]): number {
   return holes.reduce((a, h) => a + h.par, 0)
 }
 
-/** Texto corto del sistema de puntos: "1 por jugar · 10/6/4 al podio". */
+/** Puntos por puesto según cuántos juegan (jugadores o equipos). Si no hay una fila para esa cantidad, la general. */
+export function positionsFor(cfg: GolfPointsConfig, entrants: number): number[] {
+  return cfg.byField?.[String(entrants)] ?? cfg.positions
+}
+
+/** Texto corto del sistema de puntos: "1 por jugar · entre 2: 5/0 · entre 3: 7/3/0 · 4 o más: 10/6/4". */
 export function pointsText(cfg: GolfPointsConfig): string {
-  const pos = cfg.positions.filter((x) => x > 0)
-  return `${cfg.participation} por jugar${pos.length ? ` · ${pos.join('/')} a los primeros ${pos.length}` : ''}`
+  const fmt = (p: number[]) => (p.length ? p.join('/') : 'nada')
+  const rows = Object.entries(cfg.byField ?? {})
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([n, p]) => `entre ${n}: ${fmt(p)}`)
+  const sizes = Object.keys(cfg.byField ?? {}).map(Number)
+  const general = sizes.length ? `${Math.max(...sizes) + 1} o más: ${fmt(cfg.positions)}` : `por puesto: ${fmt(cfg.positions)}`
+  return [`${cfg.participation} por jugar`, ...rows, general].join(' · ')
 }

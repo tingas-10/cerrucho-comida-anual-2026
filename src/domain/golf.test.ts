@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GolfCard, GolfEntrant, GolfMode, GolfRound } from '../data/types'
-import { calcCard, golfPlayerStats, golfVersus, meritTable, playingHcp, regroup, roundResult, strokesOn, validateRound } from './golf'
+import { calcCard, golfPlayerStats, golfVersus, meritTable, playingHcp, pointsText, regroup, roundResult, strokesOn, validateRound } from './golf'
 
 const holes18 = Array.from({ length: 18 }, (_, i) => ({ par: 4, si: i + 1 }))
 const all = (v: number, n = 18) => Array.from({ length: n }, () => v)
@@ -123,6 +123,15 @@ describe('golf · Orden de Mérito, estadísticas y 1 vs 1', () => {
     expect(by.c.points).toBe(7)
     expect(by.a.rounds).toBe(2)
     expect(by.b.wins).toBe(1)
+  })
+  it('puntos según cuántos juegan: entre 2, 5/0; entre 3, 7/3/0; más el punto por jugar', () => {
+    const byField = { participation: 1, positions: [10, 6, 4], byField: { '2': [5, 0], '3': [7, 3, 0] } }
+    const by = Object.fromEntries(meritTable([r1, r2], byField).map((x) => [x.playerId, x.points]))
+    // r1 (3 jugadores): a 1º → 1+7; b y c empatan 2º → 1+3 cada uno. r2 (2 jugadores): b 1º → 1+5; a 2º → 1+0.
+    expect(by).toEqual({ a: 8 + 1, b: 4 + 6, c: 4 })
+    const four = round('stableford', solo('a', 'b', 'c', 'd'), { a: card(all(3)), b: card(all(4)), c: card(all(5)), d: card(all(6)) })
+    expect(Object.fromEntries(meritTable([four], byField).map((x) => [x.playerId, x.points]))).toEqual({ a: 11, b: 7, c: 5, d: 1 })
+    expect(pointsText(byField)).toBe('1 por jugar · entre 2: 5/0 · entre 3: 7/3/0 · 4 o más: 10/6/4')
   })
   it('estadísticas: mejor ronda, birdies, eagles y hoyo en uno', () => {
     const s = golfPlayerStats([r1, r2], 'b')

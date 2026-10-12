@@ -1,5 +1,5 @@
 // Golf · Comisión: quiénes son, propuestas pendientes (se aplican con 2 aprobaciones) e historial.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GOLF } from '../../content/golf'
 import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
@@ -8,7 +8,7 @@ import { useMembers } from '../../data/hooks'
 import type { GolfProposal } from '../../data/types'
 import { fmtDayShort } from '../../domain/format'
 import { pointsText } from '../../domain/golf'
-import { Button, Card, Empty, Field, Input, Loading, MemberAvatar, PageHeader, Pill, Section } from '../../ui/components'
+import { Button, Card, Empty, Field, Input, Loading, MemberAvatar, Notice, PageHeader, Pill, Section } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { GolfTabs, useGolfConfig, useGolfProposals } from './golfShared'
 
@@ -20,14 +20,27 @@ const STATUS: Record<GolfProposal['status'], { label: string; tone: 'ok' | 'warn
 }
 
 export function GolfComision() {
-  const { db, memberId, isGolfComm, golfCommission } = useSession()
+  const { db, memberId, isGolfComm, golfPreview, golfCommission } = useSession()
+  const showTools = isGolfComm || golfPreview
   const members = useMembers()
   const toast = useToast()
   const { rows, loading } = useGolfProposals()
   const cfg = useGolfConfig()
   const [busy, setBusy] = useState<string | null>(null)
   const [participation, setParticipation] = useState('')
-  const [positions, setPositions] = useState('')
+  const [pos2, setPos2] = useState('')
+  const [pos3, setPos3] = useState('')
+  const [posMore, setPosMore] = useState('')
+  const loaded = !cfg.loading
+  const pointsKey = JSON.stringify(cfg.points)
+  useEffect(() => {
+    if (!loaded) return
+    setParticipation(String(cfg.points.participation))
+    setPos2((cfg.points.byField?.['2'] ?? cfg.points.positions).join(', '))
+    setPos3((cfg.points.byField?.['3'] ?? cfg.points.positions).join(', '))
+    setPosMore(cfg.points.positions.join(', '))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, pointsKey])
 
   if (loading || cfg.loading) return <Loading />
   const open = rows.filter((p) => p.status === 'OPEN').sort((a, b) => b.createdAt - a.createdAt)
@@ -47,21 +60,22 @@ export function GolfComision() {
     }
   }
 
-  const pos = positions
-    .split(/[,;\s/]+/)
-    .filter(Boolean)
-    .map((x) => Math.floor(Number(x)))
+  const parse = (v: string) =>
+    v
+      .split(/[,;\s/]+/)
+      .filter(Boolean)
+      .map((x) => Math.floor(Number(x)))
+  const okList = (l: number[]) => l.length <= 10 && l.every((x) => Number.isFinite(x) && x >= 0 && x <= 100)
   const part = Math.floor(Number(participation))
-  const pointsValid = participation.trim() !== '' && Number.isFinite(part) && part >= 0 && part <= 100 && pos.length <= 10 && pos.every((x) => Number.isFinite(x) && x >= 0 && x <= 100)
+  const draft = { participation: part, positions: parse(posMore), byField: { '2': parse(pos2), '3': parse(pos3) } }
+  const pointsValid = participation.trim() !== '' && Number.isFinite(part) && part >= 0 && part <= 100 && okList(draft.positions) && okList(draft.byField['2']) && okList(draft.byField['3'])
+  const changed = pointsText(draft) !== pointsText(cfg.points)
 
   async function proposePoints() {
-    if (!memberId || !pointsValid) return
+    if (!memberId || !pointsValid || !isGolfComm) return
     setBusy('points')
     try {
-      const points = { participation: part, positions: pos }
-      await proposeGolf(db, memberId, `Sistema de puntos: ${pointsText(points)}`, { type: 'points', points })
-      setParticipation('')
-      setPositions('')
+      await proposeGolf(db, memberId, `Sistema de puntos: ${pointsText(draft)}`, { type: 'points', points: draft })
       toast.ok('Propuesta enviada. Se aplica cuando otro de la comisión la apruebe.')
     } catch (e) {
       toast.error(errorText(e))
@@ -78,6 +92,11 @@ export function GolfComision() {
         intro={`Define el sistema de puntos, carga las canchas, corrige tarjetas pasado el plazo y ajusta hándicaps. Cada decisión necesita ${GOLF.aprobacionesNecesarias} aprobaciones (quien propone ya cuenta como una).`}
       />
       <GolfTabs />
+      {golfPreview ? (
+        <Notice>
+          <b>Vista de administrador.</b> Así ven esto los comisionados. Vos no sos de la comisión: los botones están desactivados y nadie ve que entraste.
+        </Notice>
+      ) : null}
 
       <p className="italic small muted mb-4 leading-relaxed">
         La comisión de golf cuida que el juego y el ranking sean parejos para todos. Define cómo se suman los puntos, carga las canchas con el par y la dificultad de cada hoyo, corrige o anula partidos cuando ya pasaron las 48 horas para corregirlos y ajusta hándicaps si hace falta. Nadie decide solo: cada cambio se aplica recién cuando lo aprueban al menos 2 comisionados.
@@ -118,15 +137,15 @@ export function GolfComision() {
                   Propuso {members.aliasOf(p.proposedBy)} el {fmtDayShort(p.createdAt)} · aprobaron: {names(p.approvals) || 'nadie'}
                   {Object.keys(p.rejections).length ? ` · rechazaron: ${names(p.rejections)}` : ''}
                 </p>
-                {isGolfComm ? (
+                {showTools ? (
                   <div className="flex gap-2 flex-wrap mt-3">
                     {!approved ? (
-                      <Button size="sm" variant="gold" onClick={() => void vote(p, 'approve')} loading={busy === p.id + 'approve'}>
+                      <Button size="sm" variant="gold" disabled={!isGolfComm} onClick={() => void vote(p, 'approve')} loading={busy === p.id + 'approve'}>
                         Aprobar
                       </Button>
                     ) : null}
                     {!mine && !rejected ? (
-                      <Button size="sm" variant="line" onClick={() => void vote(p, 'reject')} loading={busy === p.id + 'reject'}>
+                      <Button size="sm" variant="line" disabled={!isGolfComm} onClick={() => void vote(p, 'reject')} loading={busy === p.id + 'reject'}>
                         Rechazar
                       </Button>
                     ) : null}
@@ -143,19 +162,26 @@ export function GolfComision() {
         </div>
       </Section>
 
-      {isGolfComm ? (
+      {showTools ? (
         <Section title="Proponer otro sistema de puntos">
           <Card>
+            <p className="tiny muted mb-3">Puntos por puesto según cuántos juegan (jugadores o, en parejas y scramble, equipos). Separados por coma: 1º, 2º, 3º… El que no tiene número suma 0.</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Puntos por jugar un partido" id="gp-part">
-                <Input id="gp-part" inputMode="numeric" value={participation} onChange={(e) => setParticipation(e.target.value)} placeholder={String(cfg.points.participation)} />
+                <Input id="gp-part" inputMode="numeric" value={participation} onChange={(e) => setParticipation(e.target.value)} />
               </Field>
-              <Field label="Puntos extra por puesto (1º, 2º, 3º…)" id="gp-pos" hint="Separados por coma. Ej: 10, 6, 4">
-                <Input id="gp-pos" value={positions} onChange={(e) => setPositions(e.target.value)} placeholder={cfg.points.positions.join(', ')} />
+              <Field label="Si juegan 2" id="gp-2" hint="Ej: 5, 0">
+                <Input id="gp-2" value={pos2} onChange={(e) => setPos2(e.target.value)} />
+              </Field>
+              <Field label="Si juegan 3" id="gp-3" hint="Ej: 7, 3, 0">
+                <Input id="gp-3" value={pos3} onChange={(e) => setPos3(e.target.value)} />
+              </Field>
+              <Field label="Si juegan 4 o más" id="gp-more" hint="Ej: 10, 6, 4">
+                <Input id="gp-more" value={posMore} onChange={(e) => setPosMore(e.target.value)} />
               </Field>
             </div>
-            {pointsValid ? <p className="small mb-2">Quedaría: {pointsText({ participation: part, positions: pos })}</p> : null}
-            <Button variant="gold" onClick={() => void proposePoints()} disabled={!pointsValid} loading={busy === 'points'}>
+            {pointsValid && changed ? <p className="small mb-2">Quedaría: {pointsText(draft)}</p> : null}
+            <Button variant="gold" onClick={() => void proposePoints()} disabled={!pointsValid || !changed || !isGolfComm} loading={busy === 'points'}>
               Proponer
             </Button>
           </Card>

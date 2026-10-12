@@ -13,7 +13,7 @@ import { YearSelect, useFmoPlayers } from '../fmo/fmoShared'
 import { GolfTabs, entrantName, formatHcp, modeLabel, useGolfHcps, useGolfRounds } from './golfShared'
 
 export function GolfJugadores() {
-  const { db, memberId, isMember, isGolfComm } = useSession()
+  const { db, memberId, isMember, isGolfComm, golfPreview } = useSession()
   const toast = useToast()
   const { rows, loading } = useGolfRounds()
   const hcps = useGolfHcps()
@@ -43,7 +43,7 @@ export function GolfJugadores() {
   if (loading || hcps.loading || players.loading) return <Loading />
   const isGuest = players.byId[who]?.guest ?? false
   const canSetDirect = isMember && (who === memberId || isGuest)
-  const canPropose = isGolfComm && !canSetDirect
+  const canPropose = (isGolfComm || golfPreview) && !canSetDirect
   const parsed = Number(value.replace(',', '.'))
   const valid = value.trim() !== '' && Number.isFinite(parsed) && parsed >= -10 && parsed <= 54
 
@@ -94,13 +94,13 @@ export function GolfJugadores() {
                 <span className="tiny muted block">{canSetDirect ? (who === memberId ? 'Tu hándicap' : 'Hándicap del invitado') : 'Proponer otro'}</span>
                 <input className="input !w-24 text-center" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="ej. 18" aria-label="Hándicap" />
               </label>
-              <Button variant="gold" onClick={() => void saveHcp()} disabled={!valid} loading={busy}>
+              <Button variant="gold" onClick={() => void saveHcp()} disabled={!valid || (!canSetDirect && !isGolfComm)} loading={busy}>
                 {canSetDirect ? 'Guardar' : 'Proponer'}
               </Button>
             </div>
           ) : null}
         </div>
-        {canPropose ? <p className="tiny muted mt-2">El de otro miembro lo cambia la comisión: se aplica cuando otro comisionado lo aprueba.</p> : null}
+        {canPropose ? <p className="tiny muted mt-2">{golfPreview ? 'Vista de administrador: así lo ven los comisionados (el botón está desactivado).' : 'El de otro miembro lo cambia la comisión: se aplica cuando otro comisionado lo aprueba.'}</p> : null}
         {!isMember ? null : !canSetDirect && !canPropose ? <p className="tiny muted mt-2">Cada uno carga el suyo. Si está mal, la comisión lo puede corregir.</p> : null}
         {doc?.history?.length ? (
           <p className="tiny muted mt-2">
