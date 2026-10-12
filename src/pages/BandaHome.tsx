@@ -158,7 +158,7 @@ export function BandaHome() {
             {lastGolf ? (
               <p>
                 <span className="muted">
-                  Última ronda · {fmtDayLong(lastGolf.playedAt)} · {lastGolf.course.name}
+                  Último partido · {fmtDayLong(lastGolf.playedAt)} · {lastGolf.course.name}
                 </span>
                 <br />
                 {lastGolfWinner ? (
@@ -168,12 +168,12 @@ export function BandaHome() {
                 ) : null}
               </p>
             ) : (
-              <p className="muted">Todavía no hay rondas cargadas.</p>
+              <p className="muted">Todavía no hay partidos cargados.</p>
             )}
             {nextGolf ? (
               <p className="mt-2">
                 <span className="muted">
-                  Próxima · {fmtDayLong(nextGolf.playedAt)} · {fmtTime(nextGolf.playedAt)} h
+                  Próximo · {fmtDayLong(nextGolf.playedAt)} · {fmtTime(nextGolf.playedAt)} h
                 </span>
                 <br />
                 <b>{nextGolf.course.name}</b>
@@ -181,7 +181,7 @@ export function BandaHome() {
             ) : null}
             {golfLeader ? (
               <p className="mt-2 flex items-center gap-2">
-                <span className="muted">Orden de Mérito {yearOf(now)}:</span>
+                <span className="muted">Ranking {yearOf(now)}:</span>
                 <b>{players.nameOf(golfLeader.playerId)}</b>
                 <span className="muted">({golfLeader.points} pts)</span>
               </p>

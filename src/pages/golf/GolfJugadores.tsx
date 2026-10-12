@@ -68,7 +68,7 @@ export function GolfJugadores() {
 
   return (
     <div>
-      <PageHeader eyebrow="Golf" title="Jugadores" intro="Hándicap, mejores rondas, logros e historial de cada uno." />
+      <PageHeader eyebrow="Golf" title="Jugadores" intro="Hándicap, mejores tarjetas, logros e historial de cada uno." />
       <GolfTabs />
       <div className="flex gap-2 flex-wrap mb-4">
         <select className="input w-auto" aria-label="Jugador" value={who} onChange={(e) => setWho(e.target.value)}>
@@ -110,7 +110,7 @@ export function GolfJugadores() {
       </Card>
 
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-        <Stat label="Rondas" value={st.rounds} />
+        <Stat label="Partidos" value={st.rounds} />
         <Stat label="Primeros" value={st.wins} />
         <Stat label="Podios" value={st.podiums} />
         <Stat label="Mejor 18" value={st.best18 ?? '—'} />
@@ -122,15 +122,15 @@ export function GolfJugadores() {
         <Stat label="Mejor 9" value={st.best9 ?? '—'} />
       </div>
 
-      <Section title="Sus rondas">
+      <Section title="Sus partidos">
         <Card>
-          {history.length === 0 ? <p className="small muted">Todavía no jugó ninguna ronda guardada{y ? ` en ${y}` : ''}.</p> : null}
+          {history.length === 0 ? <p className="small muted">Todavía no jugó ningún partido guardado{y ? ` en ${y}` : ''}.</p> : null}
           {history.map((r) => {
             const res = roundResult(r)
             const e = r.entrants.find((x) => x.players.includes(who))!
             const s = res.standings.find((x) => x.entrantId === e.id)
             return (
-              <Link key={r.id} to={`/golf/ronda/${r.id}`} className="row">
+              <Link key={r.id} to={`/golf/partido/${r.id}`} className="row">
                 <span className="small min-w-0">
                   <span className="tiny muted block">
                     {fmtDayShort(r.playedAt)} · {r.course.name} · {modeLabel(r)}

@@ -33,7 +33,7 @@ export function GolfVersus() {
   // [etiqueta, valor A, valor B, comparable A, comparable B] (más alto = mejor; los golpes van en negativo)
   const lines: Array<[string, string | number, string | number, number, number]> = [
     ['Hándicap', formatHcp(hcps.hcpOf(a)), formatHcp(hcps.hcpOf(b)), -(hcps.hcpOf(a) ?? 99), -(hcps.hcpOf(b) ?? 99)],
-    ['Rondas', sa.rounds, sb.rounds, sa.rounds, sb.rounds],
+    ['Partidos', sa.rounds, sb.rounds, sa.rounds, sb.rounds],
     ['Primeros', sa.wins, sb.wins, sa.wins, sb.wins],
     ['Podios', sa.podiums, sb.podiums, sa.podiums, sb.podiums],
     ['Mejor 18', sa.best18 ?? '—', sb.best18 ?? '—', -(sa.best18 ?? 999), -(sb.best18 ?? 999)],
@@ -84,7 +84,7 @@ export function GolfVersus() {
           <Card>
             <p className="h3 mb-2">Uno contra otro</p>
             {v.together - v.partners === 0 ? (
-              <p className="small muted">Nunca jugaron una misma ronda en contra.</p>
+              <p className="small muted">Nunca jugaron un mismo partido en contra.</p>
             ) : (
               <>
                 <div className="row">
@@ -118,7 +118,7 @@ export function GolfVersus() {
             ) : (
               <>
                 <div className="row">
-                  <span>Rondas juntos</span>
+                  <span>Partidos juntos</span>
                   <b>{v.partners}</b>
                 </div>
                 <div className="row">

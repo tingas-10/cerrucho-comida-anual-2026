@@ -1,5 +1,5 @@
 // Reglas puras de golf: hándicap por hoyo, cálculo de tarjetas, posiciones por modalidad,
-// Orden de Mérito, estadísticas de cada jugador y 1 vs 1.
+// Ranking, estadísticas de cada jugador y 1 vs 1.
 import { GOLF_MODOS } from '../content/golf'
 import type { GolfCard, GolfEntrant, GolfHole, GolfMode, GolfPointsConfig, GolfRound } from '../data/types'
 import { yearOf } from './fmo'
@@ -207,7 +207,7 @@ export interface MeritRow {
   points: number
 }
 
-/** Orden de Mérito: puntos por jugar y por puesto en cada ronda jugada (los empatados comparten puesto). */
+/** Ranking: puntos por jugar y por puesto en cada ronda jugada (los empatados comparten puesto). */
 export function meritTable(rounds: GolfRound[], cfg: GolfPointsConfig, year?: number): MeritRow[] {
   const out: Record<string, MeritRow> = {}
   for (const r of counted(rounds, year)) {

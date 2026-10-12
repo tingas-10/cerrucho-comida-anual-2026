@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useSession } from './data/DataContext'
 import { Admin } from './pages/admin/Admin'
 import { Agenda } from './pages/Agenda'
@@ -17,9 +17,9 @@ import { FmoVersus } from './pages/fmo/FmoVersus'
 import { GolfCanchas } from './pages/golf/GolfCanchas'
 import { GolfComision } from './pages/golf/GolfComision'
 import { GolfJugadores } from './pages/golf/GolfJugadores'
-import { GolfMerito } from './pages/golf/GolfMerito'
-import { GolfRonda } from './pages/golf/GolfRonda'
-import { GolfRondas } from './pages/golf/GolfRondas'
+import { GolfRanking } from './pages/golf/GolfRanking'
+import { GolfPartido } from './pages/golf/GolfPartido'
+import { GolfPartidos } from './pages/golf/GolfPartidos'
 import { GolfVersus } from './pages/golf/GolfVersus'
 import { PadelJugadores } from './pages/padel/PadelJugadores'
 import { PadelPartido } from './pages/padel/PadelPartido'
@@ -35,6 +35,12 @@ import { Premios } from './pages/Premios'
 import { Tareas } from './pages/Tareas'
 import { Loading } from './ui/components'
 import { Shell } from './ui/Shell'
+
+/** Los links viejos de golf (/golf/ronda/…) llevan al partido. */
+function OldGolfLink() {
+  const { id } = useParams()
+  return <Navigate to={`/golf/partido/${id}`} replace />
+}
 
 export default function App() {
   const { status, isMember, member } = useSession()
@@ -78,9 +84,11 @@ export default function App() {
           <Route path="/padel/parejas" element={<PadelRanking pairs />} />
           <Route path="/padel/jugadores" element={<PadelJugadores />} />
           <Route path="/padel/versus" element={<PadelVersus />} />
-          <Route path="/golf" element={<GolfRondas />} />
-          <Route path="/golf/ronda/:id" element={<GolfRonda />} />
-          <Route path="/golf/merito" element={<GolfMerito />} />
+          <Route path="/golf" element={<GolfPartidos />} />
+          <Route path="/golf/partido/:id" element={<GolfPartido />} />
+          <Route path="/golf/ronda/:id" element={<OldGolfLink />} />
+          <Route path="/golf/ranking" element={<GolfRanking />} />
+          <Route path="/golf/merito" element={<Navigate to="/golf/ranking" replace />} />
           <Route path="/golf/jugadores" element={<GolfJugadores />} />
           <Route path="/golf/versus" element={<GolfVersus />} />
           <Route path="/golf/canchas" element={<GolfCanchas />} />

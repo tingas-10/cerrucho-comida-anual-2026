@@ -30,8 +30,8 @@ export function useGolfHcps() {
 }
 
 const TABS = [
-  { to: '/golf', label: 'Rondas', end: true },
-  { to: '/golf/merito', label: 'Orden de Mérito' },
+  { to: '/golf', label: 'Partidos', end: true },
+  { to: '/golf/ranking', label: 'Ranking' },
   { to: '/golf/jugadores', label: 'Jugadores' },
   { to: '/golf/versus', label: '1 vs 1' },
   { to: '/golf/canchas', label: 'Canchas' },

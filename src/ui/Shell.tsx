@@ -85,8 +85,8 @@ function useNav() {
     { to: '/padel/versus', label: '1 vs 1', icon: <Swords size={18} /> },
   ]
   const golf: NavItem[] = [
-    { to: '/golf', label: 'Rondas', icon: <Flag size={18} />, end: true },
-    { to: '/golf/merito', label: 'Orden de Mérito', icon: <Trophy size={18} /> },
+    { to: '/golf', label: 'Partidos', icon: <Flag size={18} />, end: true },
+    { to: '/golf/ranking', label: 'Ranking', icon: <Trophy size={18} /> },
     { to: '/golf/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },
     { to: '/golf/versus', label: '1 vs 1', icon: <Swords size={18} /> },
     { to: '/golf/canchas', label: 'Canchas', icon: <LayoutList size={18} /> },

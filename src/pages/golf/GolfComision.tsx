@@ -79,6 +79,10 @@ export function GolfComision() {
       />
       <GolfTabs />
 
+      <p className="italic small muted mb-4 leading-relaxed">
+        La comisión de golf cuida que el juego y el ranking sean parejos para todos. Define cómo se suman los puntos, carga las canchas con el par y la dificultad de cada hoyo, corrige o anula partidos cuando ya pasaron las 48 horas para corregirlos y ajusta hándicaps si hace falta. Nadie decide solo: cada cambio se aplica recién cuando lo aprueban al menos 2 comisionados.
+      </p>
+
       <Card className="mb-4">
         <p className="h3 mb-2">Comisionados</p>
         {golfCommission.length === 0 ? <p className="small muted">Todavía no hay comisión. La arma Agus en Administración → Miembros.</p> : null}
@@ -143,7 +147,7 @@ export function GolfComision() {
         <Section title="Proponer otro sistema de puntos">
           <Card>
             <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Puntos por jugar una ronda" id="gp-part">
+              <Field label="Puntos por jugar un partido" id="gp-part">
                 <Input id="gp-part" inputMode="numeric" value={participation} onChange={(e) => setParticipation(e.target.value)} placeholder={String(cfg.points.participation)} />
               </Field>
               <Field label="Puntos extra por puesto (1º, 2º, 3º…)" id="gp-pos" hint="Separados por coma. Ej: 10, 6, 4">

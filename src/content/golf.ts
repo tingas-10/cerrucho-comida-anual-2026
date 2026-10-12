@@ -1,6 +1,6 @@
 // ============================================================
 // CONTENIDO EDITABLE · Golf de la banda
-// Modalidades, comisión inicial, puntos iniciales del Orden de Mérito y plazo para corregir.
+// Modalidades, comisión inicial, puntos iniciales del ranking y plazo para corregir.
 // El sistema de puntos vigente lo cambia la comisión (2 aprobaciones) y vive en Firestore (config/golf).
 // ============================================================
 
@@ -21,7 +21,7 @@ export const GOLF = {
   // Comisión de golf inicial (se cambia desde Administración → Miembros): Pato, Morron, Yayo y Orrito.
   comisionInicial: ['m-pato', 'm-saimon', 'm-agus', 'm-tomi'],
   aprobacionesNecesarias: 2,
-  // Puntos iniciales del Orden de Mérito: 1 por jugar y 10, 6 y 4 al podio. Los cambia la comisión.
+  // Puntos iniciales del ranking: 1 por jugar y 10, 6 y 4 al podio. Los cambia la comisión.
   puntosIniciales: { participation: 1, positions: [10, 6, 4] },
   // Después de guardar una ronda jugada, los jugadores la pueden corregir durante este plazo; después, la comisión.
   horasParaCorregir: 48,

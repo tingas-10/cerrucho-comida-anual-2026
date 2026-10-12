@@ -36,7 +36,7 @@ export function GolfCanchas() {
       />
       <GolfTabs />
       {courses.active.length === 0 ? (
-        <Empty title="Todavía no hay canchas" text="Mientras tanto, al armar una ronda se puede cargar el par a mano." />
+        <Empty title="Todavía no hay canchas" text="Mientras tanto, al armar un partido se puede cargar el par a mano." />
       ) : (
         <div className="grid gap-3">
           {courses.active.map((c) => (
