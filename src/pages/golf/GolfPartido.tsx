@@ -11,7 +11,7 @@ import { useDoc, useNow } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { FmoGuest, GolfCard, GolfMode, GolfRound } from '../../data/types'
 import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
-import { allPlayers, allowsTotal, calcCard, cardIds, emptyCard, isTeamMode, parTotal, regroup, roundResult, usesTotal, validateRound } from '../../domain/golf'
+import { allPlayers, allowsTotal, calcCard, cardIds, emptyCard, isTeamMode, parTotal, regroup, roundResult, sixesTotals, usesTotal, validateRound } from '../../domain/golf'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
@@ -396,7 +396,7 @@ export function GolfPartido() {
                     </span>
                   ))}
                 </div>
-                {m.mode === 'match' && m.entrants.length >= 2 ? null : <PlayerSelect available={available} onPick={(pid) => addPlayer(pid)} />}
+                {(m.mode === 'match' && m.entrants.length >= 2) || (m.mode === 'sixes' && m.entrants.length >= 3) ? null : <PlayerSelect available={available} onPick={(pid) => addPlayer(pid)} />}
               </>
             ) : (
               <div className="grid gap-3">
@@ -698,6 +698,20 @@ function Scorecard({ round, players, editable, onCard }: { round: GolfRound; pla
                     {calcs[cid].net ?? '—'}
                   </td>
                 ))}
+              </tr>
+            ) : null}
+            {round.mode === 'sixes' && round.entrants.length === 3 ? (
+              <tr>
+                <td className="sticky left-0 bg-card py-1 pr-2 tiny font-bold text-accent">Puntos</td>
+                {ids.map((cid) => {
+                  const t = sixesTotals(round)
+                  const k = round.entrants.findIndex((e) => e.id === cid)
+                  return (
+                    <td key={cid} className="px-1 py-1 text-center font-bold text-accent tabular-nums">
+                      {t.thru ? String(t.netted[k]).replace('.', ',') : '—'}
+                    </td>
+                  )
+                })}
               </tr>
             ) : null}
             {round.mode === 'stableford' ? (

@@ -17,7 +17,7 @@ export function GolfRanking() {
   const [year, setYear] = useState<number | 'all'>(current)
   const years = useMemo(() => golfYears(rows, current), [rows, current])
   const [params, setParams] = useSearchParams()
-  const mode = (['match', 'fourball', 'scramble'].includes(params.get('m') ?? '') ? params.get('m') : 'all') as GolfMode | 'all'
+  const mode = (['match', 'fourball', 'scramble', 'sixes'].includes(params.get('m') ?? '') ? params.get('m') : 'all') as GolfMode | 'all'
   const table = useMemo(() => meritTable(rows, cfg.points, year === 'all' ? undefined : year, mode === 'all' ? undefined : mode), [rows, cfg.points, year, mode])
 
   if (loading || cfg.loading || players.loading) return <Loading />
@@ -44,6 +44,7 @@ export function GolfRanking() {
             { value: 'match', label: '1 vs 1' },
             { value: 'fourball', label: 'Four ball' },
             { value: 'scramble', label: 'Laguneada' },
+            { value: 'sixes', label: 'De a tres' },
           ]}
         />
       </div>

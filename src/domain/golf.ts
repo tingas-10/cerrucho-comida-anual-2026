@@ -104,6 +104,45 @@ function rank<T>(items: T[], score: (x: T) => number, better: 'low' | 'high'): A
   return sorted.map((x) => ({ ...x, position: 1 + sorted.filter((y) => (better === 'low' ? score(y) < score(x) : score(y) > score(x))).length }))
 }
 
+/** Puntos de un hoyo del partidito de a tres: 4/2/0 por puesto; los empatados se reparten lo de sus puestos
+ *  (3 y 3 si empatan los dos primeros, 1 y 1 si empatan los dos segundos, 2 cada uno si empatan los tres). */
+export function sixesHolePoints(scores: number[]): number[] {
+  const values = [4, 2, 0]
+  const order = scores.map((s, i) => ({ s, i })).sort((a, b) => a.s - b.s)
+  const out = new Array(scores.length).fill(0)
+  let k = 0
+  while (k < order.length) {
+    let j = k
+    while (j + 1 < order.length && order[j + 1].s === order[k].s) j++
+    const share = values.slice(k, j + 1).reduce((a, b) => a + b, 0) / (j - k + 1)
+    for (let x = k; x <= j; x++) out[order[x].i] = share
+    k = j + 1
+  }
+  return out
+}
+
+/** Partidito de a tres: puntos acumulados hoyo por hoyo y neteados (el que va último queda en 0). */
+export function sixesTotals(r: GolfRound): { netted: number[]; raw: number[]; thru: number } {
+  const n = r.course.holes.length
+  const si = siOf(r.course.holes)
+  const ids = r.entrants.map((e) => e.players[0])
+  const raw = ids.map(() => 0)
+  let thru = 0
+  for (let i = 0; i < n; i++) {
+    const scores = ids.map((id) => {
+      const card = r.cards[id]
+      const s = card?.strokes[i]
+      if (s === null || s === undefined) return null
+      return r.useHcp ? s - strokesOn(playingHcp(card.hcp, n), si[i], n) : s
+    })
+    if (scores.some((x) => x === null)) continue
+    thru++
+    sixesHolePoints(scores as number[]).forEach((p, k) => (raw[k] += p))
+  }
+  const min = Math.min(...raw)
+  return { raw, netted: raw.map((x) => x - min), thru }
+}
+
 /** Resultado de una ronda según su modalidad. */
 export function roundResult(r: GolfRound): RoundResult {
   const n = r.course.holes.length
@@ -139,6 +178,13 @@ export function roundResult(r: GolfRound): RoundResult {
       return { entrantId: e.id, players: e.players, score: total, label: `${total}${r.useHcp ? ' neto' : ''}` }
     })
     return { complete: true, standings: rank(rows, (x) => x.score, 'low').map(({ entrantId, players, position, label }) => ({ entrantId, players, position, label })) }
+  }
+
+  if (r.mode === 'sixes') {
+    const t = sixesTotals(r)
+    const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ','))
+    const rows = r.entrants.map((e, k) => ({ entrantId: e.id, players: e.players, score: t.netted[k], label: `${fmt(t.netted[k])} pts` }))
+    return { complete: true, standings: rank(rows, (x) => x.score, 'high').map(({ entrantId, players, position, label }) => ({ entrantId, players, position, label })) }
   }
 
   // Match play: el de más hándicap recibe la diferencia, repartida por dificultad.
@@ -178,6 +224,7 @@ export function validateRound(r: GolfRound): string | null {
     if (r.entrants.length !== 1) return 'La vuelta individual es de un solo jugador.'
   } else if (r.entrants.length < 2) return isTeamMode(r.mode) ? 'Tiene que haber al menos 2 equipos.' : 'Tiene que haber al menos 2 jugadores.'
   if (r.mode === 'match' && r.entrants.length !== 2) return 'El 1 vs 1 es entre 2 jugadores.'
+  if (r.mode === 'sixes' && r.entrants.length !== 3) return 'El partidito de a tres es entre 3 jugadores.'
   if (r.mode === 'fourball' && r.entrants.some((e) => e.players.length !== 2)) return 'En four ball cada pareja tiene 2 jugadores.'
   if (r.mode === 'scramble' && r.entrants.some((e) => e.players.length < 2)) return 'En la laguneada cada equipo tiene al menos 2 jugadores.'
   if (!isTeamMode(r.mode) && r.entrants.some((e) => e.players.length !== 1)) return 'Revisá los jugadores.'
@@ -376,6 +423,13 @@ export function liveBoard(r: GolfRound): LiveRow[] {
     return r.useHcp ? s - strokesOn(playingHcp(card.hcp, n), si[i], n) : s
   }
   const fmt = (v: number) => (v === 0 ? 'par' : v > 0 ? `+${v}` : String(v))
+  if (r.mode === 'sixes' && r.entrants.length === 3) {
+    const t = sixesTotals(r)
+    const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ','))
+    return r.entrants
+      .map((e, k) => ({ entrantId: e.id, players: e.players, thru: t.thru, toPar: -t.netted[k], label: t.thru ? `${fmt(t.netted[k])} pts (hoyo ${t.thru})` : 'sin empezar' }))
+      .sort((x, y) => (x.toPar ?? 0) - (y.toPar ?? 0))
+  }
   if (r.mode === 'match' && r.entrants.length === 2) {
     const [a, b] = r.entrants.map((e) => e.players[0])
     const ca = r.cards[a]

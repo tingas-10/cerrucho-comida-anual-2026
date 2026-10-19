@@ -508,7 +508,7 @@ export interface PadelMatch {
 }
 
 // ---------- Golf ----------
-export type GolfMode = 'match' | 'fourball' | 'scramble' | 'solo' | 'medal' | 'stableford'
+export type GolfMode = 'match' | 'fourball' | 'scramble' | 'sixes' | 'solo' | 'medal' | 'stableford'
 
 export interface GolfHole {
   par: number

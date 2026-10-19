@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GolfCard, GolfEntrant, GolfMode, GolfRound } from '../data/types'
-import { calcCard, courseHistory, defaultLines, golfPlayerStats, golfVersus, liveBoard, meritTable, playingHcp, pointsText, regroup, roundResult, strokesOn, validateRound } from './golf'
+import { calcCard, courseHistory, sixesHolePoints, sixesTotals, defaultLines, golfPlayerStats, golfVersus, liveBoard, meritTable, playingHcp, pointsText, regroup, roundResult, strokesOn, validateRound } from './golf'
 
 const holes18 = Array.from({ length: 18 }, (_, i) => ({ par: 4, si: i + 1 }))
 const all = (v: number, n = 18) => Array.from({ length: n }, () => v)
@@ -192,6 +192,42 @@ describe('golf · vueltas individuales, rankings por modalidad, en vivo y cancha
     const a = h.find((x) => x.playerId === 'a')!
     expect(a.rounds).toBe(3)
     expect(a.best).toBe(72)
+  })
+})
+
+describe('golf · partidito de a tres (4, 2, 0)', () => {
+  it('reparte 4, 2 y 0 por hoyo, con los empates que pidió la banda', () => {
+    expect(sixesHolePoints([4, 5, 6])).toEqual([4, 2, 0])
+    expect(sixesHolePoints([4, 4, 6])).toEqual([3, 3, 0])
+    expect(sixesHolePoints([4, 5, 5])).toEqual([4, 1, 1])
+    expect(sixesHolePoints([6, 5, 4])).toEqual([0, 2, 4])
+    expect(sixesHolePoints([5, 5, 5])).toEqual([2, 2, 2])
+  })
+  it('se netea para que el último quede en 0 y gana el que más suma', () => {
+    // Hoyo 1: a gana, b 2º, c 3º → 4/2/0. Hoyo 2: c gana, a y b empatan 2º → 1/1/4. Hoyo 3: a y c empatan 1º → 3/0/3.
+    const strokes = { a: [4, 5, 4], b: [5, 5, 6], c: [6, 4, 4] }
+    const nine = Array.from({ length: 9 }, (_, i) => ({ par: 4, si: i + 1 }))
+    const pad = (x: number[]) => [...x, ...all(4, 6)]
+    const r = round('sixes', solo('a', 'b', 'c'), { a: card(pad(strokes.a)), b: card(pad(strokes.b)), c: card(pad(strokes.c)) }, { course: { name: 'Nueve', holes: nine }, useHcp: false })
+    // Los 6 hoyos restantes empatan los tres (2/2/2 cada uno): a 8+12=20, b 3+12=15, c 7+12=19 → neteado 5, 0, 4.
+    const t = sixesTotals(r)
+    expect(t.raw).toEqual([20, 15, 19])
+    expect(t.netted).toEqual([5, 0, 4])
+    const res = roundResult(r)
+    expect(res.standings.map((x) => x.entrantId)).toEqual(['a', 'c', 'b'])
+    expect(res.standings[0].label).toBe('5 pts')
+    expect(validateRound(r)).toBeNull()
+  })
+  it('es de exactamente 3 jugadores', () => {
+    expect(validateRound(round('sixes', solo('a', 'b'), { a: card(all(4)), b: card(all(4)) }))).toMatch(/3 jugadores/)
+  })
+  it('en vivo muestra los puntos hasta el último hoyo completo', () => {
+    const r = round('sixes', solo('a', 'b', 'c'), {
+      a: card([4, 5, ...all(null as unknown as number, 16)]),
+      b: card([5, 5, ...all(null as unknown as number, 16)]),
+      c: card([6, null, ...all(null as unknown as number, 16)]),
+    }, { useHcp: false })
+    expect(liveBoard(r)[0]).toMatchObject({ entrantId: 'a', label: '4 pts (hoyo 1)' })
   })
 })
 

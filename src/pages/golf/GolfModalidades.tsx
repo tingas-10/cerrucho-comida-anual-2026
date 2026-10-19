@@ -1,4 +1,4 @@
-// Golf · Modalidades (pedido de Pato): 1 vs 1, Four ball y Laguneada por equipos.
+// Golf · Modalidades (pedido de Pato): 1 vs 1, Four ball, Laguneada por equipos y Partidito de a tres (4, 2, 0).
 // Cada una con su ranking, sus últimos partidos y, en 1 vs 1 y four ball, partidos por desafíos.
 import { Swords } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -17,11 +17,11 @@ import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
 import { VersusPanel } from './GolfVersus'
 import { GolfTabs, courseGroups, entrantName, useGolfChallenges, useGolfConfig, useGolfCourses, useGolfHcps, useGolfRounds } from './golfShared'
 
-type Tab = 'match' | 'fourball' | 'scramble'
+type Tab = 'match' | 'fourball' | 'scramble' | 'sixes'
 
 export function GolfModalidades() {
   const [params, setParams] = useSearchParams()
-  const tab = (['match', 'fourball', 'scramble'].includes(params.get('m') ?? '') ? params.get('m') : 'match') as Tab
+  const tab = (['match', 'fourball', 'scramble', 'sixes'].includes(params.get('m') ?? '') ? params.get('m') : 'match') as Tab
   const { rows: rounds, loading } = useGolfRounds()
   const cfg = useGolfConfig()
   const players = useFmoPlayers()
@@ -43,6 +43,7 @@ export function GolfModalidades() {
             { value: 'match', label: '1 vs 1' },
             { value: 'fourball', label: 'Four ball' },
             { value: 'scramble', label: 'Laguneada' },
+            { value: 'sixes', label: 'De a tres' },
           ]}
         />
       </div>
@@ -89,7 +90,7 @@ export function GolfModalidades() {
         </Card>
       </div>
 
-      {tab !== 'scramble' ? <Challenges mode={tab} players={players} /> : null}
+      {tab === 'match' || tab === 'fourball' ? <Challenges mode={tab} players={players} /> : null}
 
       {tab === 'match' ? (
         <Section title="Cara a cara">

@@ -202,6 +202,24 @@ export async function seedDemo(db: MemoryAdapter) {
       'm-felix': { strokes: score(par18, [2, 1, 2]).map((v, i) => (i < 3 ? v : null)), total: null, hcp: 30 },
     },
   })
+  const olivosBlanca = (GOLF_CANCHAS as GolfCourse[]).find((c) => c.id === 'olivos-blanca')!
+  const par9 = olivosBlanca.holes.map((h) => h.par)
+  await db.setDoc(P.golfRound('demo-g4'), {
+    ...golfBase,
+    ...course(olivosBlanca),
+    id: 'demo-g4',
+    playedAt: now - 3 * 86400000,
+    status: 'PLAYED',
+    editableUntil: now - 86400000,
+    mode: 'sixes',
+    useHcp: false,
+    entrants: ['m-pato', 'm-tomi', 'm-choclo'].map((id) => ({ id, players: [id] })),
+    cards: {
+      'm-pato': { strokes: score(par9, [0, 1, 0, 1, -1, 0, 1, 0, 1]), total: null, hcp: 14 },
+      'm-tomi': { strokes: score(par9, [1, 0, 0, 2, 0, 1, 0, 0, 1]), total: null, hcp: 9 },
+      'm-choclo': { strokes: score(par9, [1, 1, 2, 0, 1, 1, 1, 0, 2]), total: null, hcp: 18 },
+    },
+  })
   await db.setDoc(P.golfChallenge('demo-ch1'), {
     id: 'demo-ch1',
     mode: 'match',
