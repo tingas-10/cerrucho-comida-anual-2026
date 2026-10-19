@@ -1,6 +1,6 @@
 // Golf · Canchas: agrupadas por club, con su mapa, tarjeta y consejos de caddy.
 // Las carga y cambia la comisión (2 aprobaciones). El resto las ve.
-import { ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSession } from '../../data/DataContext'
@@ -8,9 +8,9 @@ import { errorText } from '../../data/actions'
 import { proposeGolf } from '../../data/golf'
 import type { GolfCourse, GolfHole } from '../../data/types'
 import { parTotal } from '../../domain/golf'
-import { Button, Empty, Field, Input, Loading, Modal, Notice, PageHeader, Section } from '../../ui/components'
+import { Button, Empty, Field, Input, Loading, Modal, Notice, PageHeader } from '../../ui/components'
 import { useToast } from '../../ui/toast'
-import { GolfTabs, courseGroups, useGolfCourses } from './golfShared'
+import { GolfTabs, cleanCourseName, courseGroups, useGolfCourses } from './golfShared'
 
 function blankHoles(n: number): GolfHole[] {
   return Array.from({ length: n }, (_, i) => ({ par: 4, si: i + 1, yards: null, tip: null, mapRef: null }))
@@ -41,27 +41,66 @@ export function GolfCanchas() {
       {courses.active.length === 0 ? (
         <Empty title="Todavía no hay canchas" text="Mientras tanto, al armar un partido se puede cargar el par a mano." />
       ) : (
-        courseGroups(courses.active).map((g) => (
-          <Section key={g.club} title={g.club} className="mt-0 mb-4">
-            <div className="grid sm:grid-cols-2 gap-2">
-              {g.items.map((c) => (
-                <Link key={c.id} to={`/golf/cancha/${c.id}`} className="card flex items-center justify-between gap-3 !py-3 hover:bg-soft/60">
-                  <span className="min-w-0">
-                    <span className="font-bold block truncate">{c.name.split(' · ')[1] ?? c.name}</span>
-                    <span className="small muted">
-                      {c.holes.length} hoyos · par {parTotal(c.holes)}
-                      {c.holes.some((h) => h.mapRef) ? ' · con mapa de cada hoyo' : ''}
-                    </span>
-                  </span>
-                  <ChevronRight size={18} className="shrink-0 muted" />
-                </Link>
-              ))}
-            </div>
-          </Section>
-        ))
+        <div className="card overflow-hidden divide-y divide-[var(--border)]">
+          {courseGroups(courses.active).map((g) => (
+            <ClubRow key={g.club} club={g.club} items={g.items} />
+          ))}
+        </div>
       )}
       {!showTools ? <p className="tiny muted mt-4">¿Falta una cancha o hay un error? Pedíselo a la comisión de golf.</p> : null}
       {editing ? <CourseEditor course={null} onClose={() => setEditing(false)} /> : null}
+    </div>
+  )
+}
+
+function courseFacts(c: GolfCourse): string {
+  return `${c.holes.length} hoyos · par ${parTotal(c.holes)}`
+}
+
+// Un club por fila. Si tiene un solo recorrido, se entra directo; si tiene varios, se despliega.
+function ClubRow({ club, items }: { club: string; items: GolfCourse[] }) {
+  const [open, setOpen] = useState(false)
+  const row = 'flex items-center justify-between gap-3 w-full px-4 py-3.5 min-h-[60px] text-left hover:bg-soft/60'
+  if (items.length === 1) {
+    const c = items[0]
+    const { label, note } = cleanCourseName(club)
+    return (
+      <Link to={`/golf/cancha/${c.id}`} className={row}>
+        <span className="min-w-0">
+          <span className="font-bold block">{label}</span>
+          <span className="small muted block">{note ? `${courseFacts(c)} · ${note}` : courseFacts(c)}</span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 muted" aria-hidden />
+      </Link>
+    )
+  }
+  // Primero los recorridos simples (Azul, Blanca…), después las combinaciones.
+  const variants = [...items].sort((a, b) => a.holes.length - b.holes.length || a.name.localeCompare(b.name))
+  return (
+    <div>
+      <button type="button" className={row} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span className="min-w-0">
+          <span className="font-bold block">{cleanCourseName(club).label}</span>
+          <span className="small muted block">{items.length} recorridos para elegir</span>
+        </span>
+        <ChevronDown size={18} className={`shrink-0 muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+      </button>
+      {open ? (
+        <div className="bg-soft/40 border-t border-[var(--border)] pb-1">
+          {variants.map((c) => {
+            const { label, note } = cleanCourseName(c.name.split(' · ')[1] ?? c.name)
+            return (
+              <Link key={c.id} to={`/golf/cancha/${c.id}`} className="flex items-center justify-between gap-3 pl-7 pr-4 py-3 min-h-[52px] hover:bg-soft">
+                <span className="min-w-0">
+                  <span className="font-semibold block">{label}</span>
+                  <span className="tiny muted block">{note ? `${courseFacts(c)} · ${note}` : courseFacts(c)}</span>
+                </span>
+                <ChevronRight size={16} className="shrink-0 muted" aria-hidden />
+              </Link>
+            )
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }

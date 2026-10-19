@@ -77,3 +77,15 @@ export function courseGroups(courses: GolfCourse[]): Array<{ club: string; items
   return [...groups.entries()].map(([club, items]) => ({ club, items }))
 }
 
+
+// Nombre limpio para las listas: saca lo que va entre paréntesis y lo devuelve aparte como nota.
+// "Olivos Golf Club · Blanca (9)" → { label: 'Blanca', note: null }
+// "Club de Campo Armenia (9 hoyos x 2)" → { label: 'Club de Campo Armenia', note: '2 vueltas de 9' }
+export function cleanCourseName(name: string): { label: string; note: string | null } {
+  const m = name.match(/^(.*?)\s*\(([^)]*)\)\s*$/)
+  if (!m) return { label: name.trim(), note: null }
+  const extra = m[2].trim()
+  const twice = extra.match(/^(\d+) hoyos x 2$/)
+  const note = /^\d+$/.test(extra) ? null : twice ? `2 vueltas de ${twice[1]}` : extra === 'campeonato' ? 'la de campeonato' : extra
+  return { label: m[1].trim(), note }
+}
