@@ -13,6 +13,10 @@ const CLUBS = {
   mapuche: { file: 'rawbox-mapuche.json', courseName: 'Mapuche Country Club' },
   estancias: { file: 'rawbox-estancias.json', courseName: 'Estancias Golf Club' },
   pilara: { file: 'rawbox-pilara.json', courseName: 'Pilará' },
+  medal: { file: 'rawbox-medal.json', courseName: 'Medal Contry' },
+  lacolina: { file: 'rawbox-lacolina.json', courseName: 'La Colina' },
+  orquidea: { file: 'rawbox-orquidea.json', courseName: 'Club de Golf La Orquídea' },
+  armenia: { file: 'rawbox-armenia.json', courseName: 'Club de campo Armenia' },
 }
 
 function rings(e) {

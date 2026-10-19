@@ -1,0 +1,835 @@
+{
+  "medal": {
+    "name": "Medal Country Club (Pilar)",
+    "holeCount": 18,
+    "par": 72,
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": 7,
+        "yards": 417,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 4,
+        "si": 11,
+        "yards": 381,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 13,
+        "yards": 355,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 5,
+        "si": 3,
+        "yards": 520,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 3,
+        "si": 15,
+        "yards": 195,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 5,
+        "si": 1,
+        "yards": 469,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 3,
+        "si": 17,
+        "yards": 176,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": 5,
+        "yards": 365,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 9,
+        "yards": 390,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 4,
+        "si": 14,
+        "yards": 382,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 4,
+        "si": 12,
+        "yards": 340,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 5,
+        "si": 2,
+        "yards": 478,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": 8,
+        "yards": 384,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 10,
+        "yards": 379,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 5,
+        "si": 4,
+        "yards": 538,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 3,
+        "si": 18,
+        "yards": 133,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 4,
+        "si": 6,
+        "yards": 374,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 3,
+        "si": 16,
+        "yards": 175,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "Azul (Blue), hombres - 6451 yd (18Birdies; rating 71.5 / slope 121 según 18Birdies)",
+    "sources": [
+      "https://18birdies.com/golf-courses/club/d24a7770-86ac-11e4-8c28-020000005b00/medal-country-club-pilar",
+      "https://www.hole19golf.com/courses/medal-country-club",
+      "https://www.golfify.io/courses/medal-country-club-golf-spa",
+      "https://medalcountryclub.com/",
+      "https://mudafy.com.ar/barrios/pilar/medal-country-club"
+    ],
+    "confidence": "medium",
+    "notes": "No hay tarjeta oficial: el sitio del club (inmobiliaria Santiago Obarrio) solo dice 'Golf 18 hoyos', diseño Caprile Golf; Mudafy dice par 72. Par y SI de los 18 hoyos: 18Birdies y Hole19 coinciden en todos. Yardas: 18Birdies (en yardas, tee Azul); Hole19 da metros (tee blue (m), 5898 m) y convertidos con round(m/0.9144) coinciden hoyo a hoyo salvo hoyo 4 (475 m = 519 yd vs 520 yd en 18Birdies). Hole19 y 18Birdies podrían compartir origen de datos, por eso no 'high'. CONFLICTO: Golfify lista Medal como cancha de 9 hoyos par 35 (probablemente dato viejo): hoyo 6 par 4 (Golfify) vs par 5 (18Birdies/Hole19); SI de 9 hoyos distinto; columnas Azul/Blanco mezcladas (ej. hoyo 2 Azul 360 en Golfify vs 381 en 18Birdies). Otros tees (18Birdies): Blanca 2966 yd la ida, Rojas 2596 yd la ida. Sin descripciones de hoyos publicadas.",
+    "siCandidates": {
+      "18birdies + hole19": [
+        7,
+        11,
+        13,
+        3,
+        15,
+        1,
+        17,
+        5,
+        9,
+        14,
+        12,
+        2,
+        8,
+        10,
+        4,
+        18,
+        6,
+        16
+      ],
+      "golfify (solo 9 hoyos, escala 1-9)": [
+        4,
+        6,
+        8,
+        2,
+        9,
+        3,
+        1,
+        5,
+        7
+      ]
+    }
+  },
+  "lacolina": {
+    "name": "La Colina Golf & Polo (La Colina Villa de Campo, Open Door / Luján)",
+    "holeCount": 18,
+    "par": 72,
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": 3,
+        "yards": 418,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 4,
+        "si": 9,
+        "yards": 392,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 3,
+        "par": 3,
+        "si": 13,
+        "yards": 176,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 5,
+        "si": 11,
+        "yards": 485,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 4,
+        "si": 7,
+        "yards": 352,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": 15,
+        "yards": 384,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 5,
+        "si": 5,
+        "yards": 536,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": 1,
+        "yards": 422,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 3,
+        "si": 17,
+        "yards": 151,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 4,
+        "si": 14,
+        "yards": 379,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 5,
+        "si": 2,
+        "yards": 615,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 4,
+        "si": 18,
+        "yards": 355,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 3,
+        "si": 10,
+        "yards": 181,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 12,
+        "yards": 329,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 3,
+        "si": 16,
+        "yards": 160,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 5,
+        "si": 4,
+        "yards": 527,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 4,
+        "si": 6,
+        "yards": 415,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 4,
+        "si": 8,
+        "yards": 408,
+        "tip": null,
+        "tipSource": null
+      }
+    ],
+    "tee": "Azul, hombres - 6685 yd (tarjeta oficial del club)",
+    "sources": [
+      "https://lacolinagolf.blogspot.com/2020/02/tarjeta-de-score-la-colina-golf.html",
+      "https://lacolinavilladecampo.com/deportes/golf-club/",
+      "https://www.hole19golf.com/courses/la-colina-golf-polo",
+      "https://www.golfpass.com/courses/30389-la-colina-golf-club/scorecard-and-layout",
+      "https://www.golfingrecord.com/golf-scorecard/c174ec87-b951-5a39-9727-e516eb5f945c",
+      "https://www.golfify.io/courses/la-colina-golf-club"
+    ],
+    "confidence": "high",
+    "notes": "Fuente principal: foto de la tarjeta oficial publicada en el blog del club (feb-2020); sumas por tee verificadas. Par y SI: coinciden tarjeta, Hole19, Golfingrecord y Golfify. Totales por tee coinciden con GolfPass (Negra 7001, Azul 6685, Blanca 6457; Colorada 5869 vs 5872 en GolfPass) y con el sitio del club (7001 yd desde tees de campeonato). Hole19 (tee black, en metros) convertido coincide con la Negra de la tarjeta con diferencia máx. de 1 yd. CONFLICTO de yardas: Golfify/Golfingrecord dan un 'Azul' de 6783 yd con varios hoyos distintos (ej. hoyo 10: 423 vs 379; hoyo 13: 219 vs 181; hoyo 16: 509 vs 527; hoyo 18: 423 vs 408). Parece tarjeta vieja o tee mal etiquetado; se usó la tarjeta oficial. En la tarjeta, la vuelta de la Blanca suma 3226 pero está impresa como 3216 (total 6457): hay un error en algún número de la Blanca; no afecta al tee Azul. La tarjeta es de 2020: podría haber cambios posteriores. Sin descripciones de hoyos publicadas (las imágenes del blog son fotos).",
+    "otherTees": {
+      "Negra (yd)": [
+        428,
+        392,
+        176,
+        492,
+        352,
+        384,
+        536,
+        422,
+        185,
+        418,
+        647,
+        355,
+        215,
+        351,
+        191,
+        577,
+        462,
+        418
+      ],
+      "Blanca (yd)": [
+        410,
+        379,
+        165,
+        477,
+        342,
+        376,
+        526,
+        415,
+        151,
+        368,
+        571,
+        345,
+        144,
+        319,
+        160,
+        527,
+        404,
+        388
+      ]
+    }
+  },
+  "orquidea": {
+    "name": "La Orquídea Golf (Los Cardales)",
+    "holeCount": 18,
+    "par": 72,
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": 9,
+        "yards": 368,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 2,
+        "par": 5,
+        "si": 1,
+        "yards": 558,
+        "tip": "Hoyo de la isla: arriesgar es opcional, pero define la cancha.",
+        "tipSource": "https://laorquideagolf.com.ar/libro-de-cancha.html"
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 17,
+        "yards": 366,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 4,
+        "par": 3,
+        "si": 7,
+        "yards": 198,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 5,
+        "par": 4,
+        "si": 11,
+        "yards": 350,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 6,
+        "par": 5,
+        "si": 15,
+        "yards": 492,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 7,
+        "par": 4,
+        "si": 3,
+        "yards": 404,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 8,
+        "par": 4,
+        "si": 5,
+        "yards": 452,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 9,
+        "par": 3,
+        "si": 13,
+        "yards": 150,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 10,
+        "par": 5,
+        "si": 8,
+        "yards": 552,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 11,
+        "par": 4,
+        "si": 10,
+        "yards": 363,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 12,
+        "par": 4,
+        "si": 4,
+        "yards": 420,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 13,
+        "par": 4,
+        "si": 6,
+        "yards": 399,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 14,
+        "par": 4,
+        "si": 2,
+        "yards": 328,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 15,
+        "par": 3,
+        "si": 18,
+        "yards": 120,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 16,
+        "par": 4,
+        "si": 12,
+        "yards": 383,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 17,
+        "par": 3,
+        "si": 14,
+        "yards": 169,
+        "tip": null,
+        "tipSource": null
+      },
+      {
+        "n": 18,
+        "par": 5,
+        "si": 16,
+        "yards": 539,
+        "tip": "Regla local: si el drive pega en el molino, se repite sin penalidad.",
+        "tipSource": "https://laorquideagolf.com.ar/jugadores.html"
+      }
+    ],
+    "tee": "Azul, hombres - 6611 yd (según libro-de-cancha.html del club)",
+    "sources": [
+      "https://laorquideagolf.com.ar/libro-de-cancha.html",
+      "https://laorquideagolf.com.ar/jugadores.html",
+      "https://www.hole19golf.com/courses/la-orquidea-golf-azul",
+      "https://www.hole19golf.com/courses/la-orquidea-golf-blanca",
+      "https://www.golfingrecord.com/golf-scorecard/f269f898-8da5-ecfc-f7fb-10f5f81843d8",
+      "https://www.golfingrecord.com/golf-scorecard/959b850d-9166-43c6-bc98-fc48fc014020",
+      "https://www.golfify.io/courses/golf-la-orquidea-la-orquidea"
+    ],
+    "confidence": "high",
+    "notes": "Fuente principal: tarjeta HTML del sitio oficial (sumas verificadas). Unidades: la tabla no lo dice, pero la ficha técnica del club habla de 'Yardajes' y Hole19 (en metros) convertido coincide con estas cifras (+-2 yd), así que son yardas. Hoyos 8 y 9: la tarjeta dice par '4/5' y HCP '5/13' y '13/5'; el segundo valor está marcado en rojo = damas. Hombres: hoyo 8 par 4 SI 5; hoyo 9 SI 13 (damas: hoyo 8 par 5 SI 13, hoyo 9 SI 5). Par damas 73. Hole19 'La Orquídea Golf (Azul)' coincide con el club en par y SI de los 18 hoyos. CONFLICTO de SI: Golfingrecord y Golfify tienen una asignación vieja (ver siCandidates); se usó la del club. CONFLICTO de colores: jugadores.html (del mismo club) invierte Azul y Blanco (Azul 6318 / Blanco 6611) y trae otra ida para Rojo; libro-de-cancha.html y Hole19 (blue (m) 6045 m = 6611 yd, white (m) 5777 m = 6318 yd) coinciden en Azul = 6611. Golfify/Golfingrecord además tienen errores claros (ej. hoyo 5 Amarillo 204 yd en un par 4). Otra variante: Hole19 'La Orquídea Golf (Blanca)' y Golfingrecord 'Blanca (Alternate Tees)' traen un recorrido con hoyo 14 par 3 y 15 par 4 (otras yardas/SI en 14-18). El logo del sitio dice 'Cancha 27 hoyos' y la ficha dice '18 hoyos (con múltiples combinaciones)', pero el club no publica otra tarjeta, así que no se cargó como cancha aparte. Descripciones: el club solo publica texto para el hoyo 2 y una regla local del 18; el resto son planos ilustrados y videos flyover sin texto.",
+    "siCandidates": {
+      "club (libro-de-cancha / jugadores) + hole19 Azul": [
+        9,
+        1,
+        17,
+        7,
+        11,
+        15,
+        3,
+        5,
+        13,
+        8,
+        10,
+        4,
+        6,
+        2,
+        18,
+        12,
+        14,
+        16
+      ],
+      "golfingrecord + golfify (recorrido principal)": [
+        5,
+        1,
+        17,
+        9,
+        13,
+        15,
+        7,
+        3,
+        11,
+        4,
+        18,
+        2,
+        6,
+        8,
+        16,
+        10,
+        14,
+        12
+      ],
+      "hole19 Blanca (recorrido alternativo, hoyo 14 par 3 / 15 par 4)": [
+        5,
+        1,
+        17,
+        9,
+        13,
+        15,
+        7,
+        3,
+        11,
+        4,
+        18,
+        2,
+        6,
+        8,
+        12,
+        10,
+        16,
+        14
+      ]
+    },
+    "otherTees": {
+      "Amarillo (yd)": [
+        390,
+        585,
+        380,
+        198,
+        372,
+        514,
+        415,
+        456,
+        180,
+        590,
+        390,
+        450,
+        432,
+        383,
+        131,
+        405,
+        204,
+        577
+      ],
+      "Blanco (yd)": [
+        345,
+        547,
+        339,
+        185,
+        328,
+        475,
+        372,
+        430,
+        130,
+        539,
+        346,
+        400,
+        399,
+        328,
+        109,
+        366,
+        157,
+        523
+      ]
+    }
+  },
+  "armenia": {
+    "name": "Club de Campo Armenia (Armenia Country Club, Del Viso / Pilar)",
+    "holeCount": 9,
+    "playedTwice": true,
+    "par": 35,
+    "par18": 70,
+    "holes": [
+      {
+        "n": 1,
+        "par": 4,
+        "si": 6,
+        "yards": 356,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          11,
+          12
+        ],
+        "yardsSecondLoop": 339
+      },
+      {
+        "n": 2,
+        "par": 3,
+        "si": 8,
+        "yards": 168,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          15,
+          16
+        ],
+        "yardsSecondLoop": 160
+      },
+      {
+        "n": 3,
+        "par": 4,
+        "si": 3,
+        "yards": 390,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          6,
+          5
+        ],
+        "yardsSecondLoop": 405
+      },
+      {
+        "n": 4,
+        "par": 5,
+        "si": 1,
+        "yards": 515,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          1,
+          2
+        ],
+        "yardsSecondLoop": 502
+      },
+      {
+        "n": 5,
+        "par": 3,
+        "si": 7,
+        "yards": 175,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          14,
+          13
+        ],
+        "yardsSecondLoop": 187
+      },
+      {
+        "n": 6,
+        "par": 4,
+        "si": 4,
+        "yards": 394,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          7,
+          8
+        ],
+        "yardsSecondLoop": 384
+      },
+      {
+        "n": 7,
+        "par": 5,
+        "si": 2,
+        "yards": 495,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          4,
+          3
+        ],
+        "yardsSecondLoop": 510
+      },
+      {
+        "n": 8,
+        "par": 3,
+        "si": 9,
+        "yards": 134,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          18,
+          17
+        ],
+        "yardsSecondLoop": 148
+      },
+      {
+        "n": 9,
+        "par": 4,
+        "si": 5,
+        "yards": 383,
+        "tip": null,
+        "tipSource": null,
+        "si18": [
+          9,
+          10
+        ],
+        "yardsSecondLoop": 362
+      }
+    ],
+    "tee": "Blanco, hombres - 3010 yd por vuelta (Golfify 'Blanco - Front'). 'si' = índice 1-9 de la cancha de 9 hoyos; 'si18' = [1ra vuelta, 2da vuelta] según Hole19",
+    "sources": [
+      "https://www.golfpass.com/travel-advisor/courses/30527-armenia-country-club",
+      "https://www.golfify.io/courses/club-de-campo-armenia",
+      "https://www.hole19golf.com/courses/club-de-campo-armenia",
+      "https://www.golfshake.com/course/view/69697/Club_de_Campo_Armenia.html"
+    ],
+    "confidence": "medium",
+    "notes": "Cancha de 9 hoyos que se juega dos veces para 18 (par 35 x2 = 70). GolfPass: 9 hoyos par 35, Blue 3012 / White 3000 / Red (W) 2756 yd, sin datos por hoyo. Golfify (dirección Campanilla 620, Del Viso, igual que GolfPass): par, SI 1-9 y yardas Blanco 3010 por hoyo. Hole19 (mismo teléfono que GolfPass) la carga como 18 hoyos par 70 'blancas/azules' 5487 m (~6001 yd), con la misma secuencia de par en ida y vuelta: confirma 9 hoyos x2. Sus metros de la 1ra vuelta convertidos coinciden con Golfify (+-1 yd) y el orden de su SI coincide con el SI 1-9 de Golfify. yardsSecondLoop = metros de Hole19 de la 2da vuelta convertidos con round(m/0.9144) (otros tees de salida; una sola fuente). Golfshake: par 70, 6010 yd Azul/Blanco (sin detalle por hoyo). Conflicto menor: Golfify 'Blanco - Back' (2756 yd, igual al Red (W) de GolfPass, probablemente damas) pone hoyo 3 par 5. No se encontró sitio oficial del club con tarjeta ni descripciones de hoyos. Ojo: GolfPass/Golfify tienen otro 'Armenia Country Club' en Colombia (18 hoyos, par 71): no confundir.",
+    "siCandidates": {
+      "golfify (1-9)": [
+        6,
+        8,
+        3,
+        1,
+        7,
+        4,
+        2,
+        9,
+        5
+      ],
+      "hole19 18 hoyos (1ra vuelta + 2da vuelta)": [
+        11,
+        15,
+        6,
+        1,
+        14,
+        7,
+        4,
+        18,
+        9,
+        12,
+        16,
+        5,
+        2,
+        13,
+        8,
+        3,
+        17,
+        10
+      ]
+    }
+  }
+}

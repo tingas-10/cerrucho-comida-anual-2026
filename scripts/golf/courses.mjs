@@ -83,6 +83,30 @@ for (const [key, name, club, source] of simple) {
   add({ id: key, name, club, mapCourse: null, holes: sc.holes.map((h, i) => hole(h.par, si[i], h.yards, null, null, h.n, h.tip)), source })
 }
 
+// Tanda 2 (19/10/2026): Medal, La Colina, La Orquídea y Armenia (scorecards2.json). Ninguna tiene los hoyos dibujados en el mapa.
+const SC2 = fs.existsSync('scorecards2.json') ? JSON.parse(fs.readFileSync('scorecards2.json', 'utf8')) : {}
+const tanda2 = [
+  ['medal', 'Medal Country Club', 'Par, dificultad y yardas (tee Azul): 18Birdies y Hole19 (el club no publica la tarjeta). Consejos orientativos según la distancia.'],
+  ['lacolina', 'La Colina Golf & Polo', 'Par, dificultad y yardas (tee Azul): tarjeta oficial del club, confirmada con Hole19, Golfingrecord y GolfPass. Consejos orientativos según la distancia.'],
+  ['orquidea', 'La Orquídea Golf', 'Par, dificultad y yardas (tee Azul): tarjeta del sitio oficial del club, confirmada con Hole19. Consejos orientativos según la distancia y el libro de cancha del club.'],
+]
+for (const [key, name, source] of tanda2) {
+  const sc = SC2[key]
+  if (!sc) continue
+  add({ id: key, name, club: key, mapCourse: null, holes: sc.holes.map((h) => hole(h.par, h.si, h.yards, null, null, h.n, h.tip)), source })
+}
+if (SC2.armenia) {
+  const a = SC2.armenia.holes
+  add({
+    id: 'armenia',
+    name: 'Club de Campo Armenia (9 hoyos x 2)',
+    club: 'armenia',
+    mapCourse: null,
+    holes: [...a.map((h) => hole(h.par, h.si18[0], h.yards, null, null, h.n, h.tip)), ...a.map((h) => hole(h.par, h.si18[1], h.yardsSecondLoop ?? h.yards, null, null, h.n, h.tip))],
+    source: 'Cancha de 9 hoyos que se juega dos veces. Par y yardas de la primera vuelta (tee Blanco): Golfify, con totales de GolfPass. Dificultad de 18 y yardas de la segunda vuelta (otro tee): Hole19. Consejos orientativos según la distancia.',
+  })
+}
+
 // Controles
 for (const c of courses) {
   const n = c.holes.length

@@ -1,7 +1,7 @@
 // Igual que fetch.mjs pero por recuadro alrededor del centro de cada cancha.
 import fs from 'node:fs'
 import { overpass } from './ov.mjs'
-const C = { olivos: [-34.4712, -58.7], mayling: [-34.4335, -58.8729], mapuche: [-34.4462, -58.8512], estancias: [-34.4901, -59.0062], pilara: [-34.4674, -58.9535] }
+const C = { olivos: [-34.4712, -58.7], mayling: [-34.4335, -58.8729], mapuche: [-34.4462, -58.8512], estancias: [-34.4901, -59.0062], pilara: [-34.4674, -58.9535], medal: [-34.505, -58.9585], lacolina: [-34.513, -59.0325], orquidea: [-34.308, -59.0085], armenia: [-34.4225, -58.801] }
 const only = process.argv[2]
 for (const [id, [lat, lon]] of Object.entries(C)) {
   if (only && only !== id) continue

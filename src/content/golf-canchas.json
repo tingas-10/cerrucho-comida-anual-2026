@@ -1453,5 +1453,553 @@
    }
   ],
   "source": "Par y yardas (tee Blanco): golfpass, offcourse y Hole19. Dificultad: golfpass, offcourse y golfify (Hole19 da otra). Consejos orientativos según la distancia y Top100."
+ },
+ {
+  "archived": false,
+  "updatedAt": 0,
+  "id": "medal",
+  "name": "Medal Country Club",
+  "club": "medal",
+  "mapCourse": null,
+  "holes": [
+   {
+    "par": 4,
+    "si": 7,
+    "yards": 417,
+    "tip": "Par 4 de 417 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 11,
+    "yards": 381,
+    "tip": "Par 4 de 381 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 13,
+    "yards": 355,
+    "tip": "Par 4 de 355 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 3,
+    "yards": 520,
+    "tip": "Par 5 de 520 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 15,
+    "yards": 195,
+    "tip": "Par 3 de 195 yardas. Par 3 largo: el centro del green ya es buen resultado.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 1,
+    "yards": 469,
+    "tip": "Par 5 de 469 yardas. Par 5 corto: los que pegan largo pueden llegar en dos.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 17,
+    "yards": 176,
+    "tip": "Par 3 de 176 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 5,
+    "yards": 365,
+    "tip": "Par 4 de 365 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 9,
+    "yards": 390,
+    "tip": "Par 4 de 390 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 14,
+    "yards": 382,
+    "tip": "Par 4 de 382 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 12,
+    "yards": 340,
+    "tip": "Par 4 de 340 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 2,
+    "yards": 478,
+    "tip": "Par 5 de 478 yardas. Par 5 corto: los que pegan largo pueden llegar en dos.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 8,
+    "yards": 384,
+    "tip": "Par 4 de 384 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 10,
+    "yards": 379,
+    "tip": "Par 4 de 379 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 4,
+    "yards": 538,
+    "tip": "Par 5 de 538 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 18,
+    "yards": 133,
+    "tip": "Par 3 de 133 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 6,
+    "yards": 374,
+    "tip": "Par 4 de 374 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 16,
+    "yards": 175,
+    "tip": "Par 3 de 175 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   }
+  ],
+  "source": "Par, dificultad y yardas (tee Azul): 18Birdies y Hole19 (el club no publica la tarjeta). Consejos orientativos según la distancia."
+ },
+ {
+  "archived": false,
+  "updatedAt": 0,
+  "id": "lacolina",
+  "name": "La Colina Golf & Polo",
+  "club": "lacolina",
+  "mapCourse": null,
+  "holes": [
+   {
+    "par": 4,
+    "si": 3,
+    "yards": 418,
+    "tip": "Par 4 de 418 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 9,
+    "yards": 392,
+    "tip": "Par 4 de 392 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 13,
+    "yards": 176,
+    "tip": "Par 3 de 176 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 11,
+    "yards": 485,
+    "tip": "Par 5 de 485 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 7,
+    "yards": 352,
+    "tip": "Par 4 de 352 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 15,
+    "yards": 384,
+    "tip": "Par 4 de 384 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 5,
+    "yards": 536,
+    "tip": "Par 5 de 536 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 1,
+    "yards": 422,
+    "tip": "Par 4 de 422 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 17,
+    "yards": 151,
+    "tip": "Par 3 de 151 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 14,
+    "yards": 379,
+    "tip": "Par 4 de 379 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 2,
+    "yards": 615,
+    "tip": "Par 5 de 615 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 18,
+    "yards": 355,
+    "tip": "Par 4 de 355 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 10,
+    "yards": 181,
+    "tip": "Par 3 de 181 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 12,
+    "yards": 329,
+    "tip": "Par 4 de 329 yardas. Par 4 corto: buena chance de birdie con un buen approach.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 16,
+    "yards": 160,
+    "tip": "Par 3 de 160 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 4,
+    "yards": 527,
+    "tip": "Par 5 de 527 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 6,
+    "yards": 415,
+    "tip": "Par 4 de 415 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 8,
+    "yards": 408,
+    "tip": "Par 4 de 408 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   }
+  ],
+  "source": "Par, dificultad y yardas (tee Azul): tarjeta oficial del club, confirmada con Hole19, Golfingrecord y GolfPass. Consejos orientativos según la distancia."
+ },
+ {
+  "archived": false,
+  "updatedAt": 0,
+  "id": "orquidea",
+  "name": "La Orquídea Golf",
+  "club": "orquidea",
+  "mapCourse": null,
+  "holes": [
+   {
+    "par": 4,
+    "si": 9,
+    "yards": 368,
+    "tip": "Par 4 de 368 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 1,
+    "yards": 558,
+    "tip": "Par 5 de 558 yardas. Pensalo en tres golpes y dejate un approach cómodo. Hoyo de la isla: arriesgar es opcional, pero define la cancha.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 17,
+    "yards": 366,
+    "tip": "Par 4 de 366 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 7,
+    "yards": 198,
+    "tip": "Par 3 de 198 yardas. Par 3 largo: el centro del green ya es buen resultado.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 11,
+    "yards": 350,
+    "tip": "Par 4 de 350 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 15,
+    "yards": 492,
+    "tip": "Par 5 de 492 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 3,
+    "yards": 404,
+    "tip": "Par 4 de 404 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 5,
+    "yards": 452,
+    "tip": "Par 4 de 452 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 13,
+    "yards": 150,
+    "tip": "Par 3 de 150 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 8,
+    "yards": 552,
+    "tip": "Par 5 de 552 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 10,
+    "yards": 363,
+    "tip": "Par 4 de 363 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 4,
+    "yards": 420,
+    "tip": "Par 4 de 420 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 6,
+    "yards": 399,
+    "tip": "Par 4 de 399 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 2,
+    "yards": 328,
+    "tip": "Par 4 de 328 yardas. Par 4 corto: buena chance de birdie con un buen approach.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 18,
+    "yards": 120,
+    "tip": "Par 3 de 120 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 12,
+    "yards": 383,
+    "tip": "Par 4 de 383 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 14,
+    "yards": 169,
+    "tip": "Par 3 de 169 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 16,
+    "yards": 539,
+    "tip": "Par 5 de 539 yardas. Pensalo en tres golpes y dejate un approach cómodo. Regla local: si el drive pega en el molino, se repite sin penalidad.",
+    "mapRef": null
+   }
+  ],
+  "source": "Par, dificultad y yardas (tee Azul): tarjeta del sitio oficial del club, confirmada con Hole19. Consejos orientativos según la distancia y el libro de cancha del club."
+ },
+ {
+  "archived": false,
+  "updatedAt": 0,
+  "id": "armenia",
+  "name": "Club de Campo Armenia (9 hoyos x 2)",
+  "club": "armenia",
+  "mapCourse": null,
+  "holes": [
+   {
+    "par": 4,
+    "si": 11,
+    "yards": 356,
+    "tip": "Par 4 de 356 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 15,
+    "yards": 168,
+    "tip": "Par 3 de 168 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 6,
+    "yards": 390,
+    "tip": "Par 4 de 390 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 1,
+    "yards": 515,
+    "tip": "Par 5 de 515 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 14,
+    "yards": 175,
+    "tip": "Par 3 de 175 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 7,
+    "yards": 394,
+    "tip": "Par 4 de 394 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 4,
+    "yards": 495,
+    "tip": "Par 5 de 495 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 18,
+    "yards": 134,
+    "tip": "Par 3 de 134 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 9,
+    "yards": 383,
+    "tip": "Par 4 de 383 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 12,
+    "yards": 339,
+    "tip": "Par 4 de 339 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 16,
+    "yards": 160,
+    "tip": "Par 3 de 160 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 5,
+    "yards": 405,
+    "tip": "Par 4 de 405 yardas. Par 4 largo: priorizá el fairway y aceptá el bogey.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 2,
+    "yards": 502,
+    "tip": "Par 5 de 502 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 13,
+    "yards": 187,
+    "tip": "Par 3 de 187 yardas. Par 3 largo: el centro del green ya es buen resultado.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 8,
+    "yards": 384,
+    "tip": "Par 4 de 384 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   },
+   {
+    "par": 5,
+    "si": 3,
+    "yards": 510,
+    "tip": "Par 5 de 510 yardas. Pensalo en tres golpes y dejate un approach cómodo.",
+    "mapRef": null
+   },
+   {
+    "par": 3,
+    "si": 17,
+    "yards": 148,
+    "tip": "Par 3 de 148 yardas. Elegí el palo por la distancia al centro del green.",
+    "mapRef": null
+   },
+   {
+    "par": 4,
+    "si": 10,
+    "yards": 362,
+    "tip": "Par 4 de 362 yardas. Salida al fairway y approach al centro.",
+    "mapRef": null
+   }
+  ],
+  "source": "Cancha de 9 hoyos que se juega dos veces. Par y yardas de la primera vuelta (tee Blanco): Golfify, con totales de GolfPass. Dificultad de 18 y yardas de la segunda vuelta (otro tee): Hole19. Consejos orientativos según la distancia."
  }
 ]
