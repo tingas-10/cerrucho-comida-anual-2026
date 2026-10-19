@@ -34,7 +34,7 @@ export function GolfCancha() {
   return (
     <div>
       <PageHeader
-        eyebrow={club}
+        eyebrow={variant ? club : 'Golf · Cancha'}
         title={variant ?? course.name}
         intro={`${course.holes.length} hoyos · par ${parTotal(course.holes)}${course.archived ? ' · archivada' : ''}`}
         actions={
