@@ -1,5 +1,5 @@
 // Inicio: hero, pendientes personales, el plan y novedades.
-import { Copy } from 'lucide-react'
+import { ChevronRight, Copy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TEXTOS } from '../content/config'
@@ -142,9 +142,11 @@ export function Inicio() {
             {(['fecha', 'lugar', 'menu', 'salida'] as const).map((k) => {
               const d = edition.decisions[k]
               const labels: Record<string, string> = { fecha: 'Fecha', lugar: 'Lugar', menu: 'Comida', salida: 'Salida' }
+              // Cada fila lleva a donde se vota o se ve esa decisión.
+              const to: Record<string, string> = { fecha: `/e/${slug}/fecha`, lugar: `/e/${slug}/comida?ver=lugar`, menu: `/e/${slug}/comida?ver=menu`, salida: `/e/${slug}/agenda?ver=salida` }
               return (
-                <div key={k} className="row">
-                  <div>
+                <Link key={k} to={to[k]} className="row hover:bg-soft/60 -mx-2 px-2 rounded-lg">
+                  <div className="min-w-0">
                     <p className="font-semibold">{labels[k]}</p>
                     {d?.label ? <p className="small muted">{d.label}</p> : null}
                     {d?.status === 'CONFIRMED' && d.confirmedBy ? (
@@ -153,8 +155,11 @@ export function Inicio() {
                       </p>
                     ) : null}
                   </div>
-                  <DecisionPill status={d?.status ?? 'UNDEFINED'} />
-                </div>
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <DecisionPill status={d?.status ?? 'UNDEFINED'} />
+                    <ChevronRight size={18} className="muted" aria-hidden />
+                  </span>
+                </Link>
               )
             })}
           </Card>

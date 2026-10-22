@@ -11,6 +11,7 @@ import { Button, Card, Field, Input, Loading, LoginPrompt, Notice, PageHeader, P
 import { PollCard } from '../ui/PollCard'
 import { ProposalsBoard } from '../ui/Proposals'
 import { useToast } from '../ui/toast'
+import { useScrollToParam } from '../ui/useScrollToParam'
 
 export function Agenda() {
   const { slug, memberId, db, isMember } = useSession()
@@ -18,6 +19,7 @@ export function Agenda() {
   const members = useMembers()
   const { rows: polls } = useCollection<Poll>(P.polls(slug), [{ field: 'kind', op: '==', value: 'afterparty' }])
   const myRsvp = useDoc<Rsvp>(isMember && memberId ? P.rsvp(slug, memberId) : null)
+  useScrollToParam(!loading && !!edition)
   if (loading || !edition) return <Loading />
   const hasDate = !!edition.date.startsAt
   const visiblePolls = polls.filter((p) => p.state !== 'DRAFT' && p.state !== 'VOID')
@@ -77,6 +79,7 @@ export function Agenda() {
         {edition.venue?.address && hasDate ? <p className="small mt-4">Dirección: {edition.venue.address}</p> : null}
       </Card>
 
+      <div id="ver-salida" className="scroll-mt-24" />
       <Section title="La salida">
         {edition.afterparty ? (
           <Card className="mb-3">

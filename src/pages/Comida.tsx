@@ -3,10 +3,12 @@ import { useEdition, useMembers } from '../data/hooks'
 import { formatArs } from '../domain/expenses'
 import { Card, Loading, PageHeader, Pill } from '../ui/components'
 import { ProposalsBoard } from '../ui/Proposals'
+import { useScrollToParam } from '../ui/useScrollToParam'
 
 export function Comida() {
   const { data: edition, loading } = useEdition()
   const members = useMembers()
+  useScrollToParam(!loading && !!edition)
   if (loading || !edition) return <Loading />
   const lugar = edition.decisions?.lugar
   const menu = edition.decisions?.menu
@@ -50,8 +52,12 @@ export function Comida() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mt-6">
-        <ProposalsBoard type="venue" title="Lugares" decisionKey="lugar" placeholder="ej. Quincho de Topo" />
-        <ProposalsBoard type="food" title="Comidas" decisionKey="menu" placeholder="ej. Pizzas a la parrilla" />
+        <div id="ver-lugar" className="scroll-mt-24">
+          <ProposalsBoard type="venue" title="Lugares" decisionKey="lugar" placeholder="ej. Quincho de Topo" />
+        </div>
+        <div id="ver-menu" className="scroll-mt-24">
+          <ProposalsBoard type="food" title="Comidas" decisionKey="menu" placeholder="ej. Pizzas a la parrilla" />
+        </div>
       </div>
     </div>
   )
