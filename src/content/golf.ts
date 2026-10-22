@@ -43,3 +43,45 @@ export const GOLF = {
   horasParaCorregir: 48,
   parDefault: 4,
 } as const
+
+// Historia para Instagram que se genera al guardar un partido de golf (1080 x 1920).
+// Las fotos viven en public/golf/historia/. `foco` es dónde está la cara (x: 0 = izquierda, y: 0 = arriba).
+// Si gana alguien de `garyPara` (Pato), siempre sale una foto de Gary Player; si no, cualquiera de las otras.
+// La frase sale al azar y abajo va el nombre del ganador con "!!!" ("Foreee, agachate que pasa el" / "Pato!!!").
+export const GOLF_HISTORIA = {
+  frases: [
+    'Agarrala y reventala',
+    'Pegale como si te debiera plata',
+    'Get in the hoooooleeeee!!!!!',
+    'Los dejaste comiendo pasto',
+    'Los sacaste a pasear',
+    'Sos un birdie con patas',
+    'Los mandaste a buscar pelotas al lago',
+    'El 19 lo pagan ellos',
+    'Ni Gary Player te para',
+    'Foreee, agachate que pasa el',
+    'Ponete la verde de Augusta',
+  ],
+  garyPara: ['m-pato'],
+  gary: [
+    { src: 'golf/historia/gary-1.jpg', x: 0.36, y: 0.3 },
+    { src: 'golf/historia/gary-2.jpg', x: 0.42, y: 0.4 },
+    { src: 'golf/historia/gary-3.jpg', x: 0.5, y: 0.28 },
+    { src: 'golf/historia/gary-4.jpg', x: 0.5, y: 0.3 },
+    { src: 'golf/historia/gary-5.jpg', x: 0.55, y: 0.4 },
+  ],
+  otras: [
+    { src: 'golf/historia/tiger-1.jpg', x: 0.56, y: 0.4 },
+    { src: 'golf/historia/tiger-2.jpg', x: 0.45, y: 0.4 },
+    { src: 'golf/historia/tiger-3.jpg', x: 0.47, y: 0.4 },
+    { src: 'golf/historia/daly-1.jpg', x: 0.5, y: 0.22 },
+    { src: 'golf/historia/daly-2.jpg', x: 0.5, y: 0.3 },
+    { src: 'golf/historia/daly-3.jpg', x: 0.5, y: 0.33 },
+    { src: 'golf/historia/daly-4.jpg', x: 0.38, y: 0.3 },
+    { src: 'golf/historia/daly-5.jpg', x: 0.5, y: 0.4 },
+    { src: 'golf/historia/daly-6.jpg', x: 0.5, y: 0.4 },
+    { src: 'golf/historia/daly-7.jpg', x: 0.58, y: 0.4 },
+    { src: 'golf/historia/ferrell-1.jpg', x: 0.5, y: 0.28 },
+    { src: 'golf/historia/ferrell-2.jpg', x: 0.5, y: 0.35 },
+  ],
+}

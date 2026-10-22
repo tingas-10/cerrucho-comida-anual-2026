@@ -16,7 +16,7 @@ const BASE = import.meta.env.BASE_URL
 const GOLD = '#d9b45f'
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif"
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+export function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => resolve(img)
@@ -25,7 +25,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   })
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
   ctx.arcTo(x + w, y, x + w, y + h, r)
@@ -35,18 +35,18 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath()
 }
 
-/** Dibuja la imagen cubriendo el rectángulo (como object-fit: cover), con el foco vertical indicado. */
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, focusY = 0.5) {
+/** Dibuja la imagen cubriendo el rectángulo (como object-fit: cover), con el foco indicado (0 a 1). */
+export function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, focusY = 0.5, focusX = 0.5) {
   const scale = Math.max(w / img.width, h / img.height)
   const sw = w / scale
   const sh = h / scale
-  const sx = (img.width - sw) / 2
+  const sx = Math.max(0, Math.min(img.width - sw, img.width * focusX - sw / 2))
   const sy = Math.max(0, Math.min(img.height - sh, img.height * focusY - sh / 2))
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
 /** Achica la fuente hasta que el texto entre en el ancho. */
-function fitText(ctx: CanvasRenderingContext2D, text: string, maxW: number, size: number, weight = 800, min = 28): number {
+export function fitText(ctx: CanvasRenderingContext2D, text: string, maxW: number, size: number, weight = 800, min = 28): number {
   let s = size
   ctx.font = `${weight} ${s}px ${FONT}`
   while (ctx.measureText(text).width > maxW && s > min) {

@@ -1,6 +1,6 @@
 // Golf · Un partido: cancha, modalidad, jugadores o equipos, tarjeta y posiciones.
 // Se guarda "por jugarse" o jugado. Jugado, lo corrigen los jugadores durante 48 horas; después, la comisión.
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Share2, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { GOLF, GOLF_MODOS, MODOS_ACTIVOS } from '../../content/golf'
@@ -15,6 +15,7 @@ import { allPlayers, allowsTotal, calcCard, cardIds, emptyCard, isTeamMode, parT
 import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
+import { GolfStoryModal } from './GolfStory'
 import { LinesEditor, LiveBoard, LiveEntry, linesOf } from './golfLive'
 import { courseGroups, entrantName, formatHcp, modeLabel, useGolfCourses, useGolfHcps } from './golfShared'
 
@@ -38,6 +39,7 @@ export function GolfPartido() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [voidOpen, setVoidOpen] = useState(false)
   const [guestName, setGuestName] = useState('')
+  const [storyOpen, setStoryOpen] = useState(false)
 
   useEffect(() => {
     if (remote.data && !dirty) setM(remote.data)
@@ -148,6 +150,7 @@ export function GolfPartido() {
       await db.setDoc(P.golfRound(m.id), next)
       setM(next)
       setDirty(false)
+      if (status === 'PLAYED' && roundResult(next).complete) setStoryOpen(true)
       toast.ok(status === 'PLAYED' ? `Partido guardado. Lo pueden corregir hasta el ${fmtDayLong(editableUntil!)} a las ${fmtTime(editableUntil!)}.` : 'Guardada como por jugarse.')
     } catch (e) {
       toast.error(errorText(e))
@@ -231,7 +234,13 @@ export function GolfPartido() {
         {m.voided ? <Pill tone="danger">Anulado</Pill> : played ? <Pill tone="ok">{isSolo ? 'Vuelta cargada' : 'Jugado'}</Pill> : isLive ? <Pill tone="ok">● En vivo</Pill> : <Pill tone="warn">{isSolo ? 'Sin terminar' : 'Por jugarse'}</Pill>}
         {m.challengeId ? <Pill tone="accent">Desafío</Pill> : null}
         {dirty ? <Pill tone="danger">Cambios sin guardar</Pill> : null}
+        {played && res.complete && !m.voided && !dirty ? (
+          <Button size="sm" variant="gold" onClick={() => setStoryOpen(true)}>
+            <Share2 size={14} /> Historia
+          </Button>
+        ) : null}
       </span>
+      <GolfStoryModal open={storyOpen} onClose={() => setStoryOpen(false)} round={m} players={players} />
     </div>
   )
 
