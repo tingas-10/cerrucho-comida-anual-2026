@@ -5,7 +5,7 @@ import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
 import { P } from '../../data/paths'
 import type { FmoGuest } from '../../data/types'
-import { computeStats, emptyStats, formatPoints, resultFor, scoreOf, yearOf, yearsWithMatches } from '../../domain/fmo'
+import { computeStats, emptyStats, formatPoints, resultFor, resultText, scoreOf, yearOf, yearsWithMatches } from '../../domain/fmo'
 import { fmtDayShort } from '../../domain/format'
 import { Button, Card, Loading, PageHeader, Pill, Section, Stat } from '../../ui/components'
 import { useToast } from '../../ui/toast'
@@ -95,7 +95,7 @@ export function FmoJugadores() {
               <Link key={m.id} to={`/fmo/partido/${m.id}`} className="row">
                 <span className="small">
                   <span className="tiny muted block">{fmtDayShort(m.playedAt)}</span>
-                  {m.nameA} {s.a} – {s.b} {m.nameB}
+                  {m.resultOnly ? `${m.nameA} vs ${m.nameB} · ${resultText(m)}` : `${m.nameA} ${s.a} – ${s.b} ${m.nameB}`}
                   <span className="tiny muted"> · jugó en {mine.team === 'A' ? m.nameA : m.nameB}</span>
                 </span>
                 <span className="flex items-center gap-2 shrink-0">

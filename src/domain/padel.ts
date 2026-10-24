@@ -21,6 +21,7 @@ export function pairOf(m: PadelMatch, playerId: string): Pair | null {
 
 /** Sets ganados por cada pareja y games totales. */
 export function tally(m: PadelMatch): { a: number; b: number; gamesA: number; gamesB: number } {
+  if (m.resultOnly) return { a: 0, b: 0, gamesA: 0, gamesB: 0 } // sin sets: no suma sets ni games
   let a = 0
   let b = 0
   let gamesA = 0
@@ -34,8 +35,9 @@ export function tally(m: PadelMatch): { a: number; b: number; gamesA: number; ga
   return { a, b, gamesA, gamesB }
 }
 
-/** Pareja ganadora si los sets cargados definen el partido; si no, null. */
+/** Pareja ganadora si los sets cargados definen el partido (o la que marcaron en "sólo sé quién ganó"); si no, null. */
 export function winnerOf(m: PadelMatch): Pair | null {
+  if (m.resultOnly) return m.winner ?? null
   const t = tally(m)
   const need = setsToWin(m.bestOf)
   if (t.a >= need && t.a > t.b) return 'A'
@@ -50,6 +52,7 @@ export function validateMatch(m: PadelMatch, isGuest: (id: string) => boolean): 
   if (new Set(ids).size < 4) return 'Hay un jugador repetido.'
   if (ids.filter(isGuest).length > PADEL.maxInvitados) return `Puede jugar hasta ${PADEL.maxInvitados} invitado.`
   if (!(PADEL.formatos as readonly number[]).includes(m.bestOf)) return 'Elegí el formato del partido.'
+  if (m.resultOnly) return m.winner === 'A' || m.winner === 'B' ? null : 'Marcá qué pareja ganó.'
   if (m.sets.length === 0) return 'Cargá el resultado de los sets.'
   const need = setsToWin(m.bestOf)
   let a = 0
@@ -191,5 +194,6 @@ export function padelYears(matches: PadelMatch[], currentYear: number): number[]
 }
 
 export function setsText(m: PadelMatch): string {
+  if (m.resultOnly) return `Sin resultado · a ${m.bestOf} ${m.bestOf === 1 ? 'set' : 'sets'}`
   return m.sets.map((s) => `${s.a}-${s.b}`).join(' · ')
 }

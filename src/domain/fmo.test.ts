@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FmoMatch } from '../data/types'
-import { computeStats, defaultPosition, formatPoints, headToHead, ranking, resultFor, scoreOf, startersOf, subsOf, upcomingMatches, yearOf } from './fmo'
+import { computeStats, defaultPosition, formatPoints, headToHead, ranking, resultFor, resultText, scoreOf, startersOf, subsOf, upcomingMatches, yearOf } from './fmo'
 
 function match(id: string, playedAt: number, a: Record<string, number>, b: Record<string, number>, over: Partial<FmoMatch> = {}): FmoMatch {
   const players: FmoMatch['players'] = {}
@@ -100,3 +100,20 @@ describe('FMO · suplentes y partidos por jugarse', () => {
   })
 })
 
+
+describe('FMO · sólo sé quién ganó', () => {
+  it('suma ganados y perdidos, pero no goles', () => {
+    const m = match('r1', d2026, { ana: 0, beto: 0 }, { caro: 0 }, { resultOnly: true, winner: 'B' })
+    const st = computeStats([m, match('m1', d2026, { ana: 2 }, { caro: 1 })], 2026)
+    expect(resultFor(m, 'caro')).toBe('W')
+    expect(st.ana).toMatchObject({ played: 2, won: 1, lost: 1, goals: 2, withGoals: 1 })
+    expect(st.caro).toMatchObject({ played: 2, won: 1, lost: 1, goals: 1, withGoals: 1 })
+  })
+  it('empate y texto del resultado', () => {
+    const m = match('r2', d2026, { ana: 0 }, { caro: 0 }, { resultOnly: true, winner: null })
+    expect(resultFor(m, 'ana')).toBe('D')
+    expect(resultText(m)).toBe('Empate')
+    expect(resultText({ ...m, winner: 'A' })).toBe('Ganó Claros')
+    expect(resultText(match('m', d2026, { ana: 3 }, { caro: 1 }))).toBe('3 – 1')
+  })
+})

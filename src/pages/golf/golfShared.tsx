@@ -57,8 +57,8 @@ export function entrantName(e: GolfEntrant, players: FmoPlayers): string {
   return e.players.length ? e.players.map(players.nameOf).join(' / ') : 'Equipo sin jugadores'
 }
 
-export function modeLabel(r: Pick<GolfRound, 'mode' | 'useHcp'>): string {
-  return `${GOLF_MODOS[r.mode].corto}${r.useHcp ? '' : ' · sin hándicap'}`
+export function modeLabel(r: Pick<GolfRound, 'mode' | 'useHcp' | 'resultOnly'>): string {
+  return `${GOLF_MODOS[r.mode].corto}${r.resultOnly ? ' · sólo el resultado' : r.useHcp ? '' : ' · sin hándicap'}`
 }
 
 export function formatHcp(h: number | null | undefined): string {

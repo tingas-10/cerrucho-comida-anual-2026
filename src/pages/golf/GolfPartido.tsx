@@ -12,7 +12,7 @@ import { P } from '../../data/paths'
 import type { FmoGuest, GolfCard, GolfMode, GolfRound } from '../../data/types'
 import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
 import { allPlayers, allowsTotal, calcCard, cardIds, emptyCard, isTeamMode, parTotal, regroup, roundResult, sixesTotals, usesTotal, validateRound } from '../../domain/golf'
-import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill } from '../../ui/components'
+import { Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
 import { GolfStoryModal } from './GolfStory'
@@ -115,6 +115,13 @@ export function GolfPartido() {
   function removeTeam(tid: string) {
     change((r) => ({ ...r, entrants: r.entrants.filter((e) => e.id !== tid) }))
   }
+  /** Con las tarjetas o "sólo sé cómo salió" (se marca el puesto de cada uno, sin golpes). */
+  function setResultOnly(on: boolean) {
+    change((r) => ({ ...r, resultOnly: on, places: r.places ?? {} }))
+  }
+  function setPlace(entrantId: string, place: number) {
+    change((r) => ({ ...r, places: { ...(r.places ?? {}), [entrantId]: place } }))
+  }
   function setCard(cid: string, patch: Partial<GolfCard>) {
     change((r) => ({ ...r, cards: { ...r.cards, [cid]: { ...r.cards[cid], ...patch } } }))
   }
@@ -208,7 +215,7 @@ export function GolfPartido() {
     if (err) return toast.error(err)
     setBusy(true)
     try {
-      await proposeGolf(db, memberId, `Corregir la tarjeta del partido del ${fmtDayLong(m.playedAt)} en ${m.course.name}`, { type: 'round_fix', roundId: m.id, cards: m.cards })
+      await proposeGolf(db, memberId, `Corregir la tarjeta del partido del ${fmtDayLong(m.playedAt)} en ${m.course.name}`, { type: 'round_fix', roundId: m.id, cards: m.cards, ...(m.resultOnly ? { places: m.places ?? {} } : {}) })
       setDirty(false)
       setFixMode(false)
       toast.ok('Propuesta enviada. Se aplica cuando otro de la comisión la apruebe.')
@@ -282,7 +289,7 @@ export function GolfPartido() {
           </div>
         ) : null}
         <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
-          <Scorecard round={m} players={players} editable={false} onCard={() => undefined} />
+          {m.resultOnly ? <PlacesCard round={m} players={players} editable={false} onPlace={() => undefined} /> : <Scorecard round={m} players={players} editable={false} onCard={() => undefined} />}
           {standings}
         </div>
         <div className="mt-4">
@@ -382,10 +389,27 @@ export function GolfPartido() {
                 </select>
               </Field>
             )}
-            <label className="flex items-center gap-2 small font-semibold min-h-[40px]">
-              <input type="checkbox" className="w-5 h-5" checked={m.useHcp} onChange={(e) => change((r) => ({ ...r, useHcp: e.target.checked }))} />
-              Con hándicap
-            </label>
+            {!isSolo ? (
+              <div className="mb-2">
+                <p className="label">Resultado</p>
+                <Segmented
+                  ariaLabel="Cómo se carga el resultado"
+                  value={m.resultOnly ? 'places' : 'cards'}
+                  onChange={(v) => setResultOnly(v === 'places')}
+                  options={[
+                    { value: 'cards', label: 'Con las tarjetas' },
+                    { value: 'places', label: 'Sólo sé cómo salió' },
+                  ]}
+                />
+                {m.resultOnly ? <p className="tiny muted mt-1">Para un partido del que no se acuerdan los golpes: marcan el puesto de cada uno y suma al ranking, pero no a golpes, promedios ni récords.</p> : null}
+              </div>
+            ) : null}
+            {!m.resultOnly ? (
+              <label className="flex items-center gap-2 small font-semibold min-h-[40px]">
+                <input type="checkbox" className="w-5 h-5" checked={m.useHcp} onChange={(e) => change((r) => ({ ...r, useHcp: e.target.checked }))} />
+                Con hándicap
+              </label>
+            ) : null}
           </Card>
         ) : null}
 
@@ -444,10 +468,14 @@ export function GolfPartido() {
             <p className="tiny muted mt-1">Los invitados son los mismos de FMO y Pádel. {team ? 'El invitado nuevo entra en el primer equipo con lugar.' : ''}</p>
           </Card>
         ) : null}
-        {setupEditable && !isSolo && !played ? <LinesEditor round={m} players={players} onChange={(lines) => change((r) => ({ ...r, lines }))} /> : null}
+        {setupEditable && !isSolo && !played && !m.resultOnly ? <LinesEditor round={m} players={players} onChange={(lines) => change((r) => ({ ...r, lines }))} /> : null}
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
-          <Scorecard round={m} players={players} editable={cardsEditable && !isLive} onCard={setCard} />
+          {m.resultOnly ? (
+            <PlacesCard round={m} players={players} editable={cardsEditable} onPlace={setPlace} />
+          ) : (
+            <Scorecard round={m} players={players} editable={cardsEditable && !isLive} onCard={setCard} />
+          )}
           {standings}
         </div>
 
@@ -480,9 +508,11 @@ export function GolfPartido() {
                 <Button variant="gold" onClick={() => void save('DRAFT')} loading={busy}>
                   Guardar por jugarse
                 </Button>
-                <Button variant="line" onClick={() => void startLive()} loading={busy}>
-                  ● Empezar en vivo
-                </Button>
+                {!m.resultOnly ? (
+                  <Button variant="line" onClick={() => void startLive()} loading={busy}>
+                    ● Empezar en vivo
+                  </Button>
+                ) : null}
                 <Button variant="line" onClick={() => void save('PLAYED')} loading={busy}>
                   Ya se jugó: guardar resultado
                 </Button>
@@ -580,6 +610,40 @@ function PlayerSelect({ available, onPick }: { available: FmoPlayers['list']; on
 }
 
 /** Tarjeta: hoyos en filas y jugadores (o equipos) en columnas. */
+/** "Sólo sé cómo salió": el puesto de cada jugador o equipo. Los empatados comparten número. */
+function PlacesCard({ round, players, editable, onPlace }: { round: GolfRound; players: FmoPlayers; editable: boolean; onPlace: (entrantId: string, place: number) => void }) {
+  const n = round.entrants.length
+  return (
+    <Card>
+      <p className="h3 mb-1">Cómo salió</p>
+      <p className="tiny muted mb-2">{editable ? 'Marcá el puesto de cada uno. Si empataron, poneles el mismo puesto.' : 'Se cargaron sólo los puestos, sin la tarjeta.'}</p>
+      {n === 0 ? <p className="small muted">Todavía no hay jugadores.</p> : null}
+      {round.entrants.map((e) => {
+        const place = round.places?.[e.id]
+        return (
+          <div key={e.id} className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-0">
+            <span className="small font-semibold min-w-0 truncate">{entrantName(e, players)}</span>
+            {editable ? (
+              <select className="input !w-auto shrink-0" value={place ?? ''} onChange={(ev) => onPlace(e.id, Number(ev.target.value))} aria-label={`Puesto de ${entrantName(e, players)}`}>
+                <option value="" disabled>
+                  Puesto
+                </option>
+                {Array.from({ length: Math.max(n, 2) }, (_, i) => i + 1).map((k) => (
+                  <option key={k} value={k}>
+                    {k === 1 ? '1º · ganó' : `${k}º`}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="tabular-nums small shrink-0">{place ? `${place}º` : '—'}</span>
+            )}
+          </div>
+        )
+      })}
+    </Card>
+  )
+}
+
 function Scorecard({ round, players, editable, onCard }: { round: GolfRound; players: FmoPlayers; editable: boolean; onCard: (cid: string, patch: Partial<GolfCard>) => void }) {
   const ids = cardIds(round)
   const holes = round.course.holes

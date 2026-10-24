@@ -477,6 +477,9 @@ export interface FmoMatch {
   otherA: number // goles en contra o sin dueño a favor de A
   otherB: number
   status: 'DRAFT' | 'PLAYED' // DRAFT = por jugarse (armado, sin resultado)
+  // "Sólo sé quién ganó": no se acuerdan el resultado. Suma a la tabla (G/E/P), pero no tiene goles.
+  resultOnly?: boolean
+  winner?: 'A' | 'B' | null // con resultOnly: equipo ganador (null = empate)
   notes?: string
   createdBy: string
   updatedBy: string
@@ -499,6 +502,9 @@ export interface PadelMatch {
   pairB: [string, string]
   sets: PadelSet[]
   status: 'DRAFT' | 'PLAYED'
+  // "Sólo sé quién ganó": se elige el formato y la pareja ganadora, sin sets. Suma puntos, no sets ni games.
+  resultOnly?: boolean
+  winner?: 'A' | 'B' | null
   notes?: string
   createdBy: string
   updatedBy: string
@@ -556,6 +562,10 @@ export interface GolfRound {
   lines?: GolfLine[] // líneas (grupos que salen juntos); cada uno carga sus golpes en vivo
   live?: boolean // arrancó: se cargan los golpes hoyo por hoyo y todos ven cómo viene cada línea
   challengeId?: string | null // si salió de un desafío
+  // "Sólo sé cómo salió": sin tarjetas, se marca el puesto de cada jugador o equipo (los empatados comparten).
+  // Suma al ranking, pero no a golpes, promedios, birdies ni récords de cancha.
+  resultOnly?: boolean
+  places?: Record<string, number> // por participante (entrant.id): 1 = primero
   notes?: string
   lastProposal?: string
   createdBy: string

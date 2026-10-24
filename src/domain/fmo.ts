@@ -34,13 +34,29 @@ export function upcomingMatches(matches: FmoMatch[]): FmoMatch[] {
   return matches.filter((m) => m.status === 'DRAFT').sort((a, b) => a.playedAt - b.playedAt)
 }
 
+/** Equipo ganador (null = empate): del marcador o, si sólo se cargó quién ganó, de lo que marcaron. */
+export function winnerTeam(m: FmoMatch): Team | null {
+  if (m.resultOnly) return m.winner ?? null
+  const s = scoreOf(m)
+  return s.a === s.b ? null : s.a > s.b ? 'A' : 'B'
+}
+
+/** Cómo salió, para mostrar: "3 – 2", o "Ganó Claros" / "Empate" si no se cargaron los goles. */
+export function resultText(m: FmoMatch): string {
+  if (!m.resultOnly) {
+    const s = scoreOf(m)
+    return `${s.a} – ${s.b}`
+  }
+  const w = winnerTeam(m)
+  return w ? `Ganó ${w === 'A' ? m.nameA : m.nameB}` : 'Empate'
+}
+
 /** Resultado del partido para un jugador: G, E, P o null si no jugó. */
 export function resultFor(m: FmoMatch, playerId: string): 'W' | 'D' | 'L' | null {
   const p = m.players[playerId]
   if (!p) return null
-  const s = scoreOf(m)
-  if (s.a === s.b) return 'D'
-  const winner: Team = s.a > s.b ? 'A' : 'B'
+  const winner = winnerTeam(m)
+  if (!winner) return 'D'
   return p.team === winner ? 'W' : 'L'
 }
 
@@ -56,11 +72,12 @@ export interface PlayerStats {
   drawn: number
   lost: number
   goals: number
+  withGoals: number // partidos con los goles anotados (los de "sólo sé quién ganó" no): base para promedios
   points: number
 }
 
 export function emptyStats(playerId: string): PlayerStats {
-  return { playerId, played: 0, won: 0, drawn: 0, lost: 0, goals: 0, points: 0 }
+  return { playerId, played: 0, won: 0, drawn: 0, lost: 0, goals: 0, withGoals: 0, points: 0 }
 }
 
 export function pointsOf(s: Pick<PlayerStats, 'won' | 'drawn' | 'lost' | 'goals'>): number {
@@ -68,7 +85,8 @@ export function pointsOf(s: Pick<PlayerStats, 'won' | 'drawn' | 'lost' | 'goals'
   return s.won * p.ganado + s.drawn * p.empatado + s.lost * p.perdido + s.goals * p.gol
 }
 
-/** Sólo cuentan los partidos guardados como jugados. `year` filtra por año; sin año es el histórico. */
+/** Sólo cuentan los partidos guardados como jugados. `year` filtra por año; sin año es el histórico.
+ *  Los de "sólo sé quién ganó" suman ganados/empatados/perdidos, pero no goles. */
 export function computeStats(matches: FmoMatch[], year?: number): Record<string, PlayerStats> {
   const out: Record<string, PlayerStats> = {}
   for (const m of matches) {
@@ -77,7 +95,10 @@ export function computeStats(matches: FmoMatch[], year?: number): Record<string,
     for (const [id, p] of Object.entries(m.players)) {
       const s = (out[id] ??= emptyStats(id))
       s.played++
-      s.goals += p.goals || 0
+      if (!m.resultOnly) {
+        s.withGoals++
+        s.goals += p.goals || 0
+      }
       const r = resultFor(m, id)
       if (r === 'W') s.won++
       else if (r === 'D') s.drawn++
@@ -114,8 +135,10 @@ export function headToHead(matches: FmoMatch[], a: string, b: string, year?: num
       else out.together.lost++
     } else {
       out.against.played++
-      out.against.aGoals += pa.goals || 0
-      out.against.bGoals += pb.goals || 0
+      if (!m.resultOnly) {
+        out.against.aGoals += pa.goals || 0
+        out.against.bGoals += pb.goals || 0
+      }
       if (ra === 'W') out.against.aWins++
       else if (ra === 'L') out.against.bWins++
       else out.against.draws++

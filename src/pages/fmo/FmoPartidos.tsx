@@ -6,7 +6,7 @@ import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
 import { P } from '../../data/paths'
 import type { FmoMatch } from '../../data/types'
-import { scoreOf, startersOf, subsOf, teamOf, upcomingMatches } from '../../domain/fmo'
+import { scoreOf, startersOf, subsOf, teamOf, upcomingMatches, winnerTeam } from '../../domain/fmo'
 import { fmtDayLong, fmtTime, localToMs, msToLocalParts } from '../../domain/format'
 import { Button, Card, Empty, Loading, PageHeader, Pill, Section } from '../../ui/components'
 import { useToast } from '../../ui/toast'
@@ -101,6 +101,7 @@ export function FmoPartidos() {
           <div className="grid gap-3">
             {played.map((m) => {
               const s = scoreOf(m)
+              const w = winnerTeam(m)
               return (
                 <Card key={m.id}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -110,11 +111,18 @@ export function FmoPartidos() {
                     </Link>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-2">
-                    <p className={`text-right font-bold ${s.a > s.b ? '' : 'muted'}`}>{m.nameA}</p>
-                    <p className="text-3xl font-extrabold tracking-tight tabular-nums">
-                      {s.a} – {s.b}
-                    </p>
-                    <p className={`font-bold ${s.b > s.a ? '' : 'muted'}`}>{m.nameB}</p>
+                    <p className={`text-right font-bold ${w === 'A' ? '' : 'muted'}`}>{m.nameA}</p>
+                    {m.resultOnly ? (
+                      <p className="text-center">
+                        <span className="font-extrabold block">{w ? `Ganó ${w === 'A' ? m.nameA : m.nameB}` : 'Empate'}</span>
+                        <span className="tiny muted">sin goles anotados</span>
+                      </p>
+                    ) : (
+                      <p className="text-3xl font-extrabold tracking-tight tabular-nums">
+                        {s.a} – {s.b}
+                      </p>
+                    )}
+                    <p className={`font-bold ${w === 'B' ? '' : 'muted'}`}>{m.nameB}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mt-3 small">
                     {(['A', 'B'] as const).map((t) => (

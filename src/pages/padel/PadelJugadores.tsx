@@ -85,7 +85,7 @@ export function PadelJugadores() {
                     {fmtDayShort(m.playedAt)} · {setsText(m)}
                   </span>
                   <span className="block truncate">
-                    {pairName(m, side, players)} {side === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`} {pairName(m, other, players)}
+                    {pairName(m, side, players)} {m.resultOnly ? 'vs' : side === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`} {pairName(m, other, players)}
                   </span>
                 </span>
                 {won ? <Pill tone="ok">Ganó</Pill> : <Pill tone="danger">Perdió</Pill>}

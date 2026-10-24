@@ -75,3 +75,17 @@ describe('pádel · puntos y rankings', () => {
     expect(p[0].won).toBe(2)
   })
 })
+
+describe('pádel · sólo sé quién ganó', () => {
+  const ro = (bestOf: 1 | 3 | 5, winner: 'A' | 'B' | null) => ({ ...match(['a', 'b'], ['c', 'd'], bestOf, []), resultOnly: true, winner })
+  it('pide la pareja ganadora, no los sets', () => {
+    expect(validateMatch(ro(3, null), guest)).toMatch(/ganó/)
+    expect(validateMatch(ro(3, 'B'), guest)).toBeNull()
+  })
+  it('suma los puntos del formato, sin sets ni games', () => {
+    const st = computePadelStats([ro(5, 'B'), ro(1, 'A')])
+    expect(winnerOf(ro(5, 'B'))).toBe('B')
+    expect(st.c).toMatchObject({ played: 2, won: 1, lost: 1, points: 3, setsWon: 0, gamesWon: 0 })
+    expect(st.a).toMatchObject({ played: 2, won: 1, points: 1 })
+  })
+})

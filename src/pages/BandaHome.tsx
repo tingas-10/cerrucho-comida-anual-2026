@@ -7,9 +7,9 @@ import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
 import { useEdition, useMembers, useNow } from '../data/hooks'
 import { formatBirthday, upcoming } from '../domain/birthdays'
-import { computeStats, formatPoints, ranking, scoreOf, upcomingMatches, yearOf } from '../domain/fmo'
+import { computeStats, formatPoints, ranking, resultText, scoreOf, upcomingMatches, yearOf } from '../domain/fmo'
 import { fmtDayLong, fmtTime } from '../domain/format'
-import { computePadelStats, padelRanking, tally } from '../domain/padel'
+import { computePadelStats, padelRanking, tally, winnerOf } from '../domain/padel'
 import { meritTable, roundResult, upcomingRounds } from '../domain/golf'
 import { PadelIcon } from '../ui/Shell'
 import { Card, MemberAvatar } from '../ui/components'
@@ -93,7 +93,7 @@ export function BandaHome() {
                 <span className="muted">Último partido · {fmtDayLong(last.playedAt)}</span>
                 <br />
                 <b>
-                  {last.nameA} {scoreOf(last).a} – {scoreOf(last).b} {last.nameB}
+                  {last.resultOnly ? `${last.nameA} vs ${last.nameB} · ${resultText(last)}` : `${last.nameA} ${scoreOf(last).a} – ${scoreOf(last).b} ${last.nameB}`}
                 </b>
               </p>
             ) : (
@@ -131,7 +131,9 @@ export function BandaHome() {
                 <span className="muted">Último partido · {fmtDayLong(lastPadel.playedAt)}</span>
                 <br />
                 <b>
-                  {pairName(lastPadel, 'A', players)} {tally(lastPadel).a} – {tally(lastPadel).b} {pairName(lastPadel, 'B', players)}
+                  {lastPadel.resultOnly
+                    ? `Ganó ${pairName(lastPadel, winnerOf(lastPadel) ?? 'A', players)} · sin sets cargados`
+                    : `${pairName(lastPadel, 'A', players)} ${tally(lastPadel).a} – ${tally(lastPadel).b} ${pairName(lastPadel, 'B', players)}`}
                 </b>
               </p>
             ) : (

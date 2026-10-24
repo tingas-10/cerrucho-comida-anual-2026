@@ -146,6 +146,7 @@ export function sixesTotals(r: GolfRound): { netted: number[]; raw: number[]; th
 /** Resultado de una ronda según su modalidad. */
 export function roundResult(r: GolfRound): RoundResult {
   const n = r.course.holes.length
+  if (r.resultOnly) return placesResult(r)
   const ids = cardIds(r)
   const minEntrants = r.mode === 'solo' ? 1 : 2
   const complete = r.entrants.length >= minEntrants && ids.length > 0 && ids.every((id) => cardComplete(r.cards[id], n, r.mode))
@@ -213,6 +214,23 @@ export function roundResult(r: GolfRound): RoundResult {
   return { complete: true, standings, match: { aId: ea.id, bId: eb.id, aHoles, bHoles, halved } }
 }
 
+/** "Sólo sé cómo salió": las posiciones salen de los puestos marcados (los empatados comparten puesto). */
+function placesResult(r: GolfRound): RoundResult {
+  const places = r.places ?? {}
+  const ok = r.mode !== 'solo' && r.entrants.length >= 2 && r.entrants.every((e) => Number.isInteger(places[e.id]) && places[e.id] >= 1)
+  if (!ok) return { standings: [], complete: false }
+  const ranked = rank(
+    r.entrants.map((e) => ({ entrantId: e.id, players: e.players, score: places[e.id] })),
+    (x) => x.score,
+    'low',
+  )
+  const tied = (pos: number) => ranked.filter((x) => x.position === pos).length > 1
+  return {
+    complete: true,
+    standings: ranked.map(({ entrantId, players, position }) => ({ entrantId, players, position, label: tied(position) ? `${position}º (empate)` : position === 1 ? 'Ganó' : `${position}º` })),
+  }
+}
+
 /** Devuelve null si la ronda se puede guardar como jugada, o el motivo. */
 export function validateRound(r: GolfRound): string | null {
   const n = r.course.holes.length
@@ -228,6 +246,10 @@ export function validateRound(r: GolfRound): string | null {
   if (r.mode === 'fourball' && r.entrants.some((e) => e.players.length !== 2)) return 'En four ball cada pareja tiene 2 jugadores.'
   if (r.mode === 'scramble' && r.entrants.some((e) => e.players.length < 2)) return 'En la laguneada cada equipo tiene al menos 2 jugadores.'
   if (!isTeamMode(r.mode) && r.entrants.some((e) => e.players.length !== 1)) return 'Revisá los jugadores.'
+  if (r.resultOnly) {
+    if (r.mode === 'solo') return 'Una vuelta individual necesita la tarjeta.'
+    return r.entrants.every((e) => Number.isInteger(r.places?.[e.id]) && (r.places?.[e.id] ?? 0) >= 1) ? null : 'Marcá el puesto de cada uno.'
+  }
   const missing = cardIds(r).filter((id) => !cardComplete(r.cards[id], n, r.mode))
   if (missing.length) return allowsTotal(r.mode) ? 'Faltan tarjetas: cargá todos los hoyos o el total.' : 'Faltan tarjetas: cargá todos los hoyos.'
   return null
@@ -308,7 +330,7 @@ export function golfPlayerStats(rounds: GolfRound[], playerId: string, year?: nu
       if (pos === 1) st.wins++
       if (pos <= 3) st.podiums++
     }
-    if (r.mode === 'scramble') continue
+    if (r.mode === 'scramble' || r.resultOnly) continue // sin tarjeta propia: no suma golpes ni logros
     const card = r.cards[playerId]
     const cc = calcCard(r, card)
     const n = r.course.holes.length
@@ -496,7 +518,7 @@ export interface CourseRecord {
 export function courseHistory(rounds: GolfRound[], courseId: string): CourseRecord[] {
   const out: Record<string, { rounds: number; scores: number[]; last: number }> = {}
   for (const r of rounds) {
-    if (r.status !== 'PLAYED' || r.voided || r.courseId !== courseId || r.mode === 'scramble') continue
+    if (r.status !== 'PLAYED' || r.voided || r.courseId !== courseId || r.mode === 'scramble' || r.resultOnly) continue
     for (const pid of allPlayers(r)) {
       const cc = calcCard(r, r.cards[pid])
       const row = (out[pid] ??= { rounds: 0, scores: [], last: 0 })

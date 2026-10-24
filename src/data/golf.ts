@@ -11,7 +11,7 @@ import { localToMs, msToLocalParts } from '../domain/format'
 export type GolfPayload =
   | { type: 'points'; points: GolfPointsConfig }
   | { type: 'course'; courseId: string; name: string; holes: GolfHole[]; archived: boolean }
-  | { type: 'round_fix'; roundId: string; cards: Record<string, GolfCard> }
+  | { type: 'round_fix'; roundId: string; cards: Record<string, GolfCard>; places?: Record<string, number> }
   | { type: 'round_void'; roundId: string }
   | { type: 'hcp'; playerId: string; hcp: number }
 
@@ -61,7 +61,7 @@ export async function applyGolf(db: DataAdapter, p: GolfProposal, by: string) {
     const prevPlayer = p.type === 'hcp' ? await tx.get<GolfPlayerDoc>(P.golfPlayer(pl.playerId as string)) : null
     if (p.type === 'points') tx.set(P.golfConfig, { points: pl.points, lastProposal: p.id, updatedAt: now })
     else if (p.type === 'course') tx.set(P.golfCourse(pl.courseId as string), { id: pl.courseId, name: pl.name, holes: pl.holes, archived: pl.archived, lastProposal: p.id, updatedAt: now }, { merge: true })
-    else if (p.type === 'round_fix') tx.update(P.golfRound(pl.roundId as string), { cards: pl.cards, lastProposal: p.id, updatedBy: by, updatedAt: now })
+    else if (p.type === 'round_fix') tx.update(P.golfRound(pl.roundId as string), { cards: pl.cards, ...(pl.places ? { places: pl.places } : {}), lastProposal: p.id, updatedBy: by, updatedAt: now })
     else if (p.type === 'round_void') tx.update(P.golfRound(pl.roundId as string), { voided: true, lastProposal: p.id, updatedBy: by, updatedAt: now })
     else if (p.type === 'hcp') {
       const history = [...(prevPlayer?.history ?? []), { at: now, hcp: pl.hcp as number, by, proposalId: p.id }]

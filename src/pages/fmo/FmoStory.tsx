@@ -115,9 +115,16 @@ async function drawStory(canvas: HTMLCanvasElement, m: FmoMatch, players: FmoPla
     }
   }
   ctx.fillStyle = '#ffffff'
-  ctx.font = `800 170px ${FONT}`
-  ctx.fillText(`${d.score.a} – ${d.score.b}`, W / 2, 520)
-  if (!d.winner) {
+  if (m.resultOnly) {
+    // Sin goles anotados: en vez del marcador, quién ganó.
+    const txt = d.winner ? 'GANÓ' : 'EMPATE'
+    ctx.font = `800 120px ${FONT}`
+    ctx.fillText(txt, W / 2, 500)
+  } else {
+    ctx.font = `800 170px ${FONT}`
+    ctx.fillText(`${d.score.a} – ${d.score.b}`, W / 2, 520)
+  }
+  if (!d.winner && !m.resultOnly) {
     ctx.fillStyle = GOLD
     ctx.font = `800 26px ${FONT}`
     ctx.fillText('EMPATE', W / 2, 382)
@@ -127,12 +134,17 @@ async function drawStory(canvas: HTMLCanvasElement, m: FmoMatch, players: FmoPla
   ctx.fillStyle = GOLD
   ctx.font = `800 26px ${FONT}`
   ctx.fillText('G O L E S', W / 2, 620)
+  if (m.resultOnly) {
+    ctx.fillStyle = '#9ca1ae'
+    ctx.font = `500 34px ${FONT}`
+    ctx.fillText('Esta vez no se anotaron', W / 2, 690)
+  }
   ctx.fillStyle = '#ffffff'
   for (const [list, side] of [[d.scorersA, 'left'], [d.scorersB, 'right']] as const) {
     const shown = list.length > 4 ? list.slice(0, 3) : list
     const rows: Array<{ name: string; goals: number }> = shown.map((s) => ({ name: players.nameOf(s.id), goals: s.goals }))
     if (list.length > 4) rows.push({ name: `+${list.length - 3} más`, goals: 0 })
-    if (!rows.length) rows.push({ name: '—', goals: 0 })
+    if (!rows.length && !m.resultOnly) rows.push({ name: '—', goals: 0 })
     rows.forEach((r, i) => {
       const y = 680 + i * 52
       const balls = Math.min(r.goals, 4)

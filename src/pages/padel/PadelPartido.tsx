@@ -11,7 +11,7 @@ import type { FmoGuest, PadelMatch } from '../../data/types'
 import { fmtDayLong, localToMs, msToLocalParts } from '../../domain/format'
 import { formatPoints } from '../../domain/fmo'
 import { setsToWin, tally, validateMatch, winnerOf, type Pair } from '../../domain/padel'
-import { Avatar, Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Modal, Notice, Pill } from '../../ui/components'
+import { Avatar, Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Modal, Notice, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers } from '../fmo/fmoShared'
 import { POSITION_LABEL, PadelCourt, pairName } from './padelShared'
@@ -43,13 +43,24 @@ export function PadelPartido() {
   const validation = validateMatch(m, isGuest)
   const title = (
     <>
-      {pairName(m, 'A', players)} <span className="tabular-nums text-accent">{t.a} – {t.b}</span> {pairName(m, 'B', players)}
+      {pairName(m, 'A', players)} {m.resultOnly ? <span className="muted">vs</span> : <span className="tabular-nums text-accent">{t.a} – {t.b}</span>} {pairName(m, 'B', players)}
     </>
   )
 
   function change(patch: Partial<PadelMatch>) {
     setDirty(true)
     setM((cur) => (cur ? { ...cur, ...patch } : cur))
+  }
+
+  /** Con los sets o "sólo sé quién ganó". Al pasar a lo segundo, la pareja ganadora queda sin marcar. */
+  function setResultOnly(on: boolean) {
+    setDirty(true)
+    setM((cur) => {
+      if (!cur) return cur
+      const next: PadelMatch = { ...cur, resultOnly: on }
+      delete next.winner
+      return next
+    })
   }
 
   /** Pone a alguien en un lugar. Si ya estaba en la cancha, intercambia con quien ocupaba ese lugar. */
@@ -101,7 +112,7 @@ export function PadelPartido() {
   const canAddSet = m.sets.length < m.bestOf && !winner
   const result = winner ? (
     <Notice tone="ok">
-      Gana <b>{pairName(m, winner, players)}</b> {winner === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`}: suma {formatPoints(PADEL.puntos[m.bestOf] ?? 0)} {PADEL.puntos[m.bestOf] === 1 ? 'punto' : 'puntos'} cada uno.
+      Gana <b>{pairName(m, winner, players)}</b>{m.resultOnly ? ' (sin sets cargados)' : ` ${winner === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`}`}: suma {formatPoints(PADEL.puntos[m.bestOf] ?? 0)} {PADEL.puntos[m.bestOf] === 1 ? 'punto' : 'puntos'} cada uno.
     </Notice>
   ) : null
 
@@ -178,6 +189,34 @@ export function PadelPartido() {
           </Card>
 
           <Card>
+            <p className="h3 mb-2">Resultado</p>
+            <Segmented
+              ariaLabel="Cómo se carga el resultado"
+              value={m.resultOnly ? 'winner' : 'sets'}
+              onChange={(v) => setResultOnly(v === 'winner')}
+              options={[
+                { value: 'sets', label: 'Con los sets' },
+                { value: 'winner', label: 'Sólo sé quién ganó' },
+              ]}
+            />
+            {m.resultOnly ? (
+              <div className="mt-3">
+                <p className="small mb-2">¿Qué pareja ganó?</p>
+                <div className="grid gap-2">
+                  {(['A', 'B'] as const).map((pair) => (
+                    <button key={pair} type="button" aria-pressed={m.winner === pair} onClick={() => change({ winner: pair })} className={`btn justify-start ${m.winner === pair ? 'btn-gold' : 'btn-line'}`}>
+                      {pairName(m, pair, players)}
+                    </button>
+                  ))}
+                </div>
+                <p className="tiny muted mt-2">Suma los puntos del formato elegido ({formatoLabel(m.bestOf)}), pero no cuenta sets ni games.</p>
+                {result ? <div className="mt-3">{result}</div> : null}
+              </div>
+            ) : null}
+          </Card>
+
+          {!m.resultOnly ? (
+          <Card>
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="h3">Sets</p>
               <span className="tiny muted">{m.bestOf === 1 ? 'Gana el set' : `Gana el primero en ganar ${setsToWin(m.bestOf)}`}</span>
@@ -209,6 +248,7 @@ export function PadelPartido() {
             </Button>
             <div className="mt-3">{result ?? (m.sets.length ? <p className="tiny muted">{validation}</p> : null)}</div>
           </Card>
+          ) : null}
 
           <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] md:static z-10 flex gap-2 flex-wrap items-center rounded-xl border border-line bg-card p-2 shadow-lg md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <Button variant="gold" onClick={() => void save('PLAYED')} loading={busy}>
@@ -256,6 +296,7 @@ export function PadelPartido() {
 }
 
 function SetsTable({ m, players }: { m: PadelMatch; players: ReturnType<typeof useFmoPlayers> }) {
+  if (m.resultOnly) return <p className="small muted">Se cargó sólo quién ganó, sin los sets.</p>
   if (!m.sets.length) return <p className="small muted">Sin sets cargados.</p>
   return (
     <div>

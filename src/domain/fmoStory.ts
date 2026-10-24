@@ -1,7 +1,7 @@
 // Datos de la historia de Instagram de un partido de FMO: ganador, goleadores y el "bailado" al azar.
 // El azar es fijo por partido (sale de su id), así todos ven y bajan la misma historia; "Otro jugador" cambia la tirada.
 import type { FmoMatch } from '../data/types'
-import { scoreOf, teamOf, type Team } from './fmo'
+import { scoreOf, teamOf, winnerTeam, type Team } from './fmo'
 
 /** Número estable a partir de un texto (FNV-1a). */
 export function hashString(s: string): number {
@@ -24,9 +24,10 @@ export interface StoryData {
 
 export function storyData(m: FmoMatch, roll: number, imageCount: number): StoryData {
   const score = scoreOf(m)
-  const winner: Team | null = score.a === score.b ? null : score.a > score.b ? 'A' : 'B'
+  const winner = winnerTeam(m)
   const scorers = (t: Team) =>
     teamOf(m, t)
+      .filter(() => !m.resultOnly)
       .filter((id) => (m.players[id].goals || 0) > 0)
       .map((id) => ({ id, goals: m.players[id].goals }))
       .sort((x, y) => y.goals - x.goals || x.id.localeCompare(y.id))

@@ -101,9 +101,13 @@ export function PadelPartidos() {
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-2">
                     <p className={`text-right font-bold ${w === 'A' ? '' : 'muted'}`}>{pairName(m, 'A', players)}</p>
-                    <p className="text-3xl font-extrabold tracking-tight tabular-nums">
-                      {t.a} – {t.b}
-                    </p>
+                    {m.resultOnly ? (
+                      <p className="font-extrabold text-center">{w === 'A' ? '← Ganó' : w === 'B' ? 'Ganó →' : '—'}</p>
+                    ) : (
+                      <p className="text-3xl font-extrabold tracking-tight tabular-nums">
+                        {t.a} – {t.b}
+                      </p>
+                    )}
                     <p className={`font-bold ${w === 'B' ? '' : 'muted'}`}>{pairName(m, 'B', players)}</p>
                   </div>
                   <p className="small muted text-center mt-2">

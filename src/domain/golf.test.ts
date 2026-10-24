@@ -231,3 +231,27 @@ describe('golf · partidito de a tres (4, 2, 0)', () => {
   })
 })
 
+
+describe('golf · sólo sé cómo salió', () => {
+  const cfg = { participation: 1, positions: [10, 6, 4], byField: { '2': [5, 0], '3': [7, 3, 0] } }
+  it('las posiciones salen de los puestos marcados y suman al ranking', () => {
+    const r = round('sixes', solo('a', 'b', 'c'), {}, { resultOnly: true, places: { a: 2, b: 1, c: 3 } })
+    expect(validateRound(r)).toBeNull()
+    expect(roundResult(r).standings.map((s) => [s.entrantId, s.position, s.label])).toEqual([['b', 1, 'Ganó'], ['a', 2, '2º'], ['c', 3, '3º']])
+    const t = Object.fromEntries(meritTable([r], cfg).map((x) => [x.playerId, x.points]))
+    expect(t).toEqual({ b: 8, a: 4, c: 1 })
+  })
+  it('faltan puestos o es una vuelta individual: no se guarda', () => {
+    expect(validateRound(round('match', solo('a', 'b'), {}, { resultOnly: true, places: { a: 1 } }))).toMatch(/puesto/)
+    expect(validateRound(round('solo', solo('a'), {}, { resultOnly: true, places: { a: 1 } }))).toMatch(/tarjeta/)
+  })
+  it('empate y equipos', () => {
+    const r = round('fourball', [{ id: 't1', players: ['a', 'b'] }, { id: 't2', players: ['c', 'd'] }], {}, { resultOnly: true, places: { t1: 1, t2: 1 } })
+    expect(roundResult(r).standings.every((s) => s.position === 1 && s.label === '1º (empate)')).toBe(true)
+  })
+  it('no cuenta para golpes, promedios ni récords de cancha', () => {
+    const r = round('match', solo('a', 'b'), {}, { resultOnly: true, places: { a: 1, b: 2 } })
+    expect(golfPlayerStats([r], 'a')).toMatchObject({ rounds: 1, wins: 1, best18: null, avg18: null, birdies: 0 })
+    expect(courseHistory([r], 'c1')).toEqual([])
+  })
+})

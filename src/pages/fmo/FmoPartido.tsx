@@ -9,7 +9,7 @@ import { errorText } from '../../data/actions'
 import { useDoc } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { FmoGuest, FmoMatch } from '../../data/types'
-import { defaultPosition, scoreOf, startersOf, subsOf, teamOf, type Team } from '../../domain/fmo'
+import { defaultPosition, resultText, scoreOf, startersOf, subsOf, teamOf, winnerTeam, type Team } from '../../domain/fmo'
 import { fmtDayLong, fmtTime, initials, localToMs, msToLocalParts } from '../../domain/format'
 import { Avatar, Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
@@ -49,7 +49,7 @@ export function FmoPartido() {
   const teamName = (t: Team) => (t === 'A' ? m.nameA : m.nameB)
   const bench = players.list.filter((p) => !m.players[p.id] && (!filter || p.name.toLowerCase().includes(filter.toLowerCase())))
   const when = `${fmtDayLong(m.playedAt)} · ${fmtTime(m.playedAt)} h`
-  const title = played ? (
+  const title = played && !m.resultOnly ? (
     <>
       {m.nameA} <span className="tabular-nums">{score.a} – {score.b}</span> {m.nameB}
     </>
@@ -62,6 +62,16 @@ export function FmoPartido() {
   function change(patch: Partial<FmoMatch>) {
     setDirty(true)
     setM((cur) => (cur ? { ...cur, ...patch } : cur))
+  }
+  /** Con goles o "sólo sé quién ganó". Al pasar a lo segundo, el ganador queda sin marcar hasta que lo elijan. */
+  function setResultOnly(on: boolean) {
+    setDirty(true)
+    setM((cur) => {
+      if (!cur) return cur
+      const next: FmoMatch = { ...cur, resultOnly: on }
+      delete next.winner
+      return next
+    })
   }
   function changePlayer(pid: string, patch: Partial<FmoMatch['players'][string]> | null) {
     setDirty(true)
@@ -123,6 +133,10 @@ export function FmoPartido() {
       toast.error('Poné al menos un titular en cada equipo.')
       return
     }
+    if (status === 'PLAYED' && m.resultOnly && m.winner === undefined) {
+      toast.error('Marcá quién ganó (o si fue empate).')
+      return
+    }
     setBusy(true)
     try {
       const next: FmoMatch = { ...m, status, updatedBy: memberId, updatedAt: Date.now(), revision: (m.revision ?? 0) + 1 }
@@ -147,6 +161,7 @@ export function FmoPartido() {
           ← Partidos
         </Link>
         <h1 className="h1 mt-1 mb-1">{title}</h1>
+        {played && m.resultOnly ? <p className="font-semibold text-accent">{resultText(m)}</p> : null}
         <p className="small muted mb-4">{played ? fmtDayLong(m.playedAt) : `Por jugarse · ${when}`}</p>
         {played ? (
           <Button variant="gold" className="mb-4" onClick={() => setStoryOpen(true)}>
@@ -162,7 +177,9 @@ export function FmoPartido() {
             {(['A', 'B'] as const).map((t) => (
               <div key={t} className="mb-3 last:mb-0">
                 <p className="font-bold mb-1">
-                  {teamName(t)} {played ? <span className="text-accent tabular-nums">{t === 'A' ? score.a : score.b}</span> : null}
+                  {teamName(t)}{' '}
+                  {played && !m.resultOnly ? <span className="text-accent tabular-nums">{t === 'A' ? score.a : score.b}</span> : null}
+                  {played && m.resultOnly && winnerTeam(m) === t ? <Pill tone="ok">Ganó</Pill> : null}
                 </p>
                 {(t === 'A' ? teamA : teamB).map((pid) => (
                   <div key={pid} className="flex justify-between small py-1 border-b border-line last:border-0">
@@ -192,6 +209,7 @@ export function FmoPartido() {
             ← Partidos
           </Link>
           <h1 className="h1 mt-1">{title}</h1>
+          {played && m.resultOnly ? <p className="font-semibold text-accent">{resultText(m)} · sin goles anotados</p> : null}
           {!played ? <p className="small muted">{when}</p> : null}
         </div>
         <span className="flex items-center gap-2 flex-wrap">
@@ -323,6 +341,36 @@ export function FmoPartido() {
           </Card>
 
           <Card>
+            <p className="h3 mb-2">Resultado</p>
+            <Segmented
+              ariaLabel="Cómo se carga el resultado"
+              value={m.resultOnly ? 'winner' : 'goals'}
+              onChange={(v) => setResultOnly(v === 'winner')}
+              options={[
+                { value: 'goals', label: 'Con los goles' },
+                { value: 'winner', label: 'Sólo sé quién ganó' },
+              ]}
+            />
+            {m.resultOnly ? (
+              <div className="mt-3">
+                <p className="small mb-2">¿Quién ganó?</p>
+                <Segmented
+                  ariaLabel="Quién ganó"
+                  value={m.winner === undefined ? 'none' : m.winner === null ? 'draw' : m.winner}
+                  onChange={(v) => v !== 'none' && change({ winner: v === 'draw' ? null : v })}
+                  options={[
+                    { value: 'A', label: m.nameA || 'Arriba' },
+                    { value: 'draw', label: 'Empate' },
+                    { value: 'B', label: m.nameB || 'Abajo' },
+                  ]}
+                />
+                <p className="tiny muted mt-2">Suma a la tabla (ganados, empatados y perdidos), pero como no hay goles anotados, no cuenta para goles ni promedios.</p>
+              </div>
+            ) : null}
+          </Card>
+
+          {!m.resultOnly ? (
+          <Card>
             <p className="h3 mb-1">Goles</p>
             {!played ? <p className="tiny muted mb-2">Si todavía no se jugó, dejalo en 0 y guardalo como por jugarse.</p> : null}
             <div className="grid sm:grid-cols-2 gap-4">
@@ -351,6 +399,7 @@ export function FmoPartido() {
               })}
             </div>
           </Card>
+          ) : null}
 
           <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] md:static z-10 flex gap-2 flex-wrap items-center rounded-xl border border-line bg-card p-2 shadow-lg md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             {played ? (
@@ -374,7 +423,7 @@ export function FmoPartido() {
           <p className="tiny muted">
             {played
               ? 'Está en el historial y cuenta para estadísticas y ranking.'
-              : '"Por jugarse" lo deja armado en Partidos, sin resultado. Cuando se juegue, cargá los goles y tocá "Ya se jugó".'}
+              : '"Por jugarse" lo deja armado en Partidos, sin resultado. Cuando se juegue, cargá los goles (o sólo quién ganó) y tocá "Ya se jugó".'}
           </p>
         </div>
       </div>

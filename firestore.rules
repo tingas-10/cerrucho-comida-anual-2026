@@ -202,7 +202,9 @@ service cloud.firestore {
         || (isGolfComm()
           && ((approvedProp(request.resource.data.lastProposal, 'round_fix')
               && gprop(request.resource.data.lastProposal).payload.roundId == rid
-              && request.resource.data.cards == gprop(request.resource.data.lastProposal).payload.cards)
+              && request.resource.data.cards == gprop(request.resource.data.lastProposal).payload.cards
+              && (!('places' in gprop(request.resource.data.lastProposal).payload)
+                || request.resource.data.places == gprop(request.resource.data.lastProposal).payload.places))
             || (approvedProp(request.resource.data.lastProposal, 'round_void')
               && gprop(request.resource.data.lastProposal).payload.roundId == rid
               && request.resource.data.voided == true)));
