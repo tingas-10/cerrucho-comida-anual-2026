@@ -4,8 +4,9 @@ import { useMemo, useState } from 'react'
 import { BALLOTAGE_HORAS } from '../../content/config'
 import { NOBODY, VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
-import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
+import { errorText, logAudit, pushNews } from '../../data/actions'
 import { DataError } from '../../data/adapter'
+import { openAwardsVoting } from '../../data/awards'
 import { useCollection, useDocs, useEdition, useMembers, useNow } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { Award, Ballot, SealedResult } from '../../data/types'
@@ -74,19 +75,7 @@ export function AdminPremios() {
   }
 
   async function openRound1() {
-    checkWindow()
-    const electorate = participants.map((m) => m.id)
-    if (electorate.length === 0) throw new DataError('VALIDATION_ERROR', 'No hay miembros activos para votar.')
-    let opened = 0
-    for (const a of openable) {
-      const candidates = (a.eligibility === 'VAO' ? vao : participants).map((m) => m.id)
-      if (candidates.length === 0) continue
-      await db.updateDoc(P.award(slug, a.code), { state: 'ROUND1_OPEN', candidates, electorate, round1: { openAt: openAtMs, closeAt: closeAtMs }, updatedAt: Date.now(), version: a.version + 1 })
-      opened++
-    }
-    await setDecision(db, slug, 'premios', { status: 'VOTING' })
-    await pushNews(db, slug, `Votación de premios: abre ${fmtDateTime(openAtMs)} y cierra ${fmtDateTime(closeAtMs)}.`)
-    await logAudit(db, slug, memberId!, 'awards.open', `${opened} categorías`)
+    await openAwardsVoting(db, slug, memberId!, openable, participants.map((m) => m.id), (a) => (a.eligibility === 'VAO' ? vao : participants).map((m) => m.id), openAtMs, closeAtMs)
   }
 
   /** Cambia el período de las categorías que están en votación (para extender o adelantar). */

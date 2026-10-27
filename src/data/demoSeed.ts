@@ -44,6 +44,7 @@ export async function seedDemo(db: MemoryAdapter) {
       birthday: birthdays[acc.id] ?? null,
       giftPrefs: prefs[acc.id] ?? '',
       vao: ['m-choclo', 'm-facu', 'm-marcos', 'm-pato', 'm-pipe', 'm-tomi'].includes(acc.id),
+      ...(acc.id === 'm-facu' ? { role: 'owner' as const } : {}), // como en la web real: el presidente también es administrador (27/10)
     })
     await db.setDoc(P.uid(acc.uid), { memberId: acc.id })
     await db.setDoc<LoginDoc>(P.login(username), { memberId: acc.id, email: acc.email })

@@ -332,8 +332,9 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
 
+      // Todas las asignaciones las lee sólo Agus: otro administrador que participa (Facu) sortea sin enterarse.
       match /giftAssignments/{giverId} {
-        allow read: if isAdmin() || (isActive() && giverId == myId());
+        allow read: if isAgus() || (isActive() && giverId == myId());
         allow write: if isAdmin();
       }
 

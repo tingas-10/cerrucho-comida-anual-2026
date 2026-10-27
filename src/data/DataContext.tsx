@@ -126,7 +126,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const isAgus = isMember && memberId === OWNER_ID
   const isPresident = isMember && !!presidentId && presidentId === memberId
   const isGolfComm = isMember && !!memberId && golfCommission.includes(memberId)
-  const golfPreview = isAdmin && !isGolfComm
+  const golfPreview = isAgus && !isGolfComm // vista de comisión sin votar: sólo para Agus, no para otros administradores
 
   // El administrador completa lo que falte de la edición (idempotente, no pisa nada).
   useEffect(() => {

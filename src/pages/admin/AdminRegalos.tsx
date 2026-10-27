@@ -4,23 +4,23 @@ import { Gift } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { REGALO_MIN_PARTICIPANTES } from '../../content/config'
 import { useSession } from '../../data/DataContext'
-import { errorText, logAudit, pushNews, setDecision } from '../../data/actions'
-import { DataError } from '../../data/adapter'
+import { errorText, setDecision } from '../../data/actions'
+import { drawGift } from '../../data/gift'
 import { useCollection, useDoc, useMembers } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { GiftAssignment, GiftCampaign } from '../../data/types'
 import { formatArs, parseArs } from '../../domain/expenses'
-import { drawSecretSanta, validateDraw } from '../../domain/gift'
 import { fmtDateTime } from '../../domain/format'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, MemberAvatar, Notice, Pill } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 
 export function AdminRegalos() {
-  const { db, slug, memberId } = useSession()
+  const { db, slug, memberId, isAgus } = useSession()
   const toast = useToast()
   const members = useMembers()
   const { data: gift } = useDoc<GiftCampaign>(P.gift(slug))
-  const { rows: assignments } = useCollection<GiftAssignment>(P.giftAssignments(slug))
+  // Todas las asignaciones las ve sólo Agus (otro administrador que participa se arruinaría la sorpresa).
+  const { rows: assignments } = useCollection<GiftAssignment>(isAgus ? P.giftAssignments(slug) : null)
   const [amount, setAmount] = useState('')
   const [tolerance, setTolerance] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -37,25 +37,7 @@ export function AdminRegalos() {
   const current = assignments.filter((a) => a.version === gift.drawVersion)
 
   async function doDraw(reason: string) {
-    const roster = [...participants]
-    if (roster.length < REGALO_MIN_PARTICIPANTES) throw new DataError('GIFT_MIN_PARTICIPANTS', `Hacen falta al menos ${REGALO_MIN_PARTICIPANTES} participantes.`)
-    const { pairs } = drawSecretSanta(roster)
-    const invalid = validateDraw(roster, pairs)
-    if (invalid) throw new DataError('INVARIANT_VIOLATION', invalid)
-    const version = gift!.drawVersion + 1
-    const stale = assignments.filter((a) => !roster.includes(a.id)).map((a) => a.id)
-    await db.runTransaction(async (tx) => {
-      const cur = await tx.get<GiftCampaign>(P.gift(slug))
-      if (!cur) throw new DataError('NOT_FOUND')
-      if (cur.drawVersion !== gift!.drawVersion) throw new DataError('STATE_CONFLICT', 'Ya se hizo otro sorteo mientras tanto. Recargá.')
-      for (const p of pairs) {
-        tx.set(P.giftAssignment(slug, p.giverId), { receiverId: p.receiverId, version, viewedAt: null, readyAt: null, deliveredAt: null, revealedAt: null, giverRevealedId: null } satisfies GiftAssignment)
-      }
-      for (const id of stale) tx.delete(P.giftAssignment(slug, id))
-      tx.update(P.gift(slug), { state: 'DRAW_PUBLISHED', drawVersion: version, roster, drawnAt: Date.now(), stats: { participants: roster.length, viewed: 0, ready: 0, delivered: 0 }, version: cur.version + 1, updatedAt: Date.now() })
-    })
-    await pushNews(db, slug, version > 1 ? 'Se rehízo el sorteo del amigo invisible: fijate de nuevo a quién le regalás.' : 'Ya está el sorteo del amigo invisible. Entrá a ver a quién le regalás.')
-    await logAudit(db, slug, memberId!, version > 1 ? 'gift.redraw' : 'gift.draw', `v${version} · ${roster.length} participantes`, reason)
+    await drawGift(db, slug, memberId!, gift!, [...participants], reason)
   }
 
   async function run(key: string, fn: () => Promise<void>, ok: string) {
@@ -125,9 +107,11 @@ export function AdminRegalos() {
           </Button>
         ) : (
           <div className="flex gap-2 flex-wrap mt-3">
-            <Button variant="line" onClick={() => setShowMap((s) => !s)}>
-              {showMap ? 'Ocultar asignaciones' : 'Ver todas las asignaciones'}
-            </Button>
+            {isAgus ? (
+              <Button variant="line" onClick={() => setShowMap((s) => !s)}>
+                {showMap ? 'Ocultar asignaciones' : 'Ver todas las asignaciones'}
+              </Button>
+            ) : null}
             <Button variant="line" onClick={() => setRedrawOpen(true)}>
               Rehacer sorteo
             </Button>

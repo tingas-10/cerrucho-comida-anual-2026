@@ -18,6 +18,7 @@ const NOW_MS = Date.parse(NOW)
 const people = {
   agus: { uid: 'uAgus', id: 'owner', member: { status: 'active', role: 'owner' } },
   facu: { uid: 'uFacu', id: 'm-facu', member: { status: 'active', role: 'member' } },
+  facuAdmin: { uid: 'uFacuA', id: 'm-facu', member: { status: 'active', role: 'owner' } }, // presidente y administrador (desde el 27/10)
   ana: { uid: 'uAna', id: 'm-ana', member: { status: 'active', role: 'member' } },
   susp: { uid: 'uSusp', id: 'm-susp', member: { status: 'suspended', role: 'member' } },
   pipe: { uid: 'uPipe', id: 'm-pipe', member: { status: 'active', role: 'member' } },
@@ -162,6 +163,11 @@ const cases = [
 
   // Agus
   tc('Agus ve resultados de premios', 'agus', 'get', '/editions/2026/awards/the_rat/private/sealed', 'ALLOW', { existing: { counts: {} } }),
+  tc('Facu administrador sortea (escribe asignaciones)', 'facuAdmin', 'create', '/editions/2026/giftAssignments/m-ana', 'ALLOW', { data: { receiverId: 'm-pipe', version: 1 } }),
+  tc('Facu administrador NO ve asignaciones ajenas', 'facuAdmin', 'get', '/editions/2026/giftAssignments/m-ana', 'DENY', { existing: { receiverId: 'm-facu' } }),
+  tc('Facu administrador ve la suya', 'facuAdmin', 'get', '/editions/2026/giftAssignments/m-facu', 'ALLOW', { existing: { receiverId: 'm-ana' } }),
+  tc('Facu administrador NO ve resultados de premios', 'facuAdmin', 'get', '/editions/2026/awards/cerrucho/private/sealed', 'DENY', { existing: { winner: 'm-ana' } }),
+  tc('Facu administrador abre la votación de premios', 'facuAdmin', 'update', '/editions/2026/awards/cerrucho', 'ALLOW', { existing: { state: 'DRAFT' }, data: { state: 'ROUND1_OPEN' } }),
   tc('Agus ve todas las asignaciones', 'agus', 'get', '/editions/2026/giftAssignments/m-ana', 'ALLOW', { existing: { receiverId: 'm-facu' } }),
   tc('Agus crea accesos', 'agus', 'create', '/uids/uNueva', 'ALLOW', { data: { memberId: 'm-ana' } }),
   tc('Agus cambia el presidente', 'agus', 'update', '/config/roles', 'ALLOW', { existing: { presidentId: 'm-facu' }, data: { presidentId: 'm-ana' } }),

@@ -1,4 +1,5 @@
-// Panel privado de Agus. Pestañas por módulo; cada una es un archivo en esta carpeta.
+// Panel de administración (Agus y Facu, el presidente). Pestañas por módulo; cada una es un archivo en esta carpeta.
+// "Paso a paso" va primero: lo que hay que definir, en orden, con un botón por paso.
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { useSession } from '../../data/DataContext'
 import { Notice, PageHeader } from '../../ui/components'
@@ -6,12 +7,14 @@ import { AdminAuditoria } from './AdminAuditoria'
 import { AdminBebidas } from './AdminBebidas'
 import { AdminDecisiones } from './AdminDecisiones'
 import { AdminEdicion } from './AdminEdicion'
+import { AdminGuia } from './AdminGuia'
 import { AdminMiembros } from './AdminMiembros'
 import { AdminPremios } from './AdminPremios'
 import { AdminRegalos } from './AdminRegalos'
 import { AdminTareas } from './AdminTareas'
 
 const TABS = [
+  { path: 'guia', label: 'Paso a paso' },
   { path: 'edicion', label: 'Edición' },
   { path: 'miembros', label: 'Miembros' },
   { path: 'decisiones', label: 'Decisiones y comida' },
@@ -23,11 +26,11 @@ const TABS = [
 ]
 
 export function Admin() {
-  const { isAdmin } = useSession()
+  const { isAdmin, isAgus } = useSession()
   if (!isAdmin) return <Notice tone="danger">Esta sección es sólo para el administrador.</Notice>
   return (
     <div>
-      <PageHeader eyebrow="Vista de Agus" title="Administración" intro="Todo lo organizativo se edita acá, sin tocar código. Las acciones sensibles piden motivo y quedan registradas." />
+      <PageHeader eyebrow={isAgus ? 'Vista de Agus' : 'Vista de administrador'} title="Administración" intro="Todo lo organizativo se edita acá, sin tocar código. Las acciones sensibles piden motivo y quedan registradas." />
       <nav className="flex gap-1 overflow-x-auto pb-2 mb-4 -mx-1 px-1" aria-label="Secciones de administración">
         {TABS.map((t) => (
           <NavLink key={t.path} to={`/admin/${t.path}`} className={({ isActive }) => `nav-link whitespace-nowrap ${isActive ? 'active' : ''}`}>
@@ -36,7 +39,8 @@ export function Admin() {
         ))}
       </nav>
       <Routes>
-        <Route index element={<Navigate to="/admin/edicion" replace />} />
+        <Route index element={<Navigate to="/admin/guia" replace />} />
+        <Route path="guia" element={<AdminGuia />} />
         <Route path="edicion" element={<AdminEdicion />} />
         <Route path="miembros" element={<AdminMiembros />} />
         <Route path="decisiones" element={<AdminDecisiones />} />
@@ -45,7 +49,7 @@ export function Admin() {
         <Route path="premios" element={<AdminPremios />} />
         <Route path="tareas" element={<AdminTareas />} />
         <Route path="auditoria" element={<AdminAuditoria />} />
-        <Route path="*" element={<Navigate to="/admin/edicion" replace />} />
+        <Route path="*" element={<Navigate to="/admin/guia" replace />} />
       </Routes>
     </div>
   )
