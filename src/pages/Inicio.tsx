@@ -41,7 +41,7 @@ export function Inicio() {
   const { docs: myResponses } = useDocs<PollResponse>(memberId ? openPolls.map((p) => P.response(slug, p.id, memberId)) : [])
   const openAwards = awards.filter((a) => (VAO_ACTIVO || a.eligibility !== 'VAO') && (a.state === 'ROUND1_OPEN' || a.state === 'ROUND2_OPEN') && memberId && a.electorate.includes(memberId))
   const { docs: myBallots } = useDocs<Ballot>(memberId ? openAwards.map((a) => P.ballot(slug, a.code, memberId)) : [])
-  const gift = useDoc<GiftCampaign>(isPresident && isAdmin ? P.gift(slug) : null)
+  const gift = useDoc<GiftCampaign>(isPresident ? P.gift(slug) : null)
 
   const pending = useMemo<Pending[]>(() => {
     if (!edition || !memberId) return []
@@ -66,12 +66,12 @@ export function Inicio() {
     if (missingR1.length) out.push({ key: 'awards1', title: `Premios: te faltan ${missingR1.length} categorías`, text: 'Un voto por categoría. Nadie ve tu voto.', to: `${e}/premios`, closeAt: Math.min(...missingR1.map((a) => a.round1?.closeAt ?? Infinity)) || null, cta: 'Votar' })
     // (las categorías programadas para más adelante no cuentan como pendientes hasta que abren)
     if (missingR2.length) out.push({ key: 'awards2', title: `Ballotage: ${missingR2.length} categorías`, text: 'Segunda vuelta entre los finalistas.', to: `${e}/premios`, closeAt: Math.min(...missingR2.map((a) => a.round2?.closeAt ?? Infinity)) || null, cta: 'Votar' })
-    // Al presidente (si es administrador) le aparece su paso a paso mientras falte algo.
-    if (isPresident && isAdmin) {
+    // Al presidente le aparece su panel (va siempre primero) mientras falte algo por confirmar o lanzar.
+    if (isPresident) {
       const d = edition.decisions
       const awardsLeft = awards.some((a) => a.enabled && (VAO_ACTIVO || a.eligibility !== 'VAO') && a.state === 'DRAFT')
       const left = [d.fecha, d.lugar, d.menu].filter((x) => x?.status !== 'CONFIRMED').length + (gift.data && gift.data.drawVersion > 0 ? 0 : 1) + (awardsLeft ? 1 : 0)
-      if (left) out.push({ key: 'president', title: 'Tus pasos como presidente', text: `${left === 1 ? 'Te falta 1 paso' : `Te faltan ${left} pasos`}: fecha, lugar, comida, amigo invisible y premios, en orden.`, to: '/admin/guia', closeAt: null, cta: 'Ver qué sigue' })
+      if (left) out.push({ key: 'president', title: 'Panel del presidente', text: 'Confirmá la fecha, el lugar y la comida, y lanzá el amigo invisible y los premios, cuando quieras. Todo desde un solo lugar.', to: '/presidente', closeAt: null, cta: 'Abrir el panel' })
     }
     for (const t of tasks) {
       const v = t.volunteers?.[memberId]
@@ -79,7 +79,7 @@ export function Inicio() {
     }
     // El paso a paso del presidente va siempre primero.
     return out.sort((a, b) => Number(b.key === 'president') - Number(a.key === 'president') || (a.closeAt ?? Infinity) - (b.closeAt ?? Infinity)).slice(0, 8)
-  }, [edition, memberId, slug, openPolls, myResponses, myRsvp.data, myBev.data, openAwards, myBallots, tasks, isPresident, isAdmin, awards, gift.data])
+  }, [edition, memberId, slug, openPolls, myResponses, myRsvp.data, myBev.data, openAwards, myBallots, tasks, isPresident, awards, gift.data])
 
   if (loading || !edition) return <Loading />
   const confirmed = rsvps.filter((r) => r.status === 'YES' && r.planVersion === edition.planVersion).length

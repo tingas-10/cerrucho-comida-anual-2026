@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Crown,
   Flag,
   Landmark,
   Gift,
@@ -59,9 +60,11 @@ interface NavItem {
 }
 
 function useNav() {
-  const { slug, isAdmin, isMember } = useSession()
+  const { slug, isAdmin, isMember, canDecide } = useSession()
   const e = `/e/${slug}`
   const comida: NavItem[] = [
+    // El presidente (y el administrador) confirma y lanza todo desde un solo lugar.
+    ...(isMember && canDecide ? [{ to: '/presidente', label: 'Panel del presidente', icon: <Crown size={18} /> }] : []),
     { to: e, label: 'Resumen', icon: <LayoutList size={18} />, end: true },
     { to: `${e}/fecha`, label: 'Fecha y asistencia', icon: <CalendarDays size={18} /> },
     { to: `${e}/comida`, label: 'Lugar y comida', icon: <UtensilsCrossed size={18} /> },

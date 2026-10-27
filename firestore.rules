@@ -286,6 +286,9 @@ service cloud.firestore {
       match /awards/{code} {
         allow read: if true;
         allow write: if isAdmin();
+        // El presidente lanza la votación (sólo abrir la primera vuelta; contar y ver resultados no).
+        allow update: if isPresident() && resource.data.state == 'DRAFT' && request.resource.data.state == 'ROUND1_OPEN'
+          && onlyKeys(['state', 'candidates', 'electorate', 'round1', 'updatedAt', 'version']);
 
         function award() {
           return get(/databases/$(database)/documents/editions/$(slug)/awards/$(code)).data;
@@ -333,12 +336,13 @@ service cloud.firestore {
       match /gift/{doc} {
         allow read: if true;
         allow write: if isAdmin();
+        allow update: if isPresident(); // el presidente sortea y pone el monto
       }
 
       // Todas las asignaciones las lee sólo Agus: otro administrador que participa (Facu) sortea sin enterarse.
       match /giftAssignments/{giverId} {
         allow read: if isAgus() || (isActive() && giverId == myId());
-        allow write: if isAdmin();
+        allow write: if isAdmin() || isPresident(); // sortea sin poder leer las de los demás
       }
 
       // ---------- Organización (sólo miembros) ----------

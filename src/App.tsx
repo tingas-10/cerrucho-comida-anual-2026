@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useSession } from './data/DataContext'
 import { Admin } from './pages/admin/Admin'
+import { Presidente } from './pages/Presidente'
 import { Agenda } from './pages/Agenda'
 import { AmigoInvisible } from './pages/AmigoInvisible'
 import { Archivo } from './pages/Archivo'
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="/cumples" element={<Cumpleanos />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/cuenta" element={<Navigate to="/perfil" replace />} />
+          <Route path="/presidente" element={<Presidente />} />
           <Route path="/e/:slug" element={<Inicio />} />
           <Route path="/e/:slug/fecha" element={<Fecha />} />
           <Route path="/e/:slug/comida" element={<Comida />} />
