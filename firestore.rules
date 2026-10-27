@@ -47,8 +47,11 @@ service cloud.firestore {
     // Perfil público: alias, nombre, foto, cumpleaños (día y mes) y gustos para el regalo.
     match /members/{memberId} {
       allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin()
+      // Nombrar administradores (role 'owner') y tocar la ficha de Agus: sólo Agus.
+      allow create: if isAdmin() && (isAgus() || request.resource.data.get('role', 'member') != 'owner');
+      allow delete: if isAdmin() && (isAgus() || (memberId != 'owner' && resource.data.get('role', 'member') != 'owner'));
+      allow update: if (isAdmin() && (isAgus() || (memberId != 'owner'
+            && request.resource.data.get('role', 'member') == resource.data.get('role', 'member'))))
         || (isActive() && memberId == myId()
             && onlyKeys(['alias', 'avatarColor', 'photo', 'birthday', 'giftPrefs', 'profileDone', 'updatedAt'])
             && (!('photo' in request.resource.data) || request.resource.data.photo == null || request.resource.data.photo.size() < 80000)

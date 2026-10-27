@@ -1,6 +1,6 @@
 // Miembros y accesos: usuario y contraseña de cada uno, presidente, participación y altas/bajas.
 // Las contraseñas no se guardan en ningún lado: se muestran una sola vez al crearlas para pasarlas por WhatsApp.
-import { Copy, KeyRound, Plus, UserPlus } from 'lucide-react'
+import { Copy, KeyRound, Plus, ShieldCheck, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { VAO_ACTIVO } from '../../content/premios'
 import { useSession } from '../../data/DataContext'
@@ -26,7 +26,7 @@ function credentialsText(list: Credential[]): string {
 }
 
 export function AdminMiembros() {
-  const { db, auth, slug, memberId } = useSession()
+  const { db, auth, slug, memberId, isAgus } = useSession()
   const toast = useToast()
   const members = useMembers()
   const { data: edition } = useEdition()
@@ -41,6 +41,7 @@ export function AdminMiembros() {
   const [shown, setShown] = useState<Credential[] | null>(null)
   const [bulkProgress, setBulkProgress] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<{ m: Member; action: 'remove-login' | 'delete' } | null>(null)
+  const [adminFor, setAdminFor] = useState<Member | null>(null)
 
   if (members.loading) return <Loading />
   const usernameOf = (id: string) => privById[id]?.username || ''
@@ -229,6 +230,7 @@ export function AdminMiembros() {
             onStatus={setStatus}
             onLogin={(mode) => setLoginFor({ m, mode })}
             onConfirm={(action) => setConfirm({ m, action })}
+            onAdmin={isAgus && m.id !== OWNER_ID && m.status === 'active' && usernameOf(m.id) ? () => setAdminFor(m) : undefined}
           />
         ))}
       </div>
@@ -277,6 +279,31 @@ export function AdminMiembros() {
       </Modal>
 
       <ConfirmDialog
+        open={!!adminFor}
+        onClose={() => setAdminFor(null)}
+        title={adminFor?.role === 'owner' ? `Sacarle el administrador a ${adminFor?.alias}` : `Hacer administrador a ${adminFor?.alias}`}
+        text={
+          adminFor?.role === 'owner'
+            ? 'Vuelve a ser un miembro común: deja de ver Administración.'
+            : 'Va a poder entrar a Administración y gestionar todo (sortear el amigo invisible, abrir premios, crear usuarios). No ve los resultados de los premios ni quién le regala a quién: eso es sólo tuyo.'
+        }
+        confirmLabel={adminFor?.role === 'owner' ? 'Sacar' : 'Hacer administrador'}
+        onConfirm={async () => {
+          const m = adminFor!
+          const role = m.role === 'owner' ? 'member' : 'owner'
+          try {
+            await db.updateDoc(P.member(m.id), { role, updatedAt: Date.now() })
+            await logAudit(db, slug, memberId!, 'member.role', `${m.alias} → ${role === 'owner' ? 'administrador' : 'miembro'}`)
+            toast.ok(role === 'owner' ? `${m.alias} ya es administrador` : `${m.alias} ya no es administrador`)
+          } catch (e) {
+            toast.error(errorText(e))
+          } finally {
+            setAdminFor(null)
+          }
+        }}
+      />
+
+      <ConfirmDialog
         open={!!confirm}
         onClose={() => setConfirm(null)}
         title={confirm?.action === 'delete' ? `Eliminar a ${confirm?.m.alias}` : `Quitarle el acceso a ${confirm?.m.alias}`}
@@ -318,6 +345,7 @@ function MemberCard(props: {
   onStatus: (m: Member, s: Member['status']) => void
   onLogin: (mode: 'create' | 'reset') => void
   onConfirm: (action: 'remove-login' | 'delete') => void
+  onAdmin?: () => void // sólo Agus: hacer o sacar administrador
 }) {
   const { m, username, isPresident } = props
   const { db } = useSession()
@@ -349,7 +377,7 @@ function MemberCard(props: {
         <MemberAvatar id={m.id} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-1">
-            {isOwner ? <Pill>Administrador</Pill> : null}
+            {isOwner || m.role === 'owner' ? <Pill>Administrador</Pill> : null}
             {isPresident ? <Pill>Presidente</Pill> : null}
             {m.status === 'suspended' ? <Pill tone="danger">Suspendido</Pill> : username ? <Pill tone="ok">Usuario: {username}</Pill> : <Pill tone="muted">Sin usuario</Pill>}
             {m.status === 'active' && m.profileDone ? null : m.status === 'active' ? <Pill tone="warn">No entró todavía</Pill> : null}
@@ -406,6 +434,11 @@ function MemberCard(props: {
         {!isOwner && !username ? (
           <Button size="sm" variant="line" onClick={() => props.onConfirm('delete')}>
             Eliminar
+          </Button>
+        ) : null}
+        {props.onAdmin ? (
+          <Button size="sm" variant="line" onClick={props.onAdmin}>
+            <ShieldCheck size={14} /> {m.role === 'owner' ? 'Sacar administrador' : 'Hacer administrador'}
           </Button>
         ) : null}
       </div>
