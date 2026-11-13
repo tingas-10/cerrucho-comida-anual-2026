@@ -28,6 +28,13 @@ import { PadelPartido } from './pages/padel/PadelPartido'
 import { PadelPartidos } from './pages/padel/PadelPartidos'
 import { PadelRanking } from './pages/padel/PadelRanking'
 import { PadelVersus } from './pages/padel/PadelVersus'
+import { TrucoPartido } from './pages/truco/TrucoPartido'
+import { TrucoPartidos } from './pages/truco/TrucoPartidos'
+import { TrucoRanking } from './pages/truco/TrucoRanking'
+import { TrucoReglas } from './pages/truco/TrucoReglas'
+import { TrucoTorneo } from './pages/truco/TrucoTorneo'
+import { TrucoTorneos } from './pages/truco/TrucoTorneos'
+import { TrucoVersus } from './pages/truco/TrucoVersus'
 import { Galeria } from './pages/Galeria'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
@@ -87,6 +94,13 @@ export default function App() {
           <Route path="/padel/parejas" element={<PadelRanking pairs />} />
           <Route path="/padel/jugadores" element={<PadelJugadores />} />
           <Route path="/padel/versus" element={<PadelVersus />} />
+          <Route path="/truco" element={<TrucoPartidos />} />
+          <Route path="/truco/partido/:id" element={<TrucoPartido />} />
+          <Route path="/truco/ranking" element={<TrucoRanking />} />
+          <Route path="/truco/torneos" element={<TrucoTorneos />} />
+          <Route path="/truco/torneo/:id" element={<TrucoTorneo />} />
+          <Route path="/truco/versus" element={<TrucoVersus />} />
+          <Route path="/truco/reglas" element={<TrucoReglas />} />
           <Route path="/golf" element={<GolfPartidos />} />
           <Route path="/golf/partido/:id" element={<GolfPartido />} />
           <Route path="/golf/ronda/:id" element={<OldGolfLink />} />

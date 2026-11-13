@@ -1,5 +1,5 @@
-// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel, golf y cumpleaños.
-import { Cake, CalendarDays, Flag, Goal, LogIn } from 'lucide-react'
+// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel, golf, truco y cumpleaños.
+import { Cake, CalendarDays, Flag, Goal, LogIn, Spade } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { EDICION_ACTUAL, GRUPO } from '../content/config'
@@ -16,6 +16,8 @@ import { Card, MemberAvatar } from '../ui/components'
 import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
 import { pairName, usePadelMatches } from './padel/padelShared'
 import { entrantName, useGolfConfig, useGolfRounds } from './golf/golfShared'
+import { computeTrucoStats, trucoRanking, winnerOf as trucoWinner } from '../domain/truco'
+import { teamLabel, useTrucoMatches } from './truco/trucoShared'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -40,6 +42,10 @@ export function BandaHome() {
   const golfLeader = useMemo(() => meritTable(golfRounds, golfCfg.points, yearOf(now))[0], [golfRounds, golfCfg.points, now])
   const lastGolfWinner = lastGolf ? roundResult(lastGolf).standings[0] : undefined
   const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
+  const { rows: trucoMatches } = useTrucoMatches()
+  const lastTruco = useMemo(() => trucoMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [trucoMatches])
+  const liveTruco = useMemo(() => trucoMatches.filter((m) => m.status === 'LIVE').sort((a, b) => b.updatedAt - a.updatedAt)[0], [trucoMatches])
+  const trucoLeader = useMemo(() => trucoRanking(computeTrucoStats(trucoMatches, yearOf(now)))[0], [trucoMatches, now])
   const e = `/e/${EDICION_ACTUAL.slug}`
   const hero = BASE + (edition?.heroPhoto ?? FOTOS[0].src)
 
@@ -191,6 +197,46 @@ export function BandaHome() {
           </div>
           <Link to="/golf" className="btn mt-3">
             Ir a Golf
+          </Link>
+        </Card>
+
+        <Card className="flex flex-col">
+          <p className="eyebrow flex items-center gap-2">
+            <Spade size={14} /> Truco
+          </p>
+          <div className="mt-2 flex-1 small">
+            {liveTruco ? (
+              <p className="mb-2">
+                <span className="text-ok font-bold">● Jugándose ahora</span>
+                <br />
+                <Link to={`/truco/partido/${liveTruco.id}`} className="font-bold underline">
+                  {teamLabel(liveTruco, 'A', players)} {liveTruco.scoreA} – {liveTruco.scoreB} {teamLabel(liveTruco, 'B', players)}
+                </Link>
+              </p>
+            ) : null}
+            {lastTruco ? (
+              <p>
+                <span className="muted">Último partido · {fmtDayLong(lastTruco.playedAt)}</span>
+                <br />
+                <b>
+                  {lastTruco.resultOnly
+                    ? `Ganó ${teamLabel(lastTruco, trucoWinner(lastTruco) ?? 'A', players)}`
+                    : `${teamLabel(lastTruco, 'A', players)} ${Math.min(lastTruco.scoreA, lastTruco.target)} – ${Math.min(lastTruco.scoreB, lastTruco.target)} ${teamLabel(lastTruco, 'B', players)}`}
+                </b>
+              </p>
+            ) : liveTruco ? null : (
+              <p className="muted">Todavía no hay partidos cargados.</p>
+            )}
+            {trucoLeader ? (
+              <p className="mt-2 flex items-center gap-2">
+                <span className="muted">Puntero {yearOf(now)}:</span>
+                <b>{players.nameOf(trucoLeader.id)}</b>
+                <span className="muted">({formatPoints(trucoLeader.points)} pts)</span>
+              </p>
+            ) : null}
+          </div>
+          <Link to="/truco" className="btn mt-3">
+            Ir a Truco
           </Link>
         </Card>
 

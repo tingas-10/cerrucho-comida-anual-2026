@@ -457,6 +457,12 @@
   .pop-in {
     animation: pop-in 0.35s ease both;
   }
+  /* Truco: el fósforo recién anotado aparece con un golpecito */
+  .fosforo-nuevo {
+    animation: fosforo-in 0.35s ease both;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
 }
 
 @keyframes pop-in {
@@ -466,6 +472,20 @@
   }
   100% {
     opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fosforo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
     transform: none;
   }
 }

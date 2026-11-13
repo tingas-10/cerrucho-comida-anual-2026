@@ -632,3 +632,59 @@ export interface GolfProposal {
   appliedBy?: string | null
 }
 
+
+// ---------- Truco ----------
+export interface TrucoLogEntry {
+  t: 'A' | 'B' // a qué equipo se anotó
+  n: number // cuántos puntos (negativo = se sacó)
+  at: number
+}
+
+export interface TrucoMatch {
+  id: string
+  playedAt: number
+  size: 1 | 2 | 3 // jugadores por equipo
+  target: 15 | 30 // a cuántos puntos
+  teamA: string[] // ids de miembro o de invitado (fmoGuests); '' = lugar vacío
+  teamB: string[]
+  nameA: string
+  nameB: string
+  scoreA: number
+  scoreB: number
+  log?: TrucoLogEntry[] // cada anotación del anotador (para deshacer)
+  // DRAFT = armado o por jugarse · LIVE = anotando en vivo · PLAYED = terminado, cuenta para el ranking
+  status: 'DRAFT' | 'LIVE' | 'PLAYED'
+  resultOnly?: boolean // "Sólo sé quién ganó": sin tantos
+  winner?: 'A' | 'B' | null // con resultOnly
+  tournamentId?: string | null // si es un partido de un torneo
+  fixtureId?: string | null // qué cruce del torneo
+  entrantA?: string | null // participante del torneo que juega de A
+  entrantB?: string | null
+  notes?: string
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt: number
+  revision: number
+}
+
+export interface TrucoEntrant {
+  id: string
+  name: string
+  players: string[]
+}
+
+export interface TrucoTournament {
+  id: string
+  name: string
+  size: 1 | 2 | 3
+  target: 15 | 30
+  format: 'league' | 'knockout' | 'groups' // liga · eliminación directa · grupos + eliminación
+  legs: 1 | 2 // liga y grupos: sólo ida o ida y vuelta
+  entrants: TrucoEntrant[] // en eliminación, en orden de cabezas de serie
+  groups: Array<{ name: string; ids: string[] }> | null
+  advance: 1 | 2 | 3 | 'all' | null // grupos: cuántos pasan de cada grupo
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+}

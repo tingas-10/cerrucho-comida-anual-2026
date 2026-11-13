@@ -3,12 +3,13 @@
 import { EDICION_ACTUAL, MIEMBROS_INICIALES } from '../content/config'
 import { authEmailFor, normalizeUsername } from '../domain/accounts'
 import { defaultPosition } from '../domain/fmo'
+import { BYE, tournamentState } from '../domain/truco'
 import { demoRegisterAccount } from './auth'
 import type { MemoryAdapter } from './memoryAdapter'
 import { P } from './paths'
 import { OWNER_ID, ensureEdition, ensureOwnerAndDrafts, slugify } from './seed'
 import GOLF_CANCHAS from '../content/golf-canchas.json'
-import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp } from './types'
+import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp, TrucoMatch, TrucoTournament } from './types'
 
 export const DEMO_PASSWORD = 'demo123'
 // Usuarios de ejemplo (el id sale de este nombre; lo que se muestra es el apodo actual de MIEMBROS_INICIALES).
@@ -135,6 +136,57 @@ export async function seedDemo(db: MemoryAdapter) {
   const padelBase = { status: 'PLAYED' as const, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
   await db.setDoc(P.padelMatch('demo-p1'), { ...padelBase, id: 'demo-p1', playedAt: now - 5 * 86400000, bestOf: 3, pairA: ['owner', 'm-pato'], pairB: ['m-facu', 'g-demo-primo'], sets: [{ a: 6, b: 4 }, { a: 3, b: 6 }, { a: 7, b: 5 }] })
   await db.setDoc(P.padelMatch('demo-p2'), { ...padelBase, id: 'demo-p2', playedAt: now - 86400000, bestOf: 1, pairA: ['m-choclo', 'm-felix'], pairB: ['owner', 'm-pato'], sets: [{ a: 4, b: 6 }] })
+
+  // Truco: partidos 1 vs 1 y 2 vs 2, uno en vivo, una liga a medio jugar y una eliminación de parejas.
+  const tb = { nameA: 'Nosotros', nameB: 'Ellos', log: [], notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1, tournamentId: null, fixtureId: null, entrantA: null, entrantB: null }
+  const truco = (id: string, daysAgo: number, teamA: string[], teamB: string[], scoreA: number, scoreB: number, extra: Partial<TrucoMatch> = {}) =>
+    db.setDoc(P.trucoMatch(id), { ...tb, id, playedAt: now - daysAgo * 86400000, size: teamA.length as 1 | 2 | 3, target: 30, teamA, teamB, scoreA, scoreB, status: 'PLAYED', ...extra } satisfies TrucoMatch)
+  await truco('demo-t1', 9, ['m-pato'], ['owner'], 30, 24)
+  await truco('demo-t2', 7, ['m-choclo', 'm-facu'], ['m-pato', 'm-topo'], 18, 30, { nameA: 'Los del fondo', nameB: 'Los de siempre' })
+  await truco('demo-t3', 4, ['owner'], ['m-felix'], 30, 11)
+  await truco('demo-t4', 2, ['m-pato'], ['m-choclo'], 0, 0, { resultOnly: true, winner: 'A' })
+  await truco('demo-t5', 0, ['m-felix', 'm-nacho'], ['owner', 'm-tomi'], 17, 12, { status: 'LIVE', log: [{ t: 'A', n: 17, at: now }, { t: 'B', n: 12, at: now }] })
+  const liga: TrucoTournament = {
+    id: 'demo-liga',
+    name: 'Liga de noviembre',
+    size: 1,
+    target: 30,
+    format: 'league',
+    legs: 1,
+    entrants: ['m-pato', 'owner', 'm-choclo', 'm-felix'].map((id) => ({ id, name: id, players: [id] })),
+    groups: null,
+    advance: null,
+    createdBy: 'owner',
+    createdAt: now - 6 * 86400000,
+    updatedAt: now,
+  }
+  await db.setDoc(P.trucoTournament(liga.id), liga)
+  const ligaFx = tournamentState(liga, []).league!.rounds.flat().slice(0, 3)
+  for (const [i, f] of ligaFx.entries()) await truco(`demo-tl${i}`, 5 - i, [f.a!], [f.b!], i === 1 ? 22 : 30, i === 1 ? 30 : 19, { tournamentId: liga.id, fixtureId: f.key, entrantA: f.a, entrantB: f.b })
+  const copa: TrucoTournament = {
+    id: 'demo-copa',
+    name: 'Copa de parejas',
+    size: 2,
+    target: 30,
+    format: 'knockout',
+    legs: 1,
+    entrants: [
+      { id: 'e1', name: 'Pato / Topo', players: ['m-pato', 'm-topo'] },
+      { id: 'e2', name: 'Tingas / Tomi', players: ['owner', 'm-tomi'] },
+      { id: 'e3', name: 'Choclo / Facu', players: ['m-choclo', 'm-facu'] },
+      { id: 'e4', name: 'Felix / Nacho', players: ['m-felix', 'm-nacho'] },
+      { id: 'e5', name: 'Pipe / Santi', players: ['m-pipe', 'm-santi'] },
+    ],
+    groups: null,
+    advance: null,
+    createdBy: 'owner',
+    createdAt: now - 3 * 86400000,
+    updatedAt: now,
+  }
+  await db.setDoc(P.trucoTournament(copa.id), copa)
+  const copaR0 = tournamentState(copa, []).knockout!.rounds[0].filter((f) => f.a !== BYE && f.b !== BYE)
+  const pl = (eid: string) => copa.entrants.find((e) => e.id === eid)!
+  await truco('demo-tc0', 1, pl(copaR0[0].a!).players, pl(copaR0[0].b!).players, 30, 26, { nameA: pl(copaR0[0].a!).name, nameB: pl(copaR0[0].b!).name, tournamentId: copa.id, fixtureId: copaR0[0].key, entrantA: copaR0[0].a, entrantB: copaR0[0].b })
 
   // Golf: las canchas reales, hándicaps, un 1 vs 1 jugado, una vuelta individual, un four ball en vivo
   // con dos líneas, un desafío pendiente para Pato y una propuesta pendiente de la comisión.

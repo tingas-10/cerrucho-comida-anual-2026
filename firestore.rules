@@ -215,6 +215,23 @@ service cloud.firestore {
     }
 
     // ---------- Pádel: igual que FMO (los invitados son los mismos de fmoGuests) ----------
+    // ---------- Truco: igual que FMO y Pádel (los invitados son los mismos de fmoGuests) ----------
+    match /trucoMatches/{matchId} {
+      allow read: if true;
+      allow delete: if isActive();
+      allow create, update: if isActive()
+        && request.resource.data.size in [1, 2, 3]
+        && request.resource.data.target in [15, 30]
+        && request.resource.data.status in ['DRAFT', 'LIVE', 'PLAYED']
+        && request.resource.data.teamA.size() == request.resource.data.size
+        && request.resource.data.teamB.size() == request.resource.data.size;
+    }
+    match /trucoTournaments/{tid} {
+      allow read: if true;
+      allow create: if isActive() && request.resource.data.createdBy == myId();
+      allow update: if isActive();
+      allow delete: if isAdmin() || (isActive() && resource.data.createdBy == myId());
+    }
     match /padelMatches/{matchId} {
       allow read: if true;
       allow delete: if isActive();

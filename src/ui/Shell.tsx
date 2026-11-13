@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
   Clock,
   Crown,
   Flag,
@@ -23,9 +24,11 @@ import {
   Moon,
   MoreHorizontal,
   Settings,
+  Spade,
   Sun,
   Swords,
   Trophy,
+  Network,
   UserRound,
   Users,
   UtensilsCrossed,
@@ -95,6 +98,13 @@ function useNav() {
     { to: '/golf/canchas', label: 'Canchas', icon: <LayoutList size={18} /> },
     { to: '/golf/comision', label: 'Comisión', icon: <Landmark size={18} /> },
   ]
+  const truco: NavItem[] = [
+    { to: '/truco', label: 'Partidos', icon: <Spade size={18} />, end: true },
+    { to: '/truco/ranking', label: 'Ranking', icon: <Medal size={18} /> },
+    { to: '/truco/torneos', label: 'Torneos', icon: <Network size={18} /> },
+    { to: '/truco/versus', label: '1 vs 1', icon: <Swords size={18} /> },
+    { to: '/truco/reglas', label: 'Cómo se juega', icon: <BookOpen size={18} /> },
+  ]
   const banda: NavItem[] = [
     { to: '/cumples', label: 'Cumpleaños', icon: <Cake size={18} /> },
     ...(isMember ? [{ to: '/miembros', label: 'Miembros', icon: <Users size={18} /> }] : []),
@@ -105,7 +115,7 @@ function useNav() {
     ...(isMember ? [{ to: '/perfil', label: 'Mi perfil', icon: <UserRound size={18} /> }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Administración', icon: <Settings size={18} /> }] : []),
   ]
-  return { comida, fmo, padel, golf, banda, mas, e }
+  return { comida, fmo, padel, golf, truco, banda, mas, e }
 }
 
 function Item({ item, collapsed, onClick }: { item: NavItem; collapsed?: boolean; onClick?: () => void }) {
@@ -210,7 +220,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const comidaTitle = edition?.title ?? EDICION_ACTUAL.titulo
   const sideWidth = collapsed ? 64 : 248
   const inComida = location.pathname.startsWith(nav.e)
-  const inDeportes = ['/fmo', '/padel', '/golf'].some((x) => location.pathname.startsWith(x))
+  const inDeportes = ['/fmo', '/padel', '/golf', '/truco'].some((x) => location.pathname.startsWith(x))
   const tab = (active: boolean) => `flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[12px] ${active ? 'text-accent font-bold bg-soft' : 'muted'}`
 
   return (
@@ -235,6 +245,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Group title="FMO" items={nav.fmo} collapsed={collapsed} open={isOpen('fmo')} onToggle={() => toggleGroup('fmo')} />
           <Group title="Pádel" items={nav.padel} collapsed={collapsed} open={isOpen('padel')} onToggle={() => toggleGroup('padel')} />
           <Group title="Golf" items={nav.golf} collapsed={collapsed} open={isOpen('golf')} onToggle={() => toggleGroup('golf')} />
+          <Group title="Truco" items={nav.truco} collapsed={collapsed} open={isOpen('truco')} onToggle={() => toggleGroup('truco')} />
           <Group title="La banda" items={nav.banda} collapsed={collapsed} open={isOpen('banda')} onToggle={() => toggleGroup('banda')} />
           <Group title="Más" items={nav.mas} collapsed={collapsed} open={isOpen('mas')} onToggle={() => toggleGroup('mas')} />
         </nav>
@@ -321,6 +332,7 @@ export function Shell({ children }: { children: ReactNode }) {
                     ['FMO', nav.fmo],
                     ['Pádel', nav.padel],
                     ['Golf', nav.golf],
+                    ['Truco', nav.truco],
                   ] as const
                 ).map(([title, items]) => (
                   <div key={title}>
