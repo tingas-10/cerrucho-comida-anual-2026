@@ -1,6 +1,6 @@
 // Truco · Torneos: la lista y el armado de uno nuevo (liga, eliminación directa o grupos + eliminación;
 // 1 vs 1, 2 vs 2 o 3 vs 3). Los partidos del torneo se anotan como cualquier otro y suman al ranking.
-import { Shuffle, Trophy } from 'lucide-react'
+import { Shuffle, Trophy, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { TRUCO, aCuantoLabel, formatoTruco } from '../../content/truco'
@@ -12,7 +12,7 @@ import { computeTrucoStats, shuffle, splitGroups, tournamentState } from '../../
 import { Button, Card, Empty, Field, Input, Loading, Modal, PageHeader, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
-import { TrucoTabs, useTrucoMatches, useTrucoTournaments } from './trucoShared'
+import { PlayerPicker, TrucoTabs, useTrucoMatches, useTrucoTournaments } from './trucoShared'
 
 export const FORMATO_TORNEO: Record<TrucoTournament['format'], { label: string; desc: string }> = {
   league: { label: 'Liga', desc: 'Todos contra todos. Gana el que más partidos gana.' },
@@ -102,7 +102,6 @@ function NewTournament({ onClose }: { onClose: () => void }) {
   const [seeding, setSeeding] = useState<'random' | 'ranking'>('random')
   const [picked, setPicked] = useState<string[]>([])
   const [teams, setTeams] = useState<string[][]>([])
-  const [filter, setFilter] = useState('')
   const [busy, setBusy] = useState(false)
   const n = Number(size)
   const stats = useMemo(() => computeTrucoStats(matches), [matches])
@@ -169,8 +168,6 @@ function NewTournament({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const f = filter.trim().toLowerCase()
-  const list = players.list.filter((p) => !f || p.name.toLowerCase().includes(f))
   return (
     <Modal open onClose={onClose} title="Nuevo torneo" wide>
       <div className="grid gap-4">
@@ -255,17 +252,21 @@ function NewTournament({ onClose }: { onClose: () => void }) {
             <p className="label !mb-0">Quiénes juegan</p>
             <span className="tiny muted">{picked.length} elegidos</span>
           </div>
-          <input className="input mb-2" placeholder="Buscar" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Buscar jugador" />
-          <div className="flex flex-wrap gap-1.5 max-h-56 overflow-y-auto overscroll-contain">
-            {list.map((p) => {
-              const on = picked.includes(p.id)
-              return (
-                <button key={p.id} type="button" aria-pressed={on} onClick={() => toggle(p.id)} className={`btn btn-sm ${on ? 'btn-gold' : 'btn-line'}`}>
-                  {p.name}
-                </button>
-              )
-            })}
-          </div>
+          <PlayerPicker value="" onChange={(id) => id && toggle(id)} players={players} exclude={picked} label="Sumar un jugador al torneo" placeholder="+ Sumar un jugador…" />
+          <p className="tiny muted mt-1">Están todos los de la banda y los invitados. Si juega alguien nuevo, al final del desplegable: «+ Otro que no es de la banda…».</p>
+          {picked.length ? (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {picked.map((id) => (
+                <span key={id} className="pill flex items-center gap-1">
+                  {players.nameOf(id)}
+                  {players.byId[id]?.guest ? <span className="tiny muted">(inv.)</span> : null}
+                  <button type="button" className="ml-1 min-w-[24px] min-h-[24px]" aria-label={`Sacar a ${players.nameOf(id)}`} onClick={() => toggle(id)}>
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {n > 1 ? (

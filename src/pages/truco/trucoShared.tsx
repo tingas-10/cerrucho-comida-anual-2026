@@ -1,10 +1,141 @@
-// Piezas compartidas de Truco: partidos, torneos, pestañas, nombres de equipo y el dibujo de los fósforos.
+// Piezas compartidas de Truco: partidos, torneos, pestañas, nombres de equipo, el desplegable de jugadores
+// (con la opción de sumar a alguien que no es de la banda) y el dibujo de los fósforos.
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useSession } from '../../data/DataContext'
+import { errorText } from '../../data/actions'
 import { useCollection } from '../../data/hooks'
 import { P } from '../../data/paths'
-import type { TrucoMatch, TrucoTournament } from '../../data/types'
+import type { FmoGuest, TrucoMatch, TrucoTournament } from '../../data/types'
 import type { Side } from '../../domain/truco'
+import { Button } from '../../ui/components'
+import { useToast } from '../../ui/toast'
 import type { FmoPlayers } from '../fmo/fmoShared'
+
+const NEW = '__nuevo'
+
+/** Desplegable con todos los que pueden jugar: los de la banda, los invitados que ya jugaron y, al final,
+ *  «Otro que no es de la banda…», que deja escribir el nombre ahí mismo y lo suma como invitado. */
+export function PlayerPicker({
+  value,
+  onChange,
+  players,
+  exclude = [],
+  label,
+  placeholder = 'Elegí…',
+}: {
+  value: string
+  onChange: (id: string) => void
+  players: FmoPlayers
+  exclude?: string[]
+  label: string
+  placeholder?: string
+}) {
+  const { db, memberId } = useSession()
+  const toast = useToast()
+  const [adding, setAdding] = useState(false)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  // El recién agregado tarda un instante en aparecer en la lista: mientras tanto se muestra igual.
+  const [fresh, setFresh] = useState<{ id: string; name: string } | null>(null)
+  const ok = (id: string) => id === value || !exclude.includes(id)
+  const members = players.list.filter((p) => !p.guest && ok(p.id))
+  const guests = players.list.filter((p) => p.guest && ok(p.id))
+  const showFresh = fresh && !players.byId[fresh.id] && (fresh.id === value || ok(fresh.id))
+
+  async function add() {
+    const n = name.trim()
+    if (n.length < 2 || !memberId) return toast.error('Escribí el nombre.')
+    const same = players.list.find((p) => p.name.toLowerCase() === n.toLowerCase())
+    if (same) {
+      onChange(same.id)
+      setAdding(false)
+      setName('')
+      return toast.ok(`${same.name} ya estaba en la lista`)
+    }
+    setBusy(true)
+    try {
+      const gid = 'g-' + db.newId().slice(0, 10).toLowerCase()
+      const g: FmoGuest = { id: gid, name: n, createdBy: memberId, createdAt: Date.now(), updatedAt: Date.now() }
+      await db.setDoc(P.fmoGuest(gid), g)
+      setFresh({ id: gid, name: n })
+      onChange(gid)
+      setAdding(false)
+      setName('')
+      toast.ok(`${n} quedó sumado como invitado`)
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      <select
+        className="input"
+        aria-label={label}
+        value={adding ? NEW : value}
+        onChange={(e) => {
+          if (e.target.value === NEW) setAdding(true)
+          else {
+            setAdding(false)
+            onChange(e.target.value)
+          }
+        }}
+      >
+        <option value="">{placeholder}</option>
+        <optgroup label="La banda">
+          {members.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </optgroup>
+        {guests.length || showFresh ? (
+          <optgroup label="Invitados">
+            {showFresh ? <option value={fresh!.id}>{fresh!.name}</option> : null}
+            {guests.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </optgroup>
+        ) : null}
+        <option value={NEW}>+ Otro que no es de la banda…</option>
+      </select>
+      {adding ? (
+        <div className="flex gap-2 mt-2">
+          <input
+            className="input"
+            placeholder="Nombre"
+            value={name}
+            maxLength={30}
+            autoFocus
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void add()
+            }}
+            aria-label={`Nombre del nuevo jugador (${label})`}
+          />
+          <Button variant="gold" onClick={() => void add()} loading={busy}>
+            Agregar
+          </Button>
+          <Button
+            variant="line"
+            onClick={() => {
+              setAdding(false)
+              setName('')
+            }}
+            aria-label="Cancelar"
+          >
+            ✕
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export function useTrucoMatches() {
   return useCollection<TrucoMatch>(P.trucoMatches)

@@ -9,14 +9,14 @@ import { useSession } from '../../data/DataContext'
 import { errorText } from '../../data/actions'
 import { useDoc } from '../../data/hooks'
 import { P } from '../../data/paths'
-import type { FmoGuest, TrucoMatch, TrucoTournament } from '../../data/types'
+import type { TrucoMatch, TrucoTournament } from '../../data/types'
 import { formatPoints } from '../../domain/fmo'
 import { fmtDayLong, localToMs, msToLocalParts } from '../../domain/format'
 import { malasBuenas, validateMatch, validateTeams, winnerOf, type Side } from '../../domain/truco'
 import { Avatar, Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Notice, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
-import { Fosforos, teamLabel, teamPlayers } from './trucoShared'
+import { Fosforos, PlayerPicker, teamLabel, teamPlayers } from './trucoShared'
 
 export function TrucoPartido() {
   const { id } = useParams()
@@ -29,7 +29,6 @@ export function TrucoPartido() {
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [guestName, setGuestName] = useState('')
   const [manualA, setManualA] = useState('')
   const [manualB, setManualB] = useState('')
   const tournament = useDoc<TrucoTournament>(m?.tournamentId ? P.trucoTournament(m.tournamentId) : null)
@@ -127,27 +126,6 @@ export function TrucoPartido() {
     const team = [...(side === 'A' ? m!.teamA : m!.teamB)]
     team[idx] = pid
     change(side === 'A' ? { teamA: team } : { teamB: team })
-  }
-
-  async function addGuest() {
-    const name = guestName.trim()
-    if (name.length < 2 || !memberId) return toast.error('Poné el nombre del invitado.')
-    try {
-      const gid = 'g-' + db.newId().slice(0, 10).toLowerCase()
-      const g: FmoGuest = { id: gid, name, createdBy: memberId, createdAt: Date.now(), updatedAt: Date.now() }
-      await db.setDoc(P.fmoGuest(gid), g)
-      setGuestName('')
-      // Entra en el primer lugar libre
-      const ia = m!.teamA.findIndex((x) => !x)
-      if (ia >= 0) setSlot('A', ia, gid)
-      else {
-        const ib = m!.teamB.findIndex((x) => !x)
-        if (ib >= 0) setSlot('B', ib, gid)
-      }
-      toast.ok(`${name} ya está en la lista`)
-    } catch (e) {
-      toast.error(errorText(e))
-    }
   }
 
   const header = (
@@ -334,31 +312,14 @@ export function TrucoPartido() {
                         {players.nameOf(pid)}
                       </p>
                     ) : (
-                      <select key={i} className="input" value={pid} onChange={(e) => setSlot(s, i, e.target.value)} aria-label={`${s === 'A' ? 'Equipo 1' : 'Equipo 2'}, jugador ${i + 1}`}>
-                        <option value="">Elegí…</option>
-                        {players.list
-                          .filter((p) => p.id === pid || !taken.has(p.id))
-                          .map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                              {p.guest ? ' (invitado)' : ''}
-                            </option>
-                          ))}
-                      </select>
+                      <PlayerPicker key={i} value={pid} onChange={(v) => setSlot(s, i, v)} players={players} exclude={[...taken]} label={`${s === 'A' ? 'Equipo 1' : 'Equipo 2'}, jugador ${i + 1}`} />
                     ),
                   )}
                 </div>
               </div>
             ))}
           </div>
-          {!inTournament ? (
-            <div className="flex gap-2 mt-3">
-              <input className="input" placeholder="Invitado nuevo" value={guestName} maxLength={30} onChange={(e) => setGuestName(e.target.value)} aria-label="Nombre de un invitado" />
-              <Button variant="line" onClick={() => void addGuest()}>
-                Sumar
-              </Button>
-            </div>
-          ) : null}
+          {!inTournament ? <p className="tiny muted mt-3">¿Juega alguien que no es de la banda? En el desplegable, «+ Otro que no es de la banda…» y escribís su nombre.</p> : null}
         </Card>
 
         <Card className="lg:col-span-2">
