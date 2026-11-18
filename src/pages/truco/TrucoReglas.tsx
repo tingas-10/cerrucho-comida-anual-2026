@@ -144,7 +144,7 @@ export function TrucoReglas() {
             <p>
               <b>Nuevo partido</b> → elegís 1 vs 1, 2 vs 2 o 3 vs 3, a 15 o a 30, y quiénes juegan → <b>Empezar a anotar</b>.
             </p>
-            <p>Tocás los fósforos (o +1) para sumar un punto, y +2, +3 o +4 para los cantos. Si te equivocaste, «Deshacer» o −1. Cada punto se guarda solo: los demás lo ven en vivo desde su celular.</p>
+            <p>La pantalla queda partida en dos: Nosotros y Ellos. Cada vez que tocás un lado, suma un fósforo; si te equivocaste, el − de abajo de ese lado resta uno. Cada punto se guarda solo: los demás lo ven en vivo desde su celular.</p>
             <p>
               Cuando alguien llega, tocás <b>Guardar el partido</b>. Para el ranking, el que gana suma {formatPoints(TRUCO.puntos.gana)} y el que pierde resta {formatPoints(-TRUCO.puntos.pierde)}.
             </p>

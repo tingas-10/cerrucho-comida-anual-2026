@@ -211,8 +211,9 @@ function Square({ count, size, lastIndex }: { count: number; size: number; lastI
   )
 }
 
-/** Los fósforos de un equipo. A 30: las malas (3 cuadrados) y al lado las buenas (otros 3). */
-export function Fosforos({ score, target, size = 52, animate = true }: { score: number; target: number; size?: number; animate?: boolean }) {
+/** Los fósforos de un equipo. A 30: las malas (3 cuadrados) y las buenas (otros 3), una abajo de la otra
+ *  con una raya en el medio, como en el papel (`stacked`), o una al lado de la otra para ocupar menos alto. */
+export function Fosforos({ score, target, size = 52, animate = true, stacked = false }: { score: number; target: number; size?: number; animate?: boolean; stacked?: boolean }) {
   const filled = Math.max(0, Math.min(score, target))
   const groups = Math.ceil(target / 5)
   const last = animate ? filled - 1 : -1
@@ -221,6 +222,17 @@ export function Fosforos({ score, target, size = 52, animate = true }: { score: 
     return <Square key={g} count={count} size={size} lastIndex={last >= g * 5 && last < g * 5 + 5 ? last - g * 5 : -1} />
   })
   if (target !== 30) return <div className="flex flex-col items-center gap-1">{squares}</div>
+  if (stacked) {
+    return (
+      <div className="flex flex-col items-center gap-1 w-full">
+        <span className="text-[11px] muted uppercase tracking-wide">Malas</span>
+        {squares.slice(0, 3)}
+        <span className="w-full border-t-2 border-[var(--border)] my-1.5" aria-hidden />
+        <span className="text-[11px] muted uppercase tracking-wide">Buenas</span>
+        {squares.slice(3)}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-2 gap-1.5">
       <div className="flex flex-col items-center gap-1">

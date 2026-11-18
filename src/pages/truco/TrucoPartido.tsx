@@ -1,7 +1,7 @@
 // Truco · Un partido: armado (1 vs 1, 2 vs 2 o 3 vs 3, a 15 o a 30), anotador en vivo con fósforos
 // (malas y buenas, +1/+2/+3/+4, sacar y deshacer) y resultado. También "sólo sé quién ganó".
 // Cada punto que se anota se guarda en el momento: los que miran desde otro celular lo ven en vivo.
-import { Trash2, Undo2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { TRUCO, aCuantoLabel, formatoTruco } from '../../content/truco'
@@ -86,24 +86,6 @@ export function TrucoPartido() {
     }
   }
 
-  async function undo() {
-    if (!m || !memberId || !m.log?.length) return
-    const last = m.log[m.log.length - 1]
-    const patch = {
-      scoreA: last.t === 'A' ? Math.max(0, m.scoreA - last.n) : m.scoreA,
-      scoreB: last.t === 'B' ? Math.max(0, m.scoreB - last.n) : m.scoreB,
-      log: m.log.slice(0, -1),
-      updatedBy: memberId,
-      updatedAt: Date.now(),
-    }
-    setM({ ...m, ...patch })
-    try {
-      await db.updateDoc(P.trucoMatch(m.id), patch)
-    } catch (e) {
-      toast.error(errorText(e))
-    }
-  }
-
   async function startLive() {
     const err = validateTeams(m!)
     if (err) return toast.error(err)
@@ -178,7 +160,6 @@ export function TrucoPartido() {
 
   // ---------- En vivo ----------
   if (m.status === 'LIVE') {
-    const last = m.log?.[m.log.length - 1]
     return (
       <div>
         {header}
@@ -190,15 +171,12 @@ export function TrucoPartido() {
                 Guardar el partido
               </Button>
             ) : null}
-            {isMember ? <p className="tiny muted mt-2">Si fue un error, deshacé el último punto.</p> : null}
+            {isMember ? <p className="tiny muted mt-2">Si fue un error, restá con el − de abajo.</p> : null}
           </Card>
         ) : null}
         <Anotador m={m} players={players} editable={isMember} onTap={(s, n) => void tap(s, n)} />
         {isMember ? (
           <div className="grid gap-3 mt-4">
-            <Button variant="line" disabled={!last} onClick={() => void undo()}>
-              <Undo2 size={16} /> {last ? `Deshacer (${last.n > 0 ? '+' : ''}${last.n} a ${teamLabel(m, last.t, players)})` : 'Deshacer'}
-            </Button>
             <details className="card p-3">
               <summary className="small font-semibold cursor-pointer min-h-[40px] flex items-center">Cargar el resultado a mano</summary>
               <p className="tiny muted mb-2">Si lo anotaron en papel, poné cómo terminó.</p>
@@ -361,7 +339,7 @@ export function TrucoPartido() {
             </div>
           ) : (
             <div className="mt-3">
-              <p className="small mb-3">Se abre el anotador: cada punto suma un fósforo, como en las apps de truco. {teamErr ? <span className="text-warn">{teamErr}</span> : null}</p>
+              <p className="small mb-3">Se abre el anotador: tocás el lado de cada equipo y suma un fósforo, como en las apps de truco. {teamErr ? <span className="text-warn">{teamErr}</span> : null}</p>
               <Button variant="gold" className="w-full sm:w-auto" onClick={() => void startLive()} loading={busy}>
                 Empezar a anotar
               </Button>
@@ -384,49 +362,62 @@ export function TrucoPartido() {
   )
 }
 
-/** El anotador: dos columnas con el número, en qué parte va (malas o buenas), los fósforos y los botones. */
+/** El anotador, como en las apps de truco: dos lados (Nosotros y Ellos, o el nombre de cada equipo).
+ *  Tocar en cualquier parte de un lado suma un fósforo; el − de abajo de cada lado resta uno.
+ *  Los fósforos arman cuadrados de 5 (4 lados y la diagonal), con las malas arriba y las buenas abajo. */
 export function Anotador({ m, players, editable, onTap, size }: { m: TrucoMatch; players: FmoPlayers; editable: boolean; onTap?: (side: Side, n: number) => void; size?: number }) {
   const winner = winnerOf(m)
   // En la compu, fósforos más grandes.
   const wide = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches
-  const sq = size ?? (wide ? 64 : 44)
+  const sq = size ?? (wide ? 64 : 56)
+  const canTap = editable && !!onTap
   return (
-    <div className="grid grid-cols-2 gap-3 max-w-3xl">
+    <div className="grid grid-cols-2 max-w-3xl rounded-2xl border border-line bg-card overflow-hidden select-none shadow-sm">
       {(['A', 'B'] as const).map((s) => {
         const score = s === 'A' ? m.scoreA : m.scoreB
         const mb = malasBuenas(score, m.target)
         const won = winner === s
-        return (
-          <Card key={s} className={`!p-3 flex flex-col items-center text-center ${won ? 'ring-2 ring-[var(--gold)]' : ''}`}>
-            <p className="font-bold truncate max-w-full">{teamLabel(m, s, players)}</p>
+        const name = teamLabel(m, s, players)
+        const content = (
+          <>
+            <p className="font-extrabold text-lg truncate max-w-full">{name}</p>
             {m.size > 1 ? <p className="tiny muted truncate max-w-full">{teamPlayers(m, s, players)}</p> : null}
-            <p className="text-5xl font-extrabold tabular-nums leading-none mt-2">{Math.min(score, m.target)}</p>
-            <p className="tiny muted mt-1 mb-2">{won ? '¡Ganó!' : mb.part ? `${mb.inPart} en las ${mb.part}` : `de ${m.target}`}</p>
-            {editable && onTap ? (
-              <div className="w-full mb-3 grid gap-2">
-                <Button variant="gold" className="w-full !text-lg" disabled={!!winner} onClick={() => onTap(s, 1)} aria-label={`Sumar 1 a ${teamLabel(m, s, players)}`}>
-                  +1
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  {[2, 3, 4].map((n) => (
-                    <Button key={n} variant="line" className="!px-1" disabled={!!winner} onClick={() => onTap(s, n)} aria-label={`Sumar ${n} a ${teamLabel(m, s, players)}`}>
-                      +{n}
-                    </Button>
-                  ))}
-                  <Button variant="line" className="!px-1" disabled={score === 0} onClick={() => onTap(s, -1)} aria-label={`Sacar un punto a ${teamLabel(m, s, players)}`}>
-                    −1
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-            {editable && onTap ? (
-              <button type="button" className="rounded-xl p-1 hover:bg-soft/60 active:scale-[.98] transition" onClick={() => onTap(s, 1)} aria-label={`Tocar los fósforos: sumar un punto a ${teamLabel(m, s, players)}`} disabled={!!winner}>
-                <Fosforos score={score} target={m.target} size={sq} />
+            <p className="text-4xl font-extrabold tabular-nums leading-none mt-2">{Math.min(score, m.target)}</p>
+            <p className="tiny muted mt-1 mb-3">{won ? '¡Ganó!' : mb.part ? `${mb.inPart} en las ${mb.part}` : `de ${m.target}`}</p>
+            <Fosforos score={score} target={m.target} size={sq} stacked />
+            {canTap && !winner ? <p className="tiny muted mt-3">Tocá para sumar</p> : null}
+          </>
+        )
+        return (
+          <div key={s} className={`flex flex-col min-w-0 ${s === 'A' ? 'border-r-2 border-[var(--border)]' : ''} ${won ? 'bg-ok-soft/40' : ''}`}>
+            {canTap ? (
+              <button
+                type="button"
+                className="flex-1 flex flex-col items-center text-center px-2 pt-4 pb-4 transition-colors active:bg-soft/80 hover:bg-soft/30"
+                style={{ touchAction: 'manipulation' }}
+                onClick={() => !winner && onTap!(s, 1)}
+                aria-label={`Sumar un fósforo a ${name} (va ${Math.min(score, m.target)})`}
+              >
+                {content}
               </button>
             ) : (
-              <Fosforos score={score} target={m.target} size={sq} />
+              <div className="flex-1 flex flex-col items-center text-center px-2 pt-4 pb-4">{content}</div>
             )}
-          </Card>
+            {canTap ? (
+              <div className="p-2 border-t border-line">
+                <button
+                  type="button"
+                  className="btn btn-line w-full !text-3xl !font-extrabold !min-h-[52px] leading-none"
+                  style={{ touchAction: 'manipulation' }}
+                  disabled={score === 0}
+                  onClick={() => onTap!(s, -1)}
+                  aria-label={`Restar un fósforo a ${name}`}
+                >
+                  −
+                </button>
+              </div>
+            ) : null}
+          </div>
         )
       })}
     </div>
