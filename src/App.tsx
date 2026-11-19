@@ -43,6 +43,7 @@ import { Onboarding, Perfil } from './pages/Perfil'
 import { Premios } from './pages/Premios'
 import { Tareas } from './pages/Tareas'
 import { Loading } from './ui/components'
+import { LideresPopup } from './ui/LideresPopup'
 import { Shell } from './ui/Shell'
 
 /** Los links viejos de golf (/golf/ronda/…) llevan al partido. */
@@ -119,6 +120,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
+      {/* Una sola vez: los número 1 de FMO y Truco (no tapa el primer ingreso ni la pantalla de entrar). */}
+      {!needsOnboarding && location.pathname !== '/entrar' ? <LideresPopup /> : null}
     </Shell>
   )
 }
