@@ -11,7 +11,7 @@ import type { PadelFormat, PadelTournament } from '../../data/types'
 import { yearOf } from '../../domain/fmo'
 import { localToMs } from '../../domain/format'
 import { computePadelStats } from '../../domain/padel'
-import { buildGroups, koTies, qualifiersCount, roundTitle, rrGames } from '../../domain/padelTorneo'
+import { buildGroups, koTies, qualifiersCount, roundTitle, rrGames, shortSetText } from '../../domain/padelTorneo'
 import { shuffle } from '../../domain/truco'
 import { Button, Card, Field, Input, LoginPrompt, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
@@ -60,6 +60,7 @@ export function PadelTorneoNuevo() {
   const [koFormats, setKoFormats] = useState<Record<string, PadelFormat>>({})
   const [points, setPoints] = useState(PADEL_TORNEO.puntos)
   const [deuce, setDeuce] = useState<'oro' | 'ventaja'>('oro')
+  const [tb4, setTb4] = useState<3 | 4>(3)
   const [busy, setBusy] = useState(false)
 
   const n = rows.length
@@ -136,6 +137,7 @@ export function PadelTorneoNuevo() {
         formats: { rr: rrFormat, ko: Object.fromEntries(ties.map((x) => [String(x), koFmt(x)])) },
         points,
         deuce,
+        tiebreak4: tb4,
         date: date ? localToMs(date, '10:00') : null,
         place: place.trim() || null,
         createdBy: memberId,
@@ -347,7 +349,22 @@ export function PadelTorneoNuevo() {
               </div>
             ))}
           </div>
-          <p className="tiny muted mt-3">A 4 games: en 3-3 hay tie-break y termina 4-3. Para el ranking general, ganar a 4 games suma medio punto, a 1 set 1 y al mejor de 3, 2.</p>
+          {(format !== 'knockout' && rrFormat === 'g4') || ties.some((x) => koFmt(x) === 'g4') ? (
+            <div className="border-t border-line pt-3 mt-3">
+              <p className="small font-semibold mb-1.5">Sets a 4 games, si van 3-3</p>
+              <Segmented
+                ariaLabel="Sets a 4 games, si van 3-3"
+                value={String(tb4) as '3' | '4'}
+                onChange={(v) => setTb4(Number(v) as 3 | 4)}
+                options={[
+                  { value: '3', label: 'Tie-break, 4-3' },
+                  { value: '4', label: 'Siguen hasta 4-4' },
+                ]}
+              />
+              <p className="tiny muted mt-1.5">{shortSetText({ tiebreak4: tb4 })}.</p>
+            </div>
+          ) : null}
+          <p className="tiny muted mt-3">Para el ranking general, ganar a 4 games suma medio punto, a 1 set 1 y al mejor de 3, 2.</p>
         </Card>
 
         <Card>
@@ -370,7 +387,7 @@ export function PadelTorneoNuevo() {
             onChange={setDeuce}
             options={[
               { value: 'oro', label: 'Punto de oro' },
-              { value: 'ventaja', label: 'Ventaja' },
+              { value: 'ventaja', label: 'Deuce' },
             ]}
           />
         </Card>

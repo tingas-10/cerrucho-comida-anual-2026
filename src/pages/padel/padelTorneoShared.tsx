@@ -9,7 +9,7 @@ import { useCollection } from '../../data/hooks'
 import { P } from '../../data/paths'
 import type { PadelMatch, PadelTournament } from '../../data/types'
 import { formatPoints } from '../../domain/fmo'
-import { BYE, fixtureTitle, resultProblem, type PFixture, type PRow, type PadelTState } from '../../domain/padelTorneo'
+import { BYE, fixtureTitle, resultProblem, shortSetText, type PFixture, type PRow, type PadelTState } from '../../domain/padelTorneo'
 import { Button, ConfirmDialog, Modal, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import type { FmoPlayers } from '../fmo/fmoShared'
@@ -38,7 +38,8 @@ export function pairNames(t: PadelTournament, id: string | null, players: FmoPla
   return p.players.map(players.nameOf).join(' / ')
 }
 
-export function formatLabel(f: PFixture['format']): string {
+export function formatLabel(f: PFixture['format'], t?: Pick<PadelTournament, 'tiebreak4'>): string {
+  if (f === 'g4' && t?.tiebreak4 === 4) return 'A 4 games, tie-break en 4-4'
   return FORMATO_PARTIDO[f].label
 }
 
@@ -302,8 +303,9 @@ export function ResultModal({ t, st, f, matches, players, onClose }: { t: PadelT
   const b = f.b
   const pa = t.pairs.find((p) => p.id === a)
   const pb = t.pairs.find((p) => p.id === b)
-  const max = fmt.games === 4 ? 4 : 7
-  const problem = mode === 'winner' ? (winner ? null : 'Marcá qué pareja ganó.') : resultProblem(shown, f.format, canDraw && draw)
+  const tb4 = t.tiebreak4 === 4 ? 4 : 3
+  const max = fmt.games === 4 ? (tb4 === 4 ? 5 : 4) : 7
+  const problem = mode === 'winner' ? (winner ? null : 'Marcá qué pareja ganó.') : resultProblem(shown, f.format, canDraw && draw, tb4)
   const existingId = f.result?.matchId ?? f.openMatchId
   const existing = existingId ? matches.find((m) => m.id === existingId) : undefined
 
@@ -379,8 +381,8 @@ export function ResultModal({ t, st, f, matches, players, onClose }: { t: PadelT
     <Modal open={!!f} onClose={onClose} title={fixtureTitle(f, st)}>
       <p className="small muted -mt-1 mb-3">
         {fmt.label}
-        {fmt.games === 4 ? ' · en 3-3 hay tie-break y termina 4-3' : ''}
-        {t.deuce === 'oro' ? ' · punto de oro' : ' · con ventaja'}
+        {fmt.games === 4 ? ` · ${shortSetText(t)}` : ''}
+        {t.deuce === 'oro' ? ' · punto de oro' : ' · deuce'}
       </p>
       <Segmented
         ariaLabel="Cómo se carga"

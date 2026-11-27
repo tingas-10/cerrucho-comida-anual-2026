@@ -206,6 +206,15 @@ describe('resultados válidos', () => {
     expect(setProblem({ a: 5, b: 3 }, 4, 0)).not.toBeNull()
     expect(setProblem({ a: 3, b: 3 }, 4, 0)).not.toBeNull()
   })
+  it('set a 4 games con tie-break en 4-4: 4-2, 5-3 y 5-4 sí; 4-3 no', () => {
+    expect(setProblem({ a: 4, b: 2 }, 4, 0, 4)).toBeNull()
+    expect(setProblem({ a: 5, b: 3 }, 4, 0, 4)).toBeNull()
+    expect(setProblem({ a: 4, b: 5 }, 4, 0, 4)).toBeNull()
+    expect(setProblem({ a: 4, b: 3 }, 4, 0, 4)).not.toBeNull()
+    expect(setProblem({ a: 6, b: 4 }, 4, 0, 4)).not.toBeNull()
+    expect(resultProblem([{ a: 5, b: 4 }], 'g4', false, 4)).toBeNull()
+    expect(resultProblem([{ a: 5, b: 4 }], 'g4', false)).not.toBeNull()
+  })
   it('set a 6 games: 6-4, 7-5 y 7-6 sí; 6-5 no', () => {
     expect(setProblem({ a: 6, b: 4 }, 6, 0)).toBeNull()
     expect(setProblem({ b: 7, a: 5 }, 6, 0)).toBeNull()

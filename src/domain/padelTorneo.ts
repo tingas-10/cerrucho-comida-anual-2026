@@ -355,22 +355,24 @@ export function fixtureTitle(f: PFixture, st: PadelTState): string {
 }
 
 /** Valida los games de un set según el formato. Devuelve el problema o null. */
-export function setProblem(s: { a: number; b: number }, games: 4 | 6, i: number): string | null {
+export function setProblem(s: { a: number; b: number }, games: 4 | 6, i: number, tiebreak4: 3 | 4 = 3): string | null {
   const hi = Math.max(s.a, s.b)
   const lo = Math.min(s.a, s.b)
   const n = `El set ${i + 1}`
   if (s.a === s.b) return `${n} está empatado: alguien lo tiene que ganar.`
+  if (games === 4 && tiebreak4 === 4)
+    return (hi === 4 && lo <= 2) || (hi === 5 && (lo === 3 || lo === 4)) ? null : `${n} es a 4 games con tie-break en 4-4: termina 4-0, 4-1, 4-2, 5-3 o 5-4.`
   if (games === 4) return hi === 4 && lo <= 3 ? null : `${n} es a 4 games: termina 4-0, 4-1, 4-2 o 4-3 (en 3-3 hay tie-break).`
   if ((hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6))) return null
   return `${n} no cierra: termina 6 a 4 o menos, 7-5 o 7-6.`
 }
 
 /** Sets que hacen falta según el formato del cruce y el problema del resultado cargado (o null si está bien). */
-export function resultProblem(sets: Array<{ a: number; b: number }>, format: PadelFormat, allowDraw: boolean): string | null {
+export function resultProblem(sets: Array<{ a: number; b: number }>, format: PadelFormat, allowDraw: boolean, tiebreak4: 3 | 4 = 3): string | null {
   const f = FORMATO_PARTIDO[format]
   if (!sets.length) return 'Cargá el resultado.'
   for (let i = 0; i < sets.length; i++) {
-    const p = setProblem(sets[i], f.games, i)
+    const p = setProblem(sets[i], f.games, i, tiebreak4)
     if (p) return p
   }
   const need = Math.floor(f.bestOf / 2) + 1
@@ -384,4 +386,9 @@ export function resultProblem(sets: Array<{ a: number; b: number }>, format: Pad
   if (a === need || b === need) return null
   if (allowDraw && a === b) return null
   return f.bestOf === 1 ? 'Cargá el set.' : 'Falta el set que define el partido.'
+}
+
+/** Cómo se define un set a 4 games en este torneo, para mostrarlo. */
+export function shortSetText(t: Pick<PadelTournament, 'tiebreak4'>): string {
+  return t.tiebreak4 === 4 ? 'en 3-3 siguen, en 4-4 hay tie-break y termina 5-4' : 'en 3-3 hay tie-break y termina 4-3'
 }

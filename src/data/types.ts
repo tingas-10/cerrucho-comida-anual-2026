@@ -551,7 +551,9 @@ export interface PadelTournament {
   formats: { rr: PadelFormat; ko: Record<string, PadelFormat> }
   // Puntos de la tabla del torneo (liga o grupos). No tocan el ranking general.
   points: { win: number; draw: number; loss: number }
-  deuce: 'oro' | 'ventaja' // 40 iguales: punto de oro o ventaja
+  deuce: 'oro' | 'ventaja' // 40 iguales: punto de oro o deuce (ventaja)
+  // Sets a 4 games: en 3-3 tie-break (termina 4-3) o siguen hasta 4-4 y recién ahí tie-break (termina 5-3 o 5-4). Sin el campo, 3.
+  tiebreak4?: 3 | 4
   date: number | null
   place: string | null
   createdBy: string

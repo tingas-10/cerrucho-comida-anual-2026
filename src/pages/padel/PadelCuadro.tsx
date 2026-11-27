@@ -93,7 +93,7 @@ export function PadelCuadro() {
         <section className="mt-6">
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
             <h2 className="tour-title text-2xl">Cuadro</h2>
-            <p className="tiny text-white/55">{ko.map((r) => `${r.length === 1 ? 'Final' : r.length === 2 ? 'Semis' : r.length === 4 ? 'Cuartos' : `Ronda de ${r.length * 2}`}: ${formatLabel(r[0].format).toLowerCase()}`).join(' · ')}</p>
+            <p className="tiny text-white/55">{ko.map((r) => `${r.length === 1 ? 'Final' : r.length === 2 ? 'Semis' : r.length === 4 ? 'Cuartos' : `Ronda de ${r.length * 2}`}: ${formatLabel(r[0].format, t).toLowerCase()}`).join(' · ')}</p>
           </div>
           <div className="mt-2 rounded-2xl bg-white/[.03] border border-white/10">
             <Bracket t={t} rounds={ko} players={players} champion={st.champion} />
@@ -106,7 +106,7 @@ export function PadelCuadro() {
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
             <h2 className="tour-title text-2xl">Grupos</h2>
             <p className="tiny text-white/55">
-              {formatLabel(t.formats.rr)} · {t.advance === 'all' ? 'pasan todos' : t.advance === 1 ? 'pasa el 1°' : `pasan los ${t.advance} primeros`}
+              {formatLabel(t.formats.rr, t)} · {t.advance === 'all' ? 'pasan todos' : t.advance === 1 ? 'pasa el 1°' : `pasan los ${t.advance} primeros`}
             </p>
           </div>
           <div className={`grid gap-4 mt-3 ${st.groups.length > 1 ? 'md:grid-cols-2' : ''} ${st.groups.length > 2 ? 'xl:grid-cols-3' : ''}`}>

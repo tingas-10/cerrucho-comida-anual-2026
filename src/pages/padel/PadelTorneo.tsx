@@ -11,7 +11,7 @@ import { P } from '../../data/paths'
 import type { PadelFormat, PadelTournament } from '../../data/types'
 import { formatPoints } from '../../domain/fmo'
 import { fmtDayLong, localToMs, msToLocalParts } from '../../domain/format'
-import { allFixtures, fixtureTitle, koTies, playable, roundTitle, tournamentState, type PFixture, type PadelTState } from '../../domain/padelTorneo'
+import { allFixtures, fixtureTitle, koTies, playable, roundTitle, shortSetText, tournamentState, type PFixture, type PadelTState } from '../../domain/padelTorneo'
 import { Button, Card, ConfirmDialog, Field, Input, Loading, Modal, Notice, Pill, Section, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
@@ -129,7 +129,7 @@ export function PadelTorneo() {
             {st.knockout.map((r, i) => (
               <Card key={i}>
                 <p className="tour-title text-xl">{roundTitle(r.length)}</p>
-                <p className="tiny muted mb-1">{formatLabel(r[0].format)}</p>
+                <p className="tiny muted mb-1">{formatLabel(r[0].format, t)}</p>
                 {r.map((f) => (
                   <FixtureRow key={f.key} t={t} st={st} f={f} players={players} onOpen={() => setOpen(f.key)} showTitle={r.length > 1} />
                 ))}
@@ -212,8 +212,13 @@ function RulesList({ t }: { t: PadelTournament }) {
         </li>
       ))}
       <li>
-        <b>40 iguales:</b> {t.deuce === 'oro' ? 'punto de oro, el que gana ese punto se lleva el game.' : 'con ventaja, hay que ganar por dos.'}
+        <b>40 iguales:</b> {t.deuce === 'oro' ? 'punto de oro, el que gana ese punto se lleva el game.' : 'deuce, hay que ganar por dos puntos.'}
       </li>
+      {t.formats.rr === 'g4' || Object.values(t.formats.ko).includes('g4') ? (
+        <li>
+          <b>Sets a 4 games:</b> {shortSetText(t)}.
+        </li>
+      ) : null}
       {t.format !== 'knockout' ? <li className="muted">Desempate: si son dos, el partido entre ellos; después diferencia de sets, de games y games a favor.</li> : null}
       <li className="muted">Cada partido suma también al ranking general de pádel.</li>
     </ul>
@@ -310,9 +315,11 @@ function EditRules({ open, onClose, t }: { open: boolean; onClose: () => void; t
   const [ko, setKo] = useState(t.formats.ko)
   const [points, setPoints] = useState(t.points)
   const [deuce, setDeuce] = useState(t.deuce)
+  const [tb4, setTb4] = useState<3 | 4>(t.tiebreak4 ?? 3)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     if (!open) return
+    setTb4(t.tiebreak4 ?? 3)
     setName(t.name)
     setDate(msToLocalParts(t.date).date)
     setPlace(t.place ?? '')
@@ -339,6 +346,7 @@ function EditRules({ open, onClose, t }: { open: boolean; onClose: () => void; t
         formats: { rr, ko },
         points,
         deuce,
+        tiebreak4: tb4,
         updatedBy: memberId,
         updatedAt: Date.now(),
       })
@@ -404,9 +412,24 @@ function EditRules({ open, onClose, t }: { open: boolean; onClose: () => void; t
           onChange={setDeuce}
           options={[
             { value: 'oro', label: 'Punto de oro' },
-            { value: 'ventaja', label: 'Ventaja' },
+            { value: 'ventaja', label: 'Deuce' },
           ]}
         />
+        {rr === 'g4' || Object.values(ko).includes('g4') ? (
+          <>
+            <p className="small font-semibold mt-1">Sets a 4 games, si van 3-3</p>
+            <Segmented
+              ariaLabel="Sets a 4 games, si van 3-3"
+              value={String(tb4) as '3' | '4'}
+              onChange={(v) => setTb4(Number(v) as 3 | 4)}
+              options={[
+                { value: '3', label: 'Tie-break, 4-3' },
+                { value: '4', label: 'Siguen hasta 4-4' },
+              ]}
+            />
+            <p className="tiny muted">{shortSetText({ tiebreak4: tb4 })}.</p>
+          </>
+        ) : null}
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <Button variant="line" onClick={onClose}>
