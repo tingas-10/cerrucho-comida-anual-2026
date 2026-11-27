@@ -48,14 +48,15 @@ export function BandaHome() {
 
   const tiles = useMemo<Tile[]>(() => {
     const e = `/e/${EDICION_ACTUAL.slug}`
-    const fmoNext = upcomingMatches(fmo)[0]
+    const soon = (ms: number) => ms >= now - 12 * 3600000
+    const fmoNext = upcomingMatches(fmo).find((m) => soon(m.playedAt))
     const fmoLeader = ranking(computeStats(fmo, year))[0]
     const tour = padelTours
       .map((t) => ({ t, st: padelTournamentState(t, padel) }))
       .filter((x) => !x.st.champion)
       .sort((a, b) => b.t.createdAt - a.t.createdAt)[0]
     const padelLeader = padelRanking(computePadelStats(padel, year))[0]
-    const golfNext = upcomingRounds(golfRounds)[0]
+    const golfNext = upcomingRounds(golfRounds).find((r) => soon(r.playedAt))
     const golfLeader = meritTable(golfRounds, golfCfg.points, year)[0]
     const trucoLive = truco.filter((m) => m.status === 'LIVE').sort((a, b) => b.updatedAt - a.updatedAt)[0]
     const trucoLeader = trucoRanking(computeTrucoStats(truco, year))[0]
