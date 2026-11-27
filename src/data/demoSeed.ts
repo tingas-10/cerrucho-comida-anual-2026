@@ -4,12 +4,13 @@ import { EDICION_ACTUAL, MIEMBROS_INICIALES } from '../content/config'
 import { authEmailFor, normalizeUsername } from '../domain/accounts'
 import { defaultPosition } from '../domain/fmo'
 import { BYE, tournamentState } from '../domain/truco'
+import { rrGames } from '../domain/padelTorneo'
 import { demoRegisterAccount } from './auth'
 import type { MemoryAdapter } from './memoryAdapter'
 import { P } from './paths'
 import { OWNER_ID, ensureEdition, ensureOwnerAndDrafts, slugify } from './seed'
 import GOLF_CANCHAS from '../content/golf-canchas.json'
-import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, Poll, PollResponse, Rsvp, TrucoMatch, TrucoTournament } from './types'
+import type { BeverageProfile, GolfCourse, LoginDoc, Member, MemberPrivate, PadelMatch, PadelTPair, PadelTournament, Poll, PollResponse, Rsvp, TrucoMatch, TrucoTournament } from './types'
 
 export const DEMO_PASSWORD = 'demo123'
 // Usuarios de ejemplo (el id sale de este nombre; lo que se muestra es el apodo actual de MIEMBROS_INICIALES).
@@ -136,6 +137,74 @@ export async function seedDemo(db: MemoryAdapter) {
   const padelBase = { status: 'PLAYED' as const, notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1 }
   await db.setDoc(P.padelMatch('demo-p1'), { ...padelBase, id: 'demo-p1', playedAt: now - 5 * 86400000, bestOf: 3, pairA: ['owner', 'm-pato'], pairB: ['m-facu', 'g-demo-primo'], sets: [{ a: 6, b: 4 }, { a: 3, b: 6 }, { a: 7, b: 5 }] })
   await db.setDoc(P.padelMatch('demo-p2'), { ...padelBase, id: 'demo-p2', playedAt: now - 86400000, bestOf: 1, pairA: ['m-choclo', 'm-felix'], pairB: ['owner', 'm-pato'], sets: [{ a: 4, b: 6 }] })
+
+  // Pádel: un torneo como el Tucan Open (2 grupos de 4, pasan 2 cruzados), con la fecha 1 y parte de la 2 jugadas.
+  await db.setDoc(P.fmoGuest('g-demo-inv1'), { id: 'g-demo-inv1', name: 'Invitado 1', createdBy: 'owner', createdAt: now, updatedAt: now })
+  await db.setDoc(P.fmoGuest('g-demo-inv2'), { id: 'g-demo-inv2', name: 'Invitado 2', createdBy: 'owner', createdAt: now, updatedAt: now })
+  const tucanPairs: PadelTPair[] = [
+    { id: 'p1', players: ['m-pay', 'm-marcos'] },
+    { id: 'p2', players: ['m-francisco', 'm-saimon'] },
+    { id: 'p3', players: ['m-tomi', 'm-rodri'] },
+    { id: 'p4', players: ['g-demo-inv1', 'g-demo-inv2'] },
+    { id: 'p5', players: ['m-santi', 'm-torta'] },
+    { id: 'p6', players: ['m-facu', 'm-pipe'] },
+    { id: 'p7', players: ['m-mateo', 'm-agus'] },
+    { id: 'p8', players: ['owner', 'm-tita'] },
+  ]
+  const tucan: PadelTournament = {
+    id: 'demo-tucan',
+    name: 'Tucan Open',
+    format: 'groups',
+    pairs: tucanPairs,
+    games: null,
+    groups: [
+      { name: 'Grupo A', ids: ['p5', 'p7', 'p4', 'p8'], games: rrGames(['p5', 'p7', 'p4', 'p8']) },
+      { name: 'Grupo B', ids: ['p1', 'p3', 'p2', 'p6'], games: rrGames(['p1', 'p3', 'p2', 'p6']) },
+    ],
+    advance: 2,
+    formats: { rr: 'g4', ko: { '2': 's1', '1': 's1' } },
+    points: { win: 3, draw: 1, loss: 0 },
+    deuce: 'oro',
+    date: now,
+    place: null,
+    createdBy: 'owner',
+    updatedBy: 'owner',
+    createdAt: now - 3600000,
+    updatedAt: now - 3600000,
+  }
+  await db.setDoc(P.padelTournament(tucan.id), tucan)
+  const tucanMatch = (key: string, a: string, b: string, sets: Array<[number, number]>, status: 'PLAYED' | 'LIVE' = 'PLAYED', ago = 1): PadelMatch => ({
+    id: `demo-tucan-${key}`,
+    playedAt: now - ago * 600000,
+    bestOf: 1,
+    games: 4,
+    pairA: tucanPairs.find((p) => p.id === a)!.players,
+    pairB: tucanPairs.find((p) => p.id === b)!.players,
+    sets: sets.map(([x, y]) => ({ a: x, b: y })),
+    status,
+    resultOnly: false,
+    winner: null,
+    draw: false,
+    tournamentId: tucan.id,
+    fixtureId: key,
+    entrantA: a,
+    entrantB: b,
+    notes: '',
+    createdBy: 'owner',
+    updatedBy: 'owner',
+    createdAt: now - ago * 600000,
+    updatedAt: now - ago * 600000,
+    revision: 1,
+  })
+  for (const m of [
+    tucanMatch('G0-0', 'p5', 'p4', [[4, 1]], 'PLAYED', 9),
+    tucanMatch('G0-1', 'p7', 'p8', [[3, 4]], 'PLAYED', 8),
+    tucanMatch('G1-0', 'p1', 'p2', [[4, 2]], 'PLAYED', 7),
+    tucanMatch('G1-1', 'p3', 'p6', [[1, 4]], 'PLAYED', 6),
+    tucanMatch('G0-2', 'p5', 'p8', [[4, 3]], 'PLAYED', 4),
+    tucanMatch('G1-2', 'p1', 'p6', [], 'LIVE', 1),
+  ])
+    await db.setDoc(P.padelMatch(m.id), m)
 
   // Truco: partidos 1 vs 1 y 2 vs 2, uno en vivo, una liga a medio jugar y una eliminación de parejas.
   const tb = { nameA: 'Nosotros', nameB: 'Ellos', log: [], notes: '', createdBy: 'owner', updatedBy: 'owner', createdAt: now, updatedAt: now, revision: 1, tournamentId: null, fixtureId: null, entrantA: null, entrantB: null }

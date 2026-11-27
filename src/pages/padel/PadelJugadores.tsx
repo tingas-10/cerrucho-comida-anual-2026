@@ -5,8 +5,9 @@ import { useSession } from '../../data/DataContext'
 import { formatPoints, yearOf } from '../../domain/fmo'
 import { fmtDayShort } from '../../domain/format'
 import { computePadelStats, emptyPadelStats, padelYears, pairOf, partnersOf, setsText, tally, winnerOf } from '../../domain/padel'
-import { Card, Loading, PageHeader, Pill, Section, Stat } from '../../ui/components'
+import { Card, Loading, Pill, Section, Stat } from '../../ui/components'
 import { YearSelect, useFmoPlayers } from '../fmo/fmoShared'
+import { PadelHeader } from './padelTorneoShared'
 import { PadelTabs, pairName, usePadelMatches } from './padelShared'
 
 export function PadelJugadores() {
@@ -33,7 +34,7 @@ export function PadelJugadores() {
   if (loading || players.loading) return <Loading />
   return (
     <div>
-      <PageHeader eyebrow="Pádel" title="Jugadores" intro="El historial de cada uno: partidos, sets, puntos y con quién le va mejor." />
+      <PadelHeader title="Jugadores" intro="El historial de cada uno: partidos, sets, puntos y con quién le va mejor." />
       <PadelTabs />
       <div className="flex gap-2 flex-wrap mb-4">
         <select className="input w-auto" aria-label="Jugador" value={who} onChange={(e) => setWho(e.target.value)}>

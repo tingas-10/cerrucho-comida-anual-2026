@@ -15,6 +15,8 @@ import { PadelIcon } from '../ui/Shell'
 import { Card, MemberAvatar } from '../ui/components'
 import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
 import { pairName, usePadelMatches } from './padel/padelShared'
+import { usePadelTournaments } from './padel/padelTorneoShared'
+import { allFixtures, tournamentState as padelTournamentState } from '../domain/padelTorneo'
 import { entrantName, useGolfConfig, useGolfRounds } from './golf/golfShared'
 import { computeTrucoStats, trucoRanking, winnerOf as trucoWinner } from '../domain/truco'
 import { teamLabel, useTrucoMatches } from './truco/trucoShared'
@@ -41,6 +43,12 @@ export function BandaHome() {
   const nextGolf = useMemo(() => upcomingRounds(golfRounds)[0], [golfRounds])
   const golfLeader = useMemo(() => meritTable(golfRounds, golfCfg.points, yearOf(now))[0], [golfRounds, golfCfg.points, now])
   const lastGolfWinner = lastGolf ? roundResult(lastGolf).standings[0] : undefined
+  const { rows: padelTours } = usePadelTournaments()
+  // Torneo de pádel en juego (el más nuevo sin campeón), para verlo desde la portada.
+  const padelTour = useMemo(() => {
+    const open = padelTours.map((t) => ({ t, st: padelTournamentState(t, padelMatches) })).filter((x) => !x.st.champion)
+    return open.sort((a, b) => b.t.createdAt - a.t.createdAt)[0]
+  }, [padelTours, padelMatches])
   const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
   const { rows: trucoMatches } = useTrucoMatches()
   const lastTruco = useMemo(() => trucoMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [trucoMatches])
@@ -132,6 +140,16 @@ export function BandaHome() {
             <PadelIcon size={14} /> Pádel
           </p>
           <div className="mt-2 flex-1 small">
+            {padelTour ? (
+              <Link to={`/padel/torneo/${padelTour.t.id}`} className="tour-band block px-4 py-3 mb-3 !rounded-xl">
+                <span className="tour-eyebrow block pr-14">Torneo en juego</span>
+                <span className="tour-title block text-xl mt-0.5 pr-14 truncate">{padelTour.t.name}</span>
+                <span className="tiny text-white/75 flex items-center gap-2 flex-wrap mt-0.5">
+                  {padelTour.st.played} de {padelTour.st.total} partidos
+                  {allFixtures(padelTour.st).some((f) => f.live) ? <span className="tour-live">En cancha</span> : null}
+                </span>
+              </Link>
+            ) : null}
             {lastPadel ? (
               <p>
                 <span className="muted">Último partido · {fmtDayLong(lastPadel.playedAt)}</span>
@@ -139,7 +157,9 @@ export function BandaHome() {
                 <b>
                   {lastPadel.resultOnly
                     ? `Ganó ${pairName(lastPadel, winnerOf(lastPadel) ?? 'A', players)} · sin sets cargados`
-                    : `${pairName(lastPadel, 'A', players)} ${tally(lastPadel).a} – ${tally(lastPadel).b} ${pairName(lastPadel, 'B', players)}`}
+                    : lastPadel.sets.length === 1
+                      ? `${pairName(lastPadel, 'A', players)} ${lastPadel.sets[0].a} – ${lastPadel.sets[0].b} ${pairName(lastPadel, 'B', players)}`
+                      : `${pairName(lastPadel, 'A', players)} ${tally(lastPadel).a} – ${tally(lastPadel).b} ${pairName(lastPadel, 'B', players)}`}
                 </b>
               </p>
             ) : (

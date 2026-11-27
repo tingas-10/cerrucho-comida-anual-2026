@@ -235,11 +235,21 @@ service cloud.firestore {
     match /padelMatches/{matchId} {
       allow read: if true;
       allow delete: if isActive();
+      // LIVE: partido de torneo en cancha. games: 4 (set corto) o 6.
       allow create, update: if isActive()
         && request.resource.data.bestOf in [1, 3, 5]
-        && request.resource.data.status in ['DRAFT', 'PLAYED']
+        && request.resource.data.status in ['DRAFT', 'LIVE', 'PLAYED']
+        && request.resource.data.get('games', 6) in [4, 6]
         && request.resource.data.pairA.size() == 2
         && request.resource.data.pairB.size() == 2;
+    }
+    // Torneos de pádel: los arma cualquiera de la banda; los borra el que lo armó o un administrador.
+    match /padelTournaments/{tid} {
+      allow read: if true;
+      allow create: if isActive() && request.resource.data.createdBy == myId()
+        && request.resource.data.format in ['league', 'knockout', 'groups'];
+      allow update: if isActive() && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin() || (isActive() && resource.data.createdBy == myId());
     }
 
     // ---------- Edición anual ----------

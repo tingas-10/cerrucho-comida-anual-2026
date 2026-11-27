@@ -497,20 +497,67 @@ export interface PadelMatch {
   id: string
   playedAt: number
   bestOf: 1 | 3 | 5
+  // Games por set: 6 (normal) o 4 (set corto, "a 4 games": en 3-3 hay tie-break y termina 4-3). Sin el campo, 6.
+  games?: 4 | 6
   // Parejas: [drive, revés]. '' = lugar vacío. Ids de miembro o de invitado (fmoGuests).
   pairA: [string, string]
   pairB: [string, string]
   sets: PadelSet[]
-  status: 'DRAFT' | 'PLAYED'
+  // LIVE: partido de torneo que se está jugando ahora (todavía sin resultado).
+  status: 'DRAFT' | 'LIVE' | 'PLAYED'
   // "Sólo sé quién ganó": se elige el formato y la pareja ganadora, sin sets. Suma puntos, no sets ni games.
   resultOnly?: boolean
   winner?: 'A' | 'B' | null
+  // Empate (sólo en la fase de liga o grupos de un torneo, por ejemplo 1 set cada uno): no suma al ranking general.
+  draw?: boolean
+  // Partido de un torneo: qué torneo, qué cruce y qué parejas del torneo juegan.
+  tournamentId?: string | null
+  fixtureId?: string | null
+  entrantA?: string | null
+  entrantB?: string | null
   notes?: string
   createdBy: string
   updatedBy: string
   createdAt: number
   updatedAt: number
   revision: number
+}
+
+// ---------- Pádel · torneos ----------
+// Formato de cada partido del torneo: a 4 games (un set corto), a 1 set o al mejor de 3 sets.
+export type PadelFormat = 'g4' | 's1' | 'bo3'
+
+export interface PadelTPair {
+  id: string
+  players: [string, string]
+}
+
+/** Un partido del fixture de la liga o de un grupo: fecha (`r`) y las dos parejas. */
+export interface PadelTGame {
+  r: number
+  a: string
+  b: string
+}
+
+export interface PadelTournament {
+  id: string
+  name: string
+  format: 'league' | 'knockout' | 'groups' // liga · eliminación directa · grupos + eliminación
+  pairs: PadelTPair[] // en eliminación directa, en orden de cabeza de serie
+  games: PadelTGame[] | null // liga: el fixture completo
+  groups: Array<{ name: string; ids: string[]; games: PadelTGame[] }> | null
+  advance: 1 | 2 | 3 | 'all' | null // grupos: cuántos pasan de cada grupo
+  // Formato de los partidos: `rr` para la liga o los grupos; `ko` por ronda, según cuántos cruces tiene (1 final, 2 semis, 4 cuartos…).
+  formats: { rr: PadelFormat; ko: Record<string, PadelFormat> }
+  // Puntos de la tabla del torneo (liga o grupos). No tocan el ranking general.
+  points: { win: number; draw: number; loss: number }
+  deuce: 'oro' | 'ventaja' // 40 iguales: punto de oro o ventaja
+  date: number | null
+  place: string | null
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt: number
 }
 
 // ---------- Golf ----------

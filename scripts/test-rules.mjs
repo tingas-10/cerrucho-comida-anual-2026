@@ -162,6 +162,16 @@ const cases = [
   tc('miembro NO carga pádel a 2 sets', 'ana', 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 2, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),
   tc('miembro borra un partido de pádel', 'ana', 'delete', '/padelMatches/x', 'ALLOW', { existing: { bestOf: 3 } }),
   tc('suspendido NO carga pádel', 'susp', 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 3, status: 'DRAFT', pairA: ['', ''], pairB: ['', ''] } }),
+  tc('miembro marca un partido de torneo en cancha', 'ana', 'create', '/padelMatches/x', 'ALLOW', { data: { bestOf: 1, games: 4, status: 'LIVE', pairA: ['a', 'b'], pairB: ['c', 'd'], tournamentId: 't1' } }),
+  tc('miembro NO carga un set a 5 games', 'ana', 'create', '/padelMatches/x', 'DENY', { data: { bestOf: 1, games: 5, status: 'PLAYED', pairA: ['a', 'b'], pairB: ['c', 'd'] } }),
+  tc('visitante lee un torneo de pádel', null, 'get', '/padelTournaments/t1', 'ALLOW', { existing: { name: 'Tucan Open' } }),
+  tc('miembro arma un torneo de pádel', 'ana', 'create', '/padelTournaments/t1', 'ALLOW', { data: { name: 'Tucan Open', format: 'groups', createdBy: 'm-ana' } }),
+  tc('miembro NO arma un torneo de pádel a nombre de otro', 'ana', 'create', '/padelTournaments/t1', 'DENY', { data: { name: 'Tucan Open', format: 'groups', createdBy: 'm-pipe' } }),
+  tc('visitante NO arma un torneo de pádel', null, 'create', '/padelTournaments/t1', 'DENY', { data: { name: 'Tucan Open', format: 'groups', createdBy: 'm-ana' } }),
+  tc('miembro cambia las reglas de un torneo de pádel', 'ana', 'update', '/padelTournaments/t1', 'ALLOW', { existing: { name: 'Tucan Open', format: 'groups', createdBy: 'm-pipe' }, data: { name: 'Tucan Open', format: 'groups', createdBy: 'm-pipe', deuce: 'oro' } }),
+  tc('miembro NO se adueña del torneo de pádel de otro', 'ana', 'update', '/padelTournaments/t1', 'DENY', { existing: { name: 'Tucan Open', format: 'groups', createdBy: 'm-pipe' }, data: { name: 'Tucan Open', format: 'groups', createdBy: 'm-ana' } }),
+  tc('miembro NO borra el torneo de pádel de otro', 'ana', 'delete', '/padelTournaments/t1', 'DENY', { existing: { name: 'Tucan Open', createdBy: 'm-pipe' } }),
+  tc('el que armó el torneo de pádel lo borra', 'pipe', 'delete', '/padelTournaments/t1', 'ALLOW', { existing: { name: 'Tucan Open', createdBy: 'm-pipe' } }),
 
   // Presidente: confirma fecha, lugar y comida; nada más
   tc('presidente confirma la fecha', 'facu', 'update', '/editions/2026', 'ALLOW', { existing: { title: 'x', date: { startsAt: null }, decisions: {} }, data: { title: 'x', date: { startsAt: 1 }, decisions: { fecha: { status: 'CONFIRMED' } } } }),

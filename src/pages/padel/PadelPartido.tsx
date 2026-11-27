@@ -10,7 +10,7 @@ import { P } from '../../data/paths'
 import type { FmoGuest, PadelMatch } from '../../data/types'
 import { fmtDayLong, localToMs, msToLocalParts } from '../../domain/format'
 import { formatPoints } from '../../domain/fmo'
-import { setsToWin, tally, validateMatch, winnerOf, type Pair } from '../../domain/padel'
+import { padelPoints, setsToWin, tally, validateMatch, winnerOf, type Pair } from '../../domain/padel'
 import { Avatar, Button, Card, ConfirmDialog, Field, Input, Loading, LoginPrompt, Modal, Notice, Pill, Segmented } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers } from '../fmo/fmoShared'
@@ -112,19 +112,19 @@ export function PadelPartido() {
   const canAddSet = m.sets.length < m.bestOf && !winner
   const result = winner ? (
     <Notice tone="ok">
-      Gana <b>{pairName(m, winner, players)}</b>{m.resultOnly ? ' (sin sets cargados)' : ` ${winner === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`}`}: suma {formatPoints(PADEL.puntos[m.bestOf] ?? 0)} {PADEL.puntos[m.bestOf] === 1 ? 'punto' : 'puntos'} cada uno.
+      Gana <b>{pairName(m, winner, players)}</b>{m.resultOnly ? ' (sin sets cargados)' : ` ${winner === 'A' ? `${t.a}–${t.b}` : `${t.b}–${t.a}`}`}: suma {formatPoints(padelPoints(m))} {padelPoints(m) === 1 ? 'punto' : 'puntos'} cada uno.
     </Notice>
   ) : null
 
-  if (!isMember) {
+  if (!isMember || m.tournamentId) {
     return (
       <div>
-        <Link to="/padel" className="back-link">
-          ← Partidos
+        <Link to={m.tournamentId ? `/padel/torneo/${m.tournamentId}` : '/padel'} className="back-link">
+          {m.tournamentId ? '← Torneo' : '← Partidos'}
         </Link>
         <h1 className="h2 mt-1 mb-1">{title}</h1>
         <p className="small muted mb-4">
-          {m.status === 'PLAYED' ? fmtDayLong(m.playedAt) : 'Todavía no se jugó'} · {formatoLabel(m.bestOf)}
+          {m.status === 'PLAYED' ? fmtDayLong(m.playedAt) : 'Todavía no se jugó'} · {m.games === 4 ? 'A 4 games' : formatoLabel(m.bestOf)}
         </p>
         <div className="grid lg:grid-cols-[minmax(0,360px)_1fr] gap-4 items-start">
           <PadelCourt match={m} players={players} readOnly />
@@ -134,7 +134,7 @@ export function PadelPartido() {
           </Card>
         </div>
         <div className="mt-4">
-          <LoginPrompt text="Entrá para armar o editar partidos." />
+          {m.tournamentId ? <Notice>Es un partido de torneo: el resultado se carga y se corrige desde el torneo.</Notice> : <LoginPrompt text="Entrá para armar o editar partidos." />}
         </div>
       </div>
     )

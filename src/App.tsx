@@ -28,6 +28,10 @@ import { PadelPartido } from './pages/padel/PadelPartido'
 import { PadelPartidos } from './pages/padel/PadelPartidos'
 import { PadelRanking } from './pages/padel/PadelRanking'
 import { PadelVersus } from './pages/padel/PadelVersus'
+import { PadelCuadro } from './pages/padel/PadelCuadro'
+import { PadelTorneo } from './pages/padel/PadelTorneo'
+import { PadelTorneoNuevo } from './pages/padel/PadelTorneoNuevo'
+import { PadelTorneos } from './pages/padel/PadelTorneos'
 import { TrucoPartido } from './pages/truco/TrucoPartido'
 import { TrucoPartidos } from './pages/truco/TrucoPartidos'
 import { TrucoRanking } from './pages/truco/TrucoRanking'
@@ -95,6 +99,10 @@ export default function App() {
           <Route path="/padel/parejas" element={<PadelRanking pairs />} />
           <Route path="/padel/jugadores" element={<PadelJugadores />} />
           <Route path="/padel/versus" element={<PadelVersus />} />
+          <Route path="/padel/torneos" element={<PadelTorneos />} />
+          <Route path="/padel/torneos/nuevo" element={<PadelTorneoNuevo />} />
+          <Route path="/padel/torneo/:id" element={<PadelTorneo />} />
+          <Route path="/padel/torneo/:id/cuadro" element={<PadelCuadro />} />
           <Route path="/truco" element={<TrucoPartidos />} />
           <Route path="/truco/partido/:id" element={<TrucoPartido />} />
           <Route path="/truco/ranking" element={<TrucoRanking />} />

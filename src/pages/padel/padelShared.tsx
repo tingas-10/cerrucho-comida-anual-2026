@@ -14,6 +14,7 @@ export function usePadelMatches() {
 
 const TABS = [
   { to: '/padel', label: 'Partidos', end: true },
+  { to: '/padel/torneos', label: 'Torneos' },
   { to: '/padel/ranking', label: 'Ranking' },
   { to: '/padel/parejas', label: 'Parejas' },
   { to: '/padel/jugadores', label: 'Jugadores' },

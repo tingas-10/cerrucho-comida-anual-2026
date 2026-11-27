@@ -5,7 +5,7 @@ import { useMembers } from '../data/hooks'
 import { useEffect, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { colorFor, initials } from '../domain/format'
 
-type BtnVariant = 'solid' | 'gold' | 'line' | 'ghost' | 'danger'
+type BtnVariant = 'solid' | 'gold' | 'line' | 'ghost' | 'danger' | 'lime'
 
 export function Button({
   variant = 'solid',

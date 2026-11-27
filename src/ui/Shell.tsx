@@ -85,6 +85,7 @@ function useNav() {
   ]
   const padel: NavItem[] = [
     { to: '/padel', label: 'Partidos', icon: <PadelIcon />, end: true },
+    { to: '/padel/torneos', label: 'Torneos', icon: <Trophy size={18} /> },
     { to: '/padel/ranking', label: 'Ranking', icon: <Medal size={18} /> },
     { to: '/padel/parejas', label: 'Parejas', icon: <Users size={18} /> },
     { to: '/padel/jugadores', label: 'Jugadores', icon: <UserRound size={18} /> },

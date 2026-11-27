@@ -463,6 +463,190 @@
     transform-box: fill-box;
     transform-origin: center;
   }
+
+  /* ---------- Pádel con aire de circuito profesional: azul noche, verde pelota y marcadores de tele ---------- */
+  .tour-band {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    color: #fff;
+    background: linear-gradient(120deg, #06112a 0%, #0c2453 55%, #143a7d 100%);
+  }
+  .tour-band::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    right: 64px;
+    width: 18px;
+    background: #d6f21d;
+    transform: skewX(-20deg);
+    opacity: 0.95;
+  }
+  .tour-band::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    right: -30px;
+    width: 80px;
+    background: rgba(214, 242, 29, 0.16);
+    transform: skewX(-20deg);
+  }
+  .tour-band > * {
+    position: relative;
+    z-index: 1;
+  }
+  .tour-eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #d6f21d;
+  }
+  .tour-title {
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+  }
+  .btn-lime {
+    background: #d6f21d;
+    color: #06112a;
+    font-weight: 800;
+  }
+  .btn-lime:hover {
+    background: #e3ff3a;
+  }
+  .tour-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #e5262b;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tour-live::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #fff;
+    animation: tour-pulse 1.2s ease-in-out infinite;
+  }
+  /* Marcador de un cruce: dos filas, una por pareja, con los sets a la derecha */
+  .tour-score {
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0b1d40;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .tour-score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 4px 8px;
+  }
+  .tour-score-row + .tour-score-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .tour-score-row.win {
+    background: linear-gradient(90deg, rgba(214, 242, 29, 0.18), rgba(214, 242, 29, 0.04));
+  }
+  .tour-set {
+    min-width: 22px;
+    text-align: center;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .tour-set.won {
+    color: #d6f21d;
+  }
+  /* Cuadro: columnas de cruces unidas con líneas (lado izquierdo avanza a la derecha y el derecho a la izquierda) */
+  .bk-col {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+  }
+  .bk-pair {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .bk-cell {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .bk-left .bk-pair::after,
+  .bk-right .bk-pair::after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    bottom: 25%;
+    width: 14px;
+    border: 2px solid rgba(214, 242, 29, 0.55);
+  }
+  .bk-left .bk-pair::after {
+    right: -14px;
+    border-left: 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .bk-right .bk-pair::after {
+    left: -14px;
+    border-right: 0;
+    border-radius: 6px 0 0 6px;
+  }
+  .bk-left .bk-in::before,
+  .bk-right .bk-in::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    border-top: 2px solid rgba(214, 242, 29, 0.55);
+  }
+  .bk-left .bk-in::before {
+    left: -14px;
+  }
+  .bk-right .bk-in::before {
+    right: -14px;
+  }
+  .bk-left .bk-out::after,
+  .bk-right .bk-out::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    border-top: 2px solid rgba(214, 242, 29, 0.55);
+  }
+  .bk-left .bk-out::after {
+    right: -14px;
+  }
+  .bk-right .bk-out::after {
+    left: -14px;
+  }
+}
+
+@keyframes tour-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 @keyframes pop-in {

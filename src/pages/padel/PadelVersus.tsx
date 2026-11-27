@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSession } from '../../data/DataContext'
 import { formatPoints, yearOf } from '../../domain/fmo'
 import { computePadelStats, emptyPadelStats, padelHeadToHead, padelYears } from '../../domain/padel'
-import { Avatar, Card, Loading, Notice, PageHeader, Section } from '../../ui/components'
+import { Avatar, Card, Loading, Notice, Section } from '../../ui/components'
 import { YearSelect, useFmoPlayers } from '../fmo/fmoShared'
+import { PadelHeader } from './padelTorneoShared'
 import { PadelTabs, usePadelMatches } from './padelShared'
 
 export function PadelVersus() {
@@ -51,7 +52,7 @@ export function PadelVersus() {
 
   return (
     <div>
-      <PageHeader eyebrow="Pádel" title="1 vs 1" intro="Elegí dos y compará." actions={<YearSelect value={year} onChange={setYear} years={years} allowAll />} />
+      <PadelHeader title="1 vs 1" intro="Elegí dos y compará." actions={<YearSelect value={year} onChange={setYear} years={years} allowAll />} />
       <PadelTabs />
       <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center mb-4">
         {select(a, setA, 'Jugador 1')}

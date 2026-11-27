@@ -8,11 +8,12 @@ import { P } from '../../data/paths'
 import type { PadelMatch } from '../../data/types'
 import { formatPoints } from '../../domain/fmo'
 import { fmtDayLong } from '../../domain/format'
-import { playersOf, setsText, tally, winnerOf } from '../../domain/padel'
-import { Button, Card, Empty, Loading, PageHeader, Pill, Section } from '../../ui/components'
+import { padelPoints, playersOf, setsText, tally, winnerOf } from '../../domain/padel'
+import { Button, Card, Empty, Loading, Pill, Section } from '../../ui/components'
 import { useToast } from '../../ui/toast'
 import { useFmoPlayers } from '../fmo/fmoShared'
 import { PadelTabs, pairName, usePadelMatches } from './padelShared'
+import { PadelHeader, usePadelTournaments } from './padelTorneoShared'
 
 export function PadelPartidos() {
   const { db, memberId, isMember } = useSession()
@@ -20,6 +21,8 @@ export function PadelPartidos() {
   const navigate = useNavigate()
   const { rows, loading } = usePadelMatches()
   const players = useFmoPlayers()
+  const { rows: tours } = usePadelTournaments()
+  const tourName = (id?: string | null) => (id ? (tours.find((x) => x.id === id)?.name ?? 'Torneo') : null)
   const [busy, setBusy] = useState(false)
 
   async function create() {
@@ -39,24 +42,42 @@ export function PadelPartidos() {
   }
 
   if (loading || players.loading) return <Loading />
-  const drafts = rows.filter((m) => m.status === 'DRAFT').sort((a, b) => b.updatedAt - a.updatedAt)
+  const drafts = rows.filter((m) => m.status === 'DRAFT' && !m.tournamentId).sort((a, b) => b.updatedAt - a.updatedAt)
+  const live = rows.filter((m) => m.status === 'LIVE' && m.tournamentId).sort((a, b) => b.updatedAt - a.updatedAt)
   const played = rows.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Pádel"
+      <PadelHeader
         title="Partidos"
-        intro={`Armá las parejas en la cancha, cargá los sets y guardá. A 1 set suma ${PADEL.puntos[1]}, al mejor de 3 suma ${PADEL.puntos[3]} y al mejor de 5 suma ${PADEL.puntos[5]} a cada uno de la pareja que gana.`}
+        intro={`Armá las parejas en la cancha, cargá los sets y guardá. A cada uno de la pareja que gana: a 4 games suma ${formatPoints(PADEL.puntosCorto)}, a 1 set ${PADEL.puntos[1]}, al mejor de 3 ${PADEL.puntos[3]} y al mejor de 5 ${PADEL.puntos[5]}.`}
         actions={
           isMember ? (
-            <Button variant="gold" onClick={() => void create()} loading={busy}>
+            <Button variant="lime" onClick={() => void create()} loading={busy}>
               Nuevo partido
             </Button>
           ) : null
         }
       />
       <PadelTabs />
+
+      {live.length ? (
+        <Section title="En cancha ahora" className="mt-0">
+          <div className="grid sm:grid-cols-2 gap-3">
+            {live.map((m) => (
+              <Link key={m.id} to={`/padel/torneo/${m.tournamentId}`} className="card p-4 block hover:border-[#d6f21d]">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="tiny muted truncate">{tourName(m.tournamentId)}</span>
+                  <span className="tour-live">En cancha</span>
+                </div>
+                <p className="font-bold mt-1 truncate">
+                  {pairName(m, 'A', players)} vs {pairName(m, 'B', players)}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      ) : null}
 
       {isMember && drafts.length ? (
         <Section title="Armados, sin jugar" className="mt-0">
@@ -92,11 +113,12 @@ export function PadelPartidos() {
               return (
                 <Card key={m.id}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <p className="tiny muted">
-                      {fmtDayLong(m.playedAt)} · {formatoLabel(m.bestOf)}
+                    <p className="tiny muted flex items-center gap-2 flex-wrap">
+                      {fmtDayLong(m.playedAt)} · {m.games === 4 ? 'A 4 games' : formatoLabel(m.bestOf)}
+                      {m.tournamentId ? <Pill tone="muted">{tourName(m.tournamentId)}</Pill> : null}
                     </p>
-                    <Link to={`/padel/partido/${m.id}`} className="text-link">
-                      {isMember ? 'Ver o editar' : 'Ver'}
+                    <Link to={m.tournamentId ? `/padel/torneo/${m.tournamentId}` : `/padel/partido/${m.id}`} className="text-link">
+                      {m.tournamentId ? 'Ver torneo' : isMember ? 'Ver o editar' : 'Ver'}
                     </Link>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 mt-2">
@@ -112,7 +134,7 @@ export function PadelPartidos() {
                   </div>
                   <p className="small muted text-center mt-2">
                     {setsText(m)}
-                    {w ? ` · +${formatPoints(PADEL.puntos[m.bestOf] ?? 0)} c/u` : ''}
+                    {w ? ` · +${formatPoints(padelPoints(m))} c/u` : m.draw ? ' · Empate' : ''}
                   </p>
                 </Card>
               )

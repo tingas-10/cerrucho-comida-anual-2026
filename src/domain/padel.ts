@@ -50,7 +50,7 @@ export function validateMatch(m: PadelMatch, isGuest: (id: string) => boolean): 
   const ids = playersOf(m)
   if (ids.length < 4) return 'Faltan jugadores: un partido es entre 4.'
   if (new Set(ids).size < 4) return 'Hay un jugador repetido.'
-  if (ids.filter(isGuest).length > PADEL.maxInvitados) return `Puede jugar hasta ${PADEL.maxInvitados} invitado.`
+  if (!m.tournamentId && ids.filter(isGuest).length > PADEL.maxInvitados) return `Puede jugar hasta ${PADEL.maxInvitados} invitado.`
   if (!(PADEL.formatos as readonly number[]).includes(m.bestOf)) return 'Elegí el formato del partido.'
   if (m.resultOnly) return m.winner === 'A' || m.winner === 'B' ? null : 'Marcá qué pareja ganó.'
   if (m.sets.length === 0) return 'Cargá el resultado de los sets.'
@@ -90,13 +90,19 @@ function counted(matches: PadelMatch[], year?: number): PadelMatch[] {
   return matches.filter((m) => m.status === 'PLAYED' && winnerOf(m) !== null && (year === undefined || yearOf(m.playedAt) === year))
 }
 
+/** Puntos del ranking general para cada jugador de la pareja que gana: según el formato (a 4 games, medio punto). */
+export function padelPoints(m: Pick<PadelMatch, 'bestOf' | 'games'>): number {
+  if (m.games === 4) return PADEL.puntosCorto
+  return PADEL.puntos[m.bestOf] ?? 0
+}
+
 function addResult(s: PadelStats, m: PadelMatch, side: Pair) {
   const t = tally(m)
   const won = winnerOf(m) === side
   s.played++
   if (won) {
     s.won++
-    s.points += PADEL.puntos[m.bestOf] ?? 0
+    s.points += padelPoints(m)
   } else s.lost++
   s.setsWon += side === 'A' ? t.a : t.b
   s.setsLost += side === 'A' ? t.b : t.a

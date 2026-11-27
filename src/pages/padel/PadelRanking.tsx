@@ -3,8 +3,9 @@ import { useMemo, useState } from 'react'
 import { PADEL } from '../../content/padel'
 import { formatPoints, yearOf } from '../../domain/fmo'
 import { computePadelStats, computePairStats, padelRanking, padelYears, type PadelStats } from '../../domain/padel'
-import { Avatar, Card, Empty, Loading, PageHeader, Pill } from '../../ui/components'
+import { Avatar, Card, Empty, Loading, Pill } from '../../ui/components'
 import { YearSelect, useFmoPlayers, type FmoPlayers } from '../fmo/fmoShared'
+import { PadelHeader } from './padelTorneoShared'
 import { PadelTabs, usePadelMatches } from './padelShared'
 
 export function PadelRanking({ pairs = false }: { pairs?: boolean }) {
@@ -20,10 +21,9 @@ export function PadelRanking({ pairs = false }: { pairs?: boolean }) {
   if (loading || players.loading) return <Loading />
   return (
     <div>
-      <PageHeader
-        eyebrow="Pádel"
+      <PadelHeader
         title={pairs ? 'Ranking de parejas' : 'Ranking'}
-        intro={`${pairs ? 'Cuenta cada pareja junta, sin importar quién jugó de drive o de revés. ' : ''}Ganar a 1 set suma ${p[1]} · al mejor de 3 suma ${p[3]} · al mejor de 5 suma ${p[5]}. Perder suma 0.`}
+        intro={`${pairs ? 'Cuenta cada pareja junta, sin importar quién jugó de drive o de revés. ' : ''}Ganar a 4 games suma ${formatPoints(PADEL.puntosCorto)}, a 1 set ${p[1]}, al mejor de 3 ${p[3]} y al mejor de 5 ${p[5]}. Perder suma 0. Cuentan también los partidos de los torneos.`}
         actions={<YearSelect value={year} onChange={setYear} years={years} allowAll />}
       />
       <PadelTabs />
@@ -47,7 +47,9 @@ export function PadelRanking({ pairs = false }: { pairs?: boolean }) {
               <tbody>
                 {table.map((s, i) => (
                   <tr key={s.id} className={`border-t border-line ${i < 3 ? 'font-semibold' : ''}`}>
-                    <td className="py-2 pr-2">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
+                    <td className="py-2 pr-2">
+                      <span className={`inline-grid place-items-center w-7 h-7 rounded-md text-xs font-extrabold ${i === 0 ? 'bg-[#d6f21d] text-[#06112a]' : i < 3 ? 'bg-[#06112a] text-white' : 'bg-soft'}`}>{i + 1}</span>
+                    </td>
                     <td className="py-2 pr-2 max-w-[150px] sm:max-w-none">
                       <WhoCell s={s} players={players} />
                     </td>

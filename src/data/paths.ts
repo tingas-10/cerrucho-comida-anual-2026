@@ -54,6 +54,8 @@ export const P = {
   fmoGuest: (id: string) => `fmoGuests/${id}`,
   padelMatches: 'padelMatches',
   padelMatch: (id: string) => `padelMatches/${id}`,
+  padelTournaments: 'padelTournaments',
+  padelTournament: (id: string) => `padelTournaments/${id}`,
   trucoMatches: 'trucoMatches',
   trucoMatch: (id: string) => `trucoMatches/${id}`,
   trucoTournaments: 'trucoTournaments',
