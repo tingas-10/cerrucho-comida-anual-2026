@@ -44,7 +44,7 @@ export function formatLabel(f: PFixture['format'], t?: Pick<PadelTournament, 'ti
 }
 
 /** Marcador de un cruce, como los de la tele: una fila por pareja con los sets y la ganadora resaltada. */
-export function ScoreBox({ t, f, players, onOpen, wide, width = 'w-[200px]' }: { t: PadelTournament; f: PFixture; players: FmoPlayers; onOpen?: () => void; wide?: boolean; width?: string }) {
+export function ScoreBox({ t, f, players, onOpen, wide, width = 'w-[200px]', compact }: { t: PadelTournament; f: PFixture; players: FmoPlayers; onOpen?: () => void; wide?: boolean; width?: string; compact?: boolean }) {
   const r = f.result
   const rows = [
     { id: f.a, label: f.aLabel, side: 'a' as const },
@@ -56,8 +56,8 @@ export function ScoreBox({ t, f, players, onOpen, wide, width = 'w-[200px]' }: {
         const known = !!id && id !== BYE
         const won = !!r && r.winner === id
         return (
-          <div key={side} className={`tour-score-row ${won ? 'win' : ''}`}>
-            <span className={`flex-1 min-w-0 truncate text-[13px] ${known ? 'font-bold' : 'italic text-white/55'} ${r && !won && r.winner !== null ? 'text-white/60' : ''}`}>{pairNames(t, id, players, label)}</span>
+          <div key={side} className={`tour-score-row ${won ? 'win' : ''} ${compact ? '!px-1.5 !gap-1 !min-h-[38px]' : ''}`}>
+            <span className={`flex-1 min-w-0 ${compact ? 'text-[11.5px] leading-tight break-words' : 'truncate text-[13px]'} ${known ? 'font-bold' : 'italic text-white/55'} ${r && !won && r.winner !== null ? 'text-white/60' : ''}`}>{pairNames(t, id, players, label)}</span>
             {r && !r.resultOnly
               ? r.sets.map((s, i) => (
                   <span key={i} className={`tour-set ${(side === 'a' ? s.a > s.b : s.b > s.a) ? 'won' : ''}`}>
@@ -86,25 +86,25 @@ export function ScoreBox({ t, f, players, onOpen, wide, width = 'w-[200px]' }: {
   )
 }
 
-/** El cuadro de eliminación: la mitad de los cruces a la izquierda, la otra mitad a la derecha y la final con la copa en el medio.
- *  En el celular parado va de arriba a abajo (una mitad arriba, la copa en el medio y la otra mitad abajo).
- *  Se agranda o se achica solo para ocupar el ancho, centrado. */
+/** El cuadro de eliminación: la mitad de los cruces a la izquierda, la otra mitad a la derecha y la final con la copa en el medio,
+ *  así se ve cómo avanzan las parejas desde los dos costados. Se agranda o se achica para ocupar el ancho, centrado;
+ *  en pantallas chicas los cuadros son más angostos y los nombres pueden ir en dos renglones. */
 export function Bracket({ t, rounds, players, champion, onFixture }: { t: PadelTournament; rounds: PFixture[][]; players: FmoPlayers; champion: string | null; onFixture?: (f: PFixture) => void }) {
   const outer = useRef<HTMLDivElement>(null)
   const inner = useRef<HTMLDivElement>(null)
-  const [fit, setFit] = useState({ scale: 1, h: 0, ml: 0, vertical: false })
+  const [fit, setFit] = useState({ scale: 1, h: 0, ml: 0, compact: false })
   useLayoutEffect(() => {
     const o = outer.current
     const i = inner.current
     if (!o || !i) return
     const measure = () => {
       const avail = o.clientWidth
-      const vertical = avail < 640
+      const compact = avail < 640
       const w = i.scrollWidth
-      const scale = Math.max(0.5, Math.min(vertical ? 1 : 1.5, (avail - 16) / w))
+      const scale = Math.max(0.5, Math.min(compact ? 1 : 1.5, (avail - 8) / w))
       setFit((cur) => {
-        const next = { scale, h: i.scrollHeight * scale, ml: Math.max(0, (avail - w * scale) / 2), vertical }
-        return cur.scale === next.scale && cur.h === next.h && cur.ml === next.ml && cur.vertical === next.vertical ? cur : next
+        const next = { scale, h: i.scrollHeight * scale, ml: Math.max(0, (avail - w * scale) / 2), compact }
+        return cur.scale === next.scale && cur.h === next.h && cur.ml === next.ml && cur.compact === next.compact ? cur : next
       })
     }
     measure()
@@ -112,66 +112,18 @@ export function Bracket({ t, rounds, players, champion, onFixture }: { t: PadelT
     ro.observe(o)
     ro.observe(i)
     return () => ro.disconnect()
-    // Al pasar de horizontal a vertical cambia el contenido: se vuelve a medir.
-  }, [rounds.length, t.id, fit.vertical])
+  }, [rounds.length, t.id])
 
   const R = rounds.length
   if (!R) return null
-  const box = (f: PFixture, width?: string) => <ScoreBox t={t} f={f} players={players} width={width} onOpen={onFixture && f.a !== BYE && f.b !== BYE ? () => onFixture(f) : undefined} />
+  const width = fit.compact ? 'w-[118px]' : 'w-[200px]'
+  const box = (f: PFixture) => <ScoreBox t={t} f={f} players={players} width={width} compact={fit.compact} onOpen={onFixture && f.a !== BYE && f.b !== BYE ? () => onFixture(f) : undefined} />
   const final = rounds[R - 1][0]
   const sides = Array.from({ length: R - 1 }, (_, r) => r)
   const halfOf = (r: number, which: 'left' | 'right') => {
     const list = rounds[r]
     return which === 'left' ? list.slice(0, list.length / 2) : list.slice(list.length / 2)
   }
-  const cup = (
-    <div className="flex flex-col items-center text-[#d6f21d]">
-      <Trophy size={54} strokeWidth={1.6} />
-      <span className="tour-eyebrow mt-1">{champion ? 'Campeones' : 'Final'}</span>
-    </div>
-  )
-  const champ = champion ? <p className="text-center font-extrabold italic uppercase text-[#d6f21d] text-sm">{pairNames(t, champion, players)}</p> : null
-
-  if (fit.vertical) {
-    const joint = <span className="block w-0.5 h-4 bg-[#d6f21d]/55 mx-auto" aria-hidden />
-    const row = (r: number, which: 'left' | 'right') => {
-      const half = halfOf(r, which)
-      const w = half.length >= 2 ? 'w-[168px]' : 'w-[260px]'
-      return (
-        <div key={`${which}${r}`} className="flex gap-3 justify-center">
-          {half.map((f) => (
-            <div key={f.key} className={f.a === BYE || f.b === BYE ? 'opacity-50' : ''}>
-              {box(f, w)}
-            </div>
-          ))}
-        </div>
-      )
-    }
-    return (
-      <div ref={outer} className="w-full overflow-x-auto overflow-y-hidden" style={{ height: fit.h || undefined }}>
-        <div ref={inner} className="inline-flex flex-col items-stretch gap-0 px-2 py-5 origin-top-left" style={{ transform: `scale(${fit.scale})`, marginLeft: fit.ml, minWidth: 'max-content' }}>
-          {sides.map((r) => (
-            <div key={`l${r}`}>
-              {row(r, 'left')}
-              {joint}
-            </div>
-          ))}
-          <div className="flex flex-col items-center gap-2 py-1">
-            {cup}
-            {box(final, 'w-[260px]')}
-            {champ}
-          </div>
-          {[...sides].reverse().map((r) => (
-            <div key={`r${r}`}>
-              {joint}
-              {row(r, 'right')}
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   const side = (r: number, which: 'left' | 'right') => {
     const half = halfOf(r, which)
     const last = r === R - 2
@@ -195,7 +147,7 @@ export function Bracket({ t, rounds, players, champion, onFixture }: { t: PadelT
   }
   return (
     <div ref={outer} className="w-full overflow-x-auto overflow-y-hidden" style={{ height: fit.h || undefined }}>
-      <div ref={inner} className="inline-flex items-stretch gap-7 px-2 pt-24 pb-10 origin-top-left" style={{ transform: `scale(${fit.scale})`, marginLeft: fit.ml, minWidth: 'max-content' }}>
+      <div ref={inner} className={`inline-flex items-stretch gap-7 px-1 ${fit.compact ? 'pt-[86px] pb-12' : 'pt-24 pb-10'} origin-top-left`} style={{ transform: `scale(${fit.scale})`, marginLeft: fit.ml, minWidth: 'max-content' }}>
         {sides.map((r) => (
           <div key={`l${r}`} className="flex">
             {side(r, 'left')}
@@ -203,11 +155,16 @@ export function Bracket({ t, rounds, players, champion, onFixture }: { t: PadelT
         ))}
         <div className="bk-col justify-center">
           <div className="relative">
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3">{cup}</div>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 flex flex-col items-center text-[#d6f21d]">
+              <Trophy size={fit.compact ? 42 : 54} strokeWidth={1.6} />
+              <span className="tour-eyebrow mt-1">{champion ? 'Campeones' : 'Final'}</span>
+            </div>
             <div className={R > 1 ? 'relative before:absolute before:top-1/2 before:-left-[14px] before:w-[14px] before:border-t-2 before:border-[#d6f21d]/55 after:absolute after:top-1/2 after:-right-[14px] after:w-[14px] after:border-t-2 after:border-[#d6f21d]/55' : ''}>
               {box(final)}
             </div>
-            {champ ? <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap">{champ}</div> : null}
+            {champion ? (
+              <p className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 text-center font-extrabold italic uppercase text-[#d6f21d] ${fit.compact ? 'text-[11px] w-[150px]' : 'text-sm whitespace-nowrap'}`}>{pairNames(t, champion, players)}</p>
+            ) : null}
           </div>
         </div>
         {[...sides].reverse().map((r) => (

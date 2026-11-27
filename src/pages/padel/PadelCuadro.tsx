@@ -98,6 +98,7 @@ export function PadelCuadro() {
           <div className="mt-2 rounded-2xl bg-white/[.03] border border-white/10">
             <Bracket t={t} rounds={ko} players={players} champion={st.champion} />
           </div>
+          {ko.length >= 3 ? <p className="tiny text-white/50 mt-2 sm:hidden">Con el celu acostado se ve más grande.</p> : null}
         </section>
       ) : null}
 
