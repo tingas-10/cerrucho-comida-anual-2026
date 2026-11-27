@@ -1,299 +1,164 @@
-// Portada de La Banda del cerrucho (no de una edición): accesos a la comida anual, FMO, pádel, golf, truco y cumpleaños.
-import { Cake, CalendarDays, Flag, Goal, LogIn, Spade } from 'lucide-react'
-import { useMemo } from 'react'
+// Portada de La Banda del cerrucho: una sola pantalla con un botón por sección (pedido de Agus, 26/11/2026).
+// Cada botón tiene su ícono y una línea al día (próximo partido, puntero, torneo en juego, próximo cumpleaños…).
+import { Archive, Cake, Flag, Goal, ImageIcon, LogIn, Spade, Users, UtensilsCrossed } from 'lucide-react'
+import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { EDICION_ACTUAL, GRUPO } from '../content/config'
+import { EDICION_ACTUAL } from '../content/config'
 import { FOTOS } from '../content/galeria'
 import { useSession } from '../data/DataContext'
 import { useEdition, useMembers, useNow } from '../data/hooks'
-import { formatBirthday, upcoming } from '../domain/birthdays'
-import { computeStats, formatPoints, ranking, resultText, scoreOf, upcomingMatches, yearOf } from '../domain/fmo'
-import { fmtDayLong, fmtTime } from '../domain/format'
-import { computePadelStats, padelRanking, tally, winnerOf } from '../domain/padel'
-import { meritTable, roundResult, upcomingRounds } from '../domain/golf'
-import { PadelIcon } from '../ui/Shell'
-import { Card, MemberAvatar } from '../ui/components'
-import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
-import { pairName, usePadelMatches } from './padel/padelShared'
-import { usePadelTournaments } from './padel/padelTorneoShared'
+import { upcoming } from '../domain/birthdays'
+import { computeStats, ranking, upcomingMatches, yearOf } from '../domain/fmo'
+import { fmtDayShort } from '../domain/format'
+import { meritTable, upcomingRounds } from '../domain/golf'
+import { computePadelStats, padelRanking } from '../domain/padel'
 import { allFixtures, tournamentState as padelTournamentState } from '../domain/padelTorneo'
-import { entrantName, useGolfConfig, useGolfRounds } from './golf/golfShared'
-import { computeTrucoStats, trucoRanking, winnerOf as trucoWinner } from '../domain/truco'
+import { computeTrucoStats, trucoRanking } from '../domain/truco'
+import { PadelIcon } from '../ui/Shell'
+import { useFmoMatches, useFmoPlayers } from './fmo/fmoShared'
+import { useGolfConfig, useGolfRounds } from './golf/golfShared'
+import { usePadelMatches } from './padel/padelShared'
+import { usePadelTournaments } from './padel/padelTorneoShared'
 import { teamLabel, useTrucoMatches } from './truco/trucoShared'
 
 const BASE = import.meta.env.BASE_URL
 
+interface Tile {
+  to: string
+  title: string
+  sub: string
+  icon: ReactNode
+  tone: string // colores del ícono
+  live?: string | null
+}
+
 export function BandaHome() {
   const { isMember, member } = useSession()
   const now = useNow(60000)
+  const year = yearOf(now)
   const { data: edition } = useEdition()
   const members = useMembers()
-  const { rows: matches } = useFmoMatches()
   const players = useFmoPlayers()
-  const nextBirthday = useMemo(() => upcoming(members.list.filter((m) => m.status !== 'suspended'), 1, now)[0], [members.list, now])
-  const played = useMemo(() => matches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt), [matches])
-  const leader = useMemo(() => ranking(computeStats(matches, yearOf(now)))[0], [matches, now])
-  const last = played[0]
-  const next = useMemo(() => upcomingMatches(matches)[0], [matches])
-  const { rows: padelMatches } = usePadelMatches()
-  const lastPadel = useMemo(() => padelMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [padelMatches])
+  const { rows: fmo } = useFmoMatches()
+  const { rows: padel } = usePadelMatches()
+  const { rows: padelTours } = usePadelTournaments()
   const { rows: golfRounds } = useGolfRounds()
   const golfCfg = useGolfConfig()
-  const lastGolf = useMemo(() => golfRounds.filter((r) => r.status === 'PLAYED' && !r.voided).sort((a, b) => b.playedAt - a.playedAt)[0], [golfRounds])
-  const nextGolf = useMemo(() => upcomingRounds(golfRounds)[0], [golfRounds])
-  const golfLeader = useMemo(() => meritTable(golfRounds, golfCfg.points, yearOf(now))[0], [golfRounds, golfCfg.points, now])
-  const lastGolfWinner = lastGolf ? roundResult(lastGolf).standings[0] : undefined
-  const { rows: padelTours } = usePadelTournaments()
-  // Torneo de pádel en juego (el más nuevo sin campeón), para verlo desde la portada.
-  const padelTour = useMemo(() => {
-    const open = padelTours.map((t) => ({ t, st: padelTournamentState(t, padelMatches) })).filter((x) => !x.st.champion)
-    return open.sort((a, b) => b.t.createdAt - a.t.createdAt)[0]
-  }, [padelTours, padelMatches])
-  const padelLeader = useMemo(() => padelRanking(computePadelStats(padelMatches, yearOf(now)))[0], [padelMatches, now])
-  const { rows: trucoMatches } = useTrucoMatches()
-  const lastTruco = useMemo(() => trucoMatches.filter((m) => m.status === 'PLAYED').sort((a, b) => b.playedAt - a.playedAt)[0], [trucoMatches])
-  const liveTruco = useMemo(() => trucoMatches.filter((m) => m.status === 'LIVE').sort((a, b) => b.updatedAt - a.updatedAt)[0], [trucoMatches])
-  const trucoLeader = useMemo(() => trucoRanking(computeTrucoStats(trucoMatches, yearOf(now)))[0], [trucoMatches, now])
-  const e = `/e/${EDICION_ACTUAL.slug}`
+  const { rows: truco } = useTrucoMatches()
+
+  const tiles = useMemo<Tile[]>(() => {
+    const e = `/e/${EDICION_ACTUAL.slug}`
+    const fmoNext = upcomingMatches(fmo)[0]
+    const fmoLeader = ranking(computeStats(fmo, year))[0]
+    const tour = padelTours
+      .map((t) => ({ t, st: padelTournamentState(t, padel) }))
+      .filter((x) => !x.st.champion)
+      .sort((a, b) => b.t.createdAt - a.t.createdAt)[0]
+    const padelLeader = padelRanking(computePadelStats(padel, year))[0]
+    const golfNext = upcomingRounds(golfRounds)[0]
+    const golfLeader = meritTable(golfRounds, golfCfg.points, year)[0]
+    const trucoLive = truco.filter((m) => m.status === 'LIVE').sort((a, b) => b.updatedAt - a.updatedAt)[0]
+    const trucoLeader = trucoRanking(computeTrucoStats(truco, year))[0]
+    const bday = upcoming(members.list.filter((m) => m.status !== 'suspended'), 1, now)[0]
+    const lead = (id: string | undefined) => (id ? `Puntero: ${players.nameOf(id)}` : 'Todavía sin partidos')
+    return [
+      {
+        to: e,
+        title: 'Comida anual',
+        sub: edition?.date.startsAt ? `${EDICION_ACTUAL.anio} · ${fmtDayShort(edition.date.startsAt)}` : 'Votando fecha y lugar',
+        icon: <UtensilsCrossed size={26} />,
+        tone: 'bg-[#d9b45f]/20 text-[#9a7420] dark:text-[#e7c877]',
+      },
+      {
+        to: '/fmo',
+        title: 'FMO',
+        sub: fmoNext ? `Próximo: ${fmtDayShort(fmoNext.playedAt)}` : lead(fmoLeader?.playerId),
+        icon: <Goal size={26} />,
+        tone: 'bg-[#1b7f3b]/15 text-[#1b7f3b] dark:text-[#7bd88f]',
+      },
+      {
+        to: tour ? `/padel/torneo/${tour.t.id}` : '/padel',
+        title: 'Pádel',
+        sub: tour ? `${tour.t.name} en juego` : lead(padelLeader?.id),
+        icon: <PadelIcon size={26} />,
+        tone: 'bg-[#06112a] text-[#d6f21d]',
+        live: tour && allFixtures(tour.st).some((f) => f.live) ? 'En cancha' : null,
+      },
+      {
+        to: '/golf',
+        title: 'Golf',
+        sub: golfNext ? `Próximo: ${fmtDayShort(golfNext.playedAt)}` : lead(golfLeader?.playerId),
+        icon: <Flag size={26} />,
+        tone: 'bg-[#2f6b3f]/15 text-[#2f6b3f] dark:text-[#8fd4a0]',
+      },
+      {
+        to: trucoLive ? `/truco/partido/${trucoLive.id}` : '/truco',
+        title: 'Truco',
+        sub: trucoLive ? `${teamLabel(trucoLive, 'A', players)} ${trucoLive.scoreA} a ${trucoLive.scoreB} ${teamLabel(trucoLive, 'B', players)}` : lead(trucoLeader?.id),
+        icon: <Spade size={26} />,
+        tone: 'bg-[#b42318]/12 text-[#b42318] dark:text-[#ff8a80]',
+        live: trucoLive ? 'En vivo' : null,
+      },
+      {
+        to: '/cumples',
+        title: 'Cumpleaños',
+        sub: bday ? `${bday.alias} · ${bday.days === 0 ? 'hoy' : bday.days === 1 ? 'mañana' : `en ${bday.days} días`}` : 'Cargá el tuyo',
+        icon: <Cake size={26} />,
+        tone: 'bg-[#d63384]/12 text-[#b0246b] dark:text-[#f38ab8]',
+      },
+      {
+        to: '/galeria',
+        title: 'Galería',
+        sub: 'Fotos de la banda',
+        icon: <ImageIcon size={26} />,
+        tone: 'bg-[#2364b8]/12 text-[#1d58a5] dark:text-[#8ab6f0]',
+      },
+      isMember
+        ? { to: '/miembros', title: 'Miembros', sub: `${members.list.filter((m) => m.status !== 'suspended').length} en la banda`, icon: <Users size={26} />, tone: 'bg-[#6d4bc4]/12 text-[#5b3db0] dark:text-[#b9a4f2]' }
+        : { to: '/archivo', title: 'Archivo', sub: 'Comidas anteriores', icon: <Archive size={26} />, tone: 'bg-[#6d4bc4]/12 text-[#5b3db0] dark:text-[#b9a4f2]' },
+    ]
+  }, [edition, fmo, padel, padelTours, golfRounds, golfCfg.points, truco, members.list, players, now, year, isMember])
+
   const hero = BASE + (edition?.heroPhoto ?? FOTOS[0].src)
 
   return (
-    <div>
+    // En el celular ocupa justo el alto que queda entre la barra de arriba y la de abajo: no hace falta scrollear.
+    <div className="flex flex-col gap-3 h-[calc(100dvh-188px)] min-h-[420px] md:h-auto md:min-h-0 md:gap-4">
       <div
-        className="relative rounded-[20px] overflow-hidden min-h-[240px] sm:min-h-[320px] flex items-end p-6 sm:p-9 text-white"
-        style={{ background: `linear-gradient(0deg, rgba(8,10,17,.9), rgba(8,10,17,.1)), url(${hero}) center 45% / cover` }}
+        className="relative rounded-[20px] overflow-hidden shrink-0 h-[clamp(80px,14dvh,124px)] md:h-[190px] flex items-end justify-between gap-3 px-5 pb-3.5 md:px-8 md:pb-6 text-white"
+        style={{ background: `linear-gradient(0deg, rgba(8,10,17,.88), rgba(8,10,17,.15)), url(${hero}) center 45% / cover` }}
       >
-        <div>
-          <h1 className="hero-title max-w-3xl">
-            La Banda
-            <br />
-            del cerrucho.
-          </h1>
-          <p className="text-[#f2e7c8] mt-3">{isMember && member ? `Hola, ${member.alias}.` : 'Comida anual, fútbol, pádel, golf y cumpleaños de la banda.'}</p>
+        <div className="min-w-0">
+          <h1 className="font-extrabold tracking-[-0.04em] leading-[0.95] text-[28px] short:text-[24px] md:text-[52px]">La Banda del cerrucho.</h1>
+          <p className="text-[#f2e7c8] text-sm md:text-base mt-1">{isMember && member ? `Hola, ${member.alias}.` : 'Elegí a dónde ir.'}</p>
         </div>
-      </div>
-
-      {!isMember ? (
-        <div className="card p-4 mt-4 flex items-center justify-between gap-3 flex-wrap">
-          <p className="small">Podés mirar todo sin entrar. Para votar o cargar lo tuyo, entrá con tu usuario.</p>
-          <Link to="/entrar" className="btn btn-gold btn-sm">
+        {!isMember ? (
+          <Link to="/entrar" className="btn btn-gold btn-sm shrink-0">
             <LogIn size={16} /> Entrar
           </Link>
-        </div>
-      ) : null}
-
-      <div className="grid sm:grid-cols-2 gap-3 mt-4">
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <CalendarDays size={14} /> {edition?.title ?? EDICION_ACTUAL.titulo}
-          </p>
-          <div className="mt-2 flex-1">
-            <SummaryRow label="Fecha" value={edition?.date.startsAt ? `${fmtDayLong(edition.date.startsAt)} · ${fmtTime(edition.date.startsAt)} h` : null} />
-            <SummaryRow label="Lugar" value={edition?.venue?.name ?? null} />
-            <SummaryRow label="Comida" value={edition?.menu?.name ?? null} />
-          </div>
-          <Link to={e} className="btn mt-3">
-            Ir a la comida anual
-          </Link>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <Goal size={14} /> FMO
-          </p>
-          <div className="mt-2 flex-1 small">
-            {last ? (
-              <p>
-                <span className="muted">Último partido · {fmtDayLong(last.playedAt)}</span>
-                <br />
-                <b>
-                  {last.resultOnly ? `${last.nameA} vs ${last.nameB} · ${resultText(last)}` : `${last.nameA} ${scoreOf(last).a} – ${scoreOf(last).b} ${last.nameB}`}
-                </b>
-              </p>
-            ) : (
-              <p className="muted">Todavía no hay partidos cargados.</p>
-            )}
-            {next ? (
-              <p className="mt-2">
-                <span className="muted">Próximo · {fmtDayLong(next.playedAt)} · {fmtTime(next.playedAt)} h</span>
-                <br />
-                <b>
-                  {next.nameA} vs {next.nameB}
-                </b>
-              </p>
-            ) : null}
-            {leader ? (
-              <p className="mt-2 flex items-center gap-2">
-                <span className="muted">Puntero {yearOf(now)}:</span>
-                <b>{players.nameOf(leader.playerId)}</b>
-                <span className="muted">({formatPoints(leader.points)} pts)</span>
-              </p>
-            ) : null}
-          </div>
-          <Link to="/fmo" className="btn mt-3">
-            Ir a FMO
-          </Link>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <PadelIcon size={14} /> Pádel
-          </p>
-          <div className="mt-2 flex-1 small">
-            {padelTour ? (
-              <Link to={`/padel/torneo/${padelTour.t.id}`} className="tour-band block px-4 py-3 mb-3 !rounded-xl">
-                <span className="tour-eyebrow block pr-14">Torneo en juego</span>
-                <span className="tour-title block text-xl mt-0.5 pr-14 truncate">{padelTour.t.name}</span>
-                <span className="tiny text-white/75 flex items-center gap-2 flex-wrap mt-0.5">
-                  {padelTour.st.played} de {padelTour.st.total} partidos
-                  {allFixtures(padelTour.st).some((f) => f.live) ? <span className="tour-live">En cancha</span> : null}
-                </span>
-              </Link>
-            ) : null}
-            {lastPadel ? (
-              <p>
-                <span className="muted">Último partido · {fmtDayLong(lastPadel.playedAt)}</span>
-                <br />
-                <b>
-                  {lastPadel.resultOnly
-                    ? `Ganó ${pairName(lastPadel, winnerOf(lastPadel) ?? 'A', players)} · sin sets cargados`
-                    : lastPadel.sets.length === 1
-                      ? `${pairName(lastPadel, 'A', players)} ${lastPadel.sets[0].a} – ${lastPadel.sets[0].b} ${pairName(lastPadel, 'B', players)}`
-                      : `${pairName(lastPadel, 'A', players)} ${tally(lastPadel).a} – ${tally(lastPadel).b} ${pairName(lastPadel, 'B', players)}`}
-                </b>
-              </p>
-            ) : (
-              <p className="muted">Todavía no hay partidos cargados.</p>
-            )}
-            {padelLeader ? (
-              <p className="mt-2 flex items-center gap-2">
-                <span className="muted">Puntero {yearOf(now)}:</span>
-                <b>{players.nameOf(padelLeader.id)}</b>
-                <span className="muted">({formatPoints(padelLeader.points)} pts)</span>
-              </p>
-            ) : null}
-          </div>
-          <Link to="/padel" className="btn mt-3">
-            Ir a Pádel
-          </Link>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <Flag size={14} /> Golf
-          </p>
-          <div className="mt-2 flex-1 small">
-            {lastGolf ? (
-              <p>
-                <span className="muted">
-                  Último partido · {fmtDayLong(lastGolf.playedAt)} · {lastGolf.course.name}
-                </span>
-                <br />
-                {lastGolfWinner ? (
-                  <b>
-                    Ganó {entrantName(lastGolf.entrants.find((x) => x.id === lastGolfWinner.entrantId)!, players)} ({lastGolfWinner.label})
-                  </b>
-                ) : null}
-              </p>
-            ) : (
-              <p className="muted">Todavía no hay partidos cargados.</p>
-            )}
-            {nextGolf ? (
-              <p className="mt-2">
-                <span className="muted">
-                  Próximo · {fmtDayLong(nextGolf.playedAt)} · {fmtTime(nextGolf.playedAt)} h
-                </span>
-                <br />
-                <b>{nextGolf.course.name}</b>
-              </p>
-            ) : null}
-            {golfLeader ? (
-              <p className="mt-2 flex items-center gap-2">
-                <span className="muted">Ranking {yearOf(now)}:</span>
-                <b>{players.nameOf(golfLeader.playerId)}</b>
-                <span className="muted">({golfLeader.points} pts)</span>
-              </p>
-            ) : null}
-          </div>
-          <Link to="/golf" className="btn mt-3">
-            Ir a Golf
-          </Link>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <Spade size={14} /> Truco
-          </p>
-          <div className="mt-2 flex-1 small">
-            {liveTruco ? (
-              <p className="mb-2">
-                <span className="text-ok font-bold">● Jugándose ahora</span>
-                <br />
-                <Link to={`/truco/partido/${liveTruco.id}`} className="font-bold underline">
-                  {teamLabel(liveTruco, 'A', players)} {liveTruco.scoreA} – {liveTruco.scoreB} {teamLabel(liveTruco, 'B', players)}
-                </Link>
-              </p>
-            ) : null}
-            {lastTruco ? (
-              <p>
-                <span className="muted">Último partido · {fmtDayLong(lastTruco.playedAt)}</span>
-                <br />
-                <b>
-                  {lastTruco.resultOnly
-                    ? `Ganó ${teamLabel(lastTruco, trucoWinner(lastTruco) ?? 'A', players)}`
-                    : `${teamLabel(lastTruco, 'A', players)} ${Math.min(lastTruco.scoreA, lastTruco.target)} – ${Math.min(lastTruco.scoreB, lastTruco.target)} ${teamLabel(lastTruco, 'B', players)}`}
-                </b>
-              </p>
-            ) : liveTruco ? null : (
-              <p className="muted">Todavía no hay partidos cargados.</p>
-            )}
-            {trucoLeader ? (
-              <p className="mt-2 flex items-center gap-2">
-                <span className="muted">Puntero {yearOf(now)}:</span>
-                <b>{players.nameOf(trucoLeader.id)}</b>
-                <span className="muted">({formatPoints(trucoLeader.points)} pts)</span>
-              </p>
-            ) : null}
-          </div>
-          <Link to="/truco" className="btn mt-3">
-            Ir a Truco
-          </Link>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="eyebrow flex items-center gap-2">
-            <Cake size={14} /> Cumpleaños
-          </p>
-          <div className="mt-2 flex-1">
-            {nextBirthday ? (
-              <div className="flex items-center gap-3">
-                <MemberAvatar id={nextBirthday.id} size={44} />
-                <div>
-                  <p className="font-bold">{nextBirthday.alias}</p>
-                  <p className="small muted">
-                    {formatBirthday(nextBirthday.birthday!)} · {nextBirthday.days === 0 ? '¡hoy!' : nextBirthday.days === 1 ? 'mañana' : `en ${nextBirthday.days} días`}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="small muted">Todavía nadie cargó su cumpleaños.</p>
-            )}
-          </div>
-          <Link to="/cumples" className="btn mt-3">
-            Ver todos
-          </Link>
-        </Card>
+        ) : null}
       </div>
-      <p className="tiny muted mt-6 text-center">{GRUPO.nombre}</p>
-    </div>
-  )
-}
 
-function SummaryRow({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="flex justify-between gap-3 py-1.5 border-b border-line last:border-0 small">
-      <span className="muted">{label}</span>
-      <span className={`text-right ${value ? 'font-semibold' : 'muted'}`}>{value ?? 'A definir'}</span>
+      <nav aria-label="Secciones" className="grid grid-cols-2 grid-rows-4 flex-1 min-h-0 md:flex-none md:grid-rows-none lg:grid-cols-4 gap-2.5 md:gap-3">
+        {tiles.map((t) => (
+          <Link
+            key={t.title}
+            to={t.to}
+            className="card relative min-h-0 overflow-hidden flex flex-col short:flex-row short:items-center gap-2 short:gap-2 p-3 short:p-2.5 md:p-4 md:min-h-[150px] hover:border-[var(--gold)] active:scale-[.98] transition"
+          >
+            {t.live ? <span className="tour-live absolute top-2 right-2 !text-[10px] !px-1.5 short:hidden">{t.live}</span> : null}
+            <span className={`relative shrink-0 w-11 h-11 short:w-9 short:h-9 short:rounded-xl short:[&>svg]:w-5 short:[&>svg]:h-5 md:w-14 md:h-14 rounded-2xl grid place-items-center ${t.tone}`}>
+              {t.icon}
+              {/* En celulares bajos, en vez del cartel, un punto rojo sobre el ícono */}
+              {t.live ? <span className="hidden short:block absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#e5262b] ring-2 ring-[var(--card)] animate-pulse" aria-label={t.live} /> : null}
+            </span>
+            <span className="mt-auto short:mt-0 min-w-0">
+              <span className="block font-extrabold text-[17px] short:text-[14.5px] md:text-xl leading-tight truncate short:whitespace-normal short:line-clamp-2">{t.title}</span>
+              <span className="block text-[12.5px] short:text-[12px] md:text-sm muted leading-snug truncate short:whitespace-normal short:line-clamp-2">{t.sub}</span>
+            </span>
+          </Link>
+        ))}
+      </nav>
     </div>
   )
 }

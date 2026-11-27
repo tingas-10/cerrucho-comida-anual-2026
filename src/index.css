@@ -5,6 +5,11 @@
 @import '@fontsource/plus-jakarta-sans/800.css';
 @import 'tailwindcss';
 
+/* El modo oscuro de Tailwind (`dark:`) sigue al tema elegido en la web, no al del sistema. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* Celulares bajos (por ejemplo, un iPhone SE): la portada pone el ícono al costado para entrar en una pantalla. */
+@custom-variant short (@media (max-width: 767px) and (max-height: 740px));
+
 /* Tema claro por defecto; el oscuro se activa con data-theme="dark" en <html>. */
 :root {
   --bg: #f5f6fa;
